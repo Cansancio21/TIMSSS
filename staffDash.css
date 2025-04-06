@@ -19,7 +19,6 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
-    min-height: 100vh;
 }
 
 .glass-container {
@@ -34,7 +33,6 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
-    width: 100%;
 }
 
 /* Sidebar */
@@ -49,7 +47,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -63,7 +60,6 @@ body {
     transition: all 0.3s;
     width: 100%;
     margin-left: -10px;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .sidebar ul {
@@ -91,7 +87,6 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
-    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -144,11 +139,7 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    margin-top: -15px;
-}
-
-.container h1{
-    color: white;
+    padding-top: 85px;
 }
 
 /* Header */
@@ -160,7 +151,15 @@ footer {
     background: linear-gradient(135deg, #6c5ce7, #a29bfe);
     color: white;
     border-radius: 10px;
-    margin-bottom: 20px;
+    position: fixed;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    top: 0;
+    left: 230px; /* Match sidebar width */
+    right: 30px; /* Match container padding */
+    z-index: 100;
+    height: 70px; /* Fixed height */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .upper h1 {
@@ -195,7 +194,6 @@ footer {
     transform: translateY(-50%);
     color: #666;
 }
-
 
 .user-profile {
     display: flex;
@@ -264,6 +262,31 @@ footer {
     margin-left: 5px;
 }
 
+.add-user-btn {
+    position: absolute;
+    top: 65px;
+    right: 20px;
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+}
+
+.add-user-btn:hover {
+    background: var(--secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+}
+
+.add-user-btn i {
+    margin-right: 8px;
+}
+
 /* Tabs */
 .tab-buttons {
     display: flex;
@@ -280,27 +303,6 @@ footer {
     border-radius: 4px 4px 0 0;
     position: relative;
 }
-
-.export-btn {
-    display: inline-block;
-    background-color: #63c216;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: lighter;
-    transition: 0.3s;
-    position: absolute;
-    right: 30px;
-    top: 15px;
-}
-
-
-.export-btn:hover {
-    background-color: #7494ec;
-}
-
 
 .tab-btn.active {
     background: #4CAF50;
@@ -340,7 +342,8 @@ table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 2.5vw;
+   
+    margin-top: 10px;
     table-layout: auto;
 }
 
@@ -353,7 +356,7 @@ thead {
 }
 
 th {
-    padding: clamp(10px, 1.5vw, 15px);
+    padding: 15px;
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
@@ -368,14 +371,13 @@ th:last-child {
 }
 
 td {
-    padding: clamp(8px, 1.5vw, 10px);
+    padding: 10px;
     border-bottom: 1px solid #eee;
     vertical-align: middle;
     text-align: center;
     word-wrap: break-word;
     white-space: normal;
 }
-
 tr:last-child td {
     border-bottom: none;
 }
@@ -428,6 +430,10 @@ tr:hover td {
 
 .action-buttons a.archive-btn {
     background: var(--warning);
+}
+
+.action-buttons a.restore-btn {
+    background: var(--info);
 }
 
 .action-buttons a.unarchive-btn {
@@ -638,201 +644,4 @@ tr:hover td {
     border: 1px dashed #ddd;
     border-radius: 8px;
     margin-top: 10px;
-}
-
-.back-icon {
-    display: inline-block;
-    margin-bottom: 20px;
-    text-decoration: none;
-    color: #333;
-    font-size: 24px;
-}
-
-.back-icon i {
-    transition: color 0.3s;
-}
-
-.back-icon:hover i {
-    color: #007bff;
-}
-
-/* Heading */
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 24px;
-    color: #333;
-}
-
-/* Form Styles */
-.form {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-row {
-    margin-bottom: 15px;
-}
-
-label {
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: #555;
-}
-
-
-
-/* Button Styles */
-button {
-    padding: 10px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-.error {
-    color: red; /* Text color for the error message */
-    font-size: 0.9em; /* Slightly smaller font size */
-    margin-top: 5px; /* Space between the input field and the error message */
-    display: block; /* Ensure the error message appears on a new line */
-}
-
-
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 70px;
-    }
-
-    .sidebar h2 {
-        font-size: 1rem;
-        padding: 10px;
-        margin-left: 0;
-    }
-
-    .sidebar ul li a span {
-        display: none;
-    }
-
-    .sidebar ul li a i {
-        margin-right: 0;
-        font-size: 1.5rem;
-    }
-
-    .container {
-        margin-left: 70px;
-        padding: 15px;
-    }
-
-    .upper {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-
-    .search-container {
-        width: 100%;
-    }
-
-    .user-profile {
-        margin-left: 0;
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .user-details {
-        margin-left: 0;
-    }
-
-    .user-details span,
-    .user-details small {
-        margin-left: 0;
-    }
-
-    .table-box {
-        padding: 15px;
-    }
-
-    th, td {
-        padding: 8px;
-        font-size: 0.875rem;
-    }
-
-    .action-buttons a {
-        width: 30px;
-        height: 30px;
-    }
-
-    .pagination-link {
-        width: 35px;
-        height: 35px;
-    }
-
-    .add-user-btn {
-        top: 50px;
-        right: 15px;
-        padding: 8px 15px;
-    }
-}
-
-@media (max-width: 480px) {
-    .sidebar {
-        width: 60px;
-    }
-
-    .container {
-        margin-left: 60px;
-        padding: 10px;
-    }
-
-    .upper h1 {
-        font-size: 1.2rem;
-    }
-
-    .search-bar {
-        padding: 8px 30px 8px 10px;
-    }
-
-    .table-box {
-        padding: 10px;
-    }
-
-    th, td {
-        padding: 6px;
-        font-size: 0.75rem;
-    }
-
-    .add-user-btn {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-
-    .modal-content {
-        width: 95%;
-        margin: 5% auto;
-        padding: 15px;
-    }
-
-    .modal-btn {
-        padding: 6px 15px;
-    }
-
-    .action-buttons a {
-        width: 25px;
-        height: 25px;
-    }
-
-    .pagination-link {
-        width: 30px;
-        height: 30px;
-    }
 }

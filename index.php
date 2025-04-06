@@ -128,7 +128,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 header("Location: staffD.php");
                 exit();
             } elseif ($row['u_type'] == 'technician') {
-                header("Location: customerP.php"); // Redirect to portal.php for technicians
+                header("Location: technicianD.php"); // Redirect to portal.php for technicians
                 exit();
             }
         } else {

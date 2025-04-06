@@ -99,16 +99,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     } elseif (isset($_POST['restore_user'])) {
         $id = $_POST['u_id'];
-        $sql = "INSERT INTO tbl_user (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
-                SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
-                FROM tbl_archive WHERE u_id=?";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
+
+        // Check if the u_id already exists in tbl_user
+        $checkSql = "SELECT u_id FROM tbl_user WHERE u_id = ?";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bind_param("i", $id);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+
+        if ($checkResult->num_rows > 0) {
+            $_SESSION['error'] = "User with ID $id already exists in active users!";
+        } else {
+            $sql = "INSERT INTO tbl_user (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
+                    SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
+                    FROM tbl_archive WHERE u_id=?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $stmt->close();
+
+            $sql = "DELETE FROM tbl_archive WHERE u_id=?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("i", $id);
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "User unarchived successfully!";
+            } else {
+                $_SESSION['error'] = "Error unarchiving user: " . $stmt->error;
+            }
+            $stmt->close();
         }
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $stmt->close();
+        $checkStmt->close();
+    } elseif (isset($_POST['restore_all_users'])) {
+        // Fetch all archived users to check for duplicates
+        $checkSql = "SELECT u_id FROM tbl_archive";
+        $checkResult = $conn->query($checkSql);
+        $duplicateIds = [];
+        while ($row = $checkResult->fetch_assoc()) {
+            $id = $row['u_id'];
+            $existsSql = "SELECT u_id FROM tbl_user WHERE u_id = ?";
+            $existsStmt = $conn->prepare($existsSql);
+            $existsStmt->bind_param("i", $id);
+            $existsStmt->execute();
+            $existsResult = $existsStmt->get_result();
+            if ($existsResult->num_rows > 0) {
+                $duplicateIds[] = $id;
+            }
+            $existsStmt->close();
+        }
+
+        if (!empty($duplicateIds)) {
+            $_SESSION['error'] = "Cannot restore all users. Duplicate IDs found: " . implode(", ", $duplicateIds);
+        } else {
+            $sql = "INSERT INTO tbl_user (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
+                    SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
+                    FROM tbl_archive";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmt->execute();
+            $stmt->close();
+
+            $sql = "DELETE FROM tbl_archive";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                die("Prepare failed: " . $conn->error);
+            }
+            if ($stmt->execute()) {
+                $_SESSION['message'] = "All users restored successfully!";
+            } else {
+                $_SESSION['error'] = "Error restoring all users: " . $stmt->error;
+            }
+            $stmt->close();
+        }
+    } elseif (isset($_POST['delete_user'])) {
+        $id = $_POST['u_id'];
 
         $sql = "DELETE FROM tbl_archive WHERE u_id=?";
         $stmt = $conn->prepare($sql);
@@ -117,31 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
-            $_SESSION['message'] = "User unarchived successfully!";
+            $_SESSION['message'] = "User deleted from archive successfully!";
         } else {
-            $_SESSION['error'] = "Error unarchiving user: " . $stmt->error;
-        }
-        $stmt->close();
-    } elseif (isset($_POST['restore_all_users'])) {
-        $sql = "INSERT INTO tbl_user (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
-                SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
-                FROM tbl_archive";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
-        $stmt->execute();
-        $stmt->close();
-
-        $sql = "DELETE FROM tbl_archive";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "All users restored successfully!";
-        } else {
-            $_SESSION['error'] = "Error restoring all users: " . $stmt->error;
+            $_SESSION['error'] = "Error deleting user: " . $stmt->error;
         }
         $stmt->close();
     }
@@ -220,7 +269,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | User Management</title>
-    <link rel="stylesheet" href="viewUs.css"> 
+    <link rel="stylesheet" href="viewUS.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -232,7 +281,7 @@ if ($conn) {
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
             <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
-            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
+            <li><a href="logss.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
             <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
             <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
         </ul>
@@ -391,6 +440,7 @@ if ($conn) {
                                         <td class='action-buttons'>
                                             <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>"; 
                             } 
@@ -530,6 +580,24 @@ if ($conn) {
     </div>
 </div>
 
+<!-- Delete User Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Delete User</h2>
+        </div>
+        <p>Are you sure you want to delete <span id="deleteUserName"></span> from the archive? This action cannot be undone.</p>
+        <form method="POST" id="deleteForm">
+            <input type="hidden" name="u_id" id="deleteUserId">
+            <input type="hidden" name="delete_user" value="1">
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Restore All Users Modal -->
 <div id="restoreAllModal" class="modal">
     <div class="modal-content">
@@ -632,6 +700,12 @@ if ($conn) {
         document.getElementById('restoreUserId').value = id;
         document.getElementById('restoreUserName').innerText = name;
         document.getElementById('restoreModal').style.display = 'block';
+    }
+
+    function showDeleteModal(id, name) {
+        document.getElementById('deleteUserId').value = id;
+        document.getElementById('deleteUserName').innerText = name;
+        document.getElementById('deleteModal').style.display = 'block';
     }
 
     function showRestoreAllModal() {

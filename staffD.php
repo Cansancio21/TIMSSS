@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | Ticket Reports</title>
-    <link rel="stylesheet" href="staffsD.css"> 
+    <link rel="stylesheet" href="staffDash.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -193,6 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
             <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
             <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
+            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
             <?php if ($userType === 'admin'): ?>
                 <li><a href="logs.php"><i class="fas fa-book"></i> <span>View Logs</span></a></li>
             <?php endif; ?>
@@ -325,7 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td>{$row['t_date']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '{$row['t_aname']}', '{$row['t_type']}', '{$row['t_status']}', '{$row['t_details']}', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a class='restore-btn' onclick=\"showRestoreModal('{$row['t_id']}', '{$row['t_aname']}')\" title='Restore'><i class='fas fa-trash-restore'></i></a>
+                                        <a class='restore-btn' onclick=\"showRestoreModal('{$row['t_id']}', '{$row['t_aname']}')\" title='Unarchive'><i class='fas fa-trash-restore'></i></a>
                                     </td>
                                   </tr>"; 
                         } 
@@ -476,7 +477,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="modal-header">
             <h2>Restore Ticket</h2>
         </div>
-        <p>Are you sure you want to restore ticket for <span id="restoreTicketName"></span>?</p>
+        <p>Are you sure you want to unarchive ticket for <span id="restoreTicketName"></span>?</p>
         <form method="POST" id="restoreForm">
             <input type="hidden" name="t_id" id="restoreTicketId">
             <input type="hidden" name="restore_ticket" value="1">

@@ -19,6 +19,7 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
+    min-height: 100vh;
 }
 
 .glass-container {
@@ -33,6 +34,7 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
+    width: 100%;
 }
 
 /* Sidebar */
@@ -47,6 +49,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -60,6 +63,7 @@ body {
     transition: all 0.3s;
     width: 100%;
     margin-left: -10px;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .sidebar ul {
@@ -87,6 +91,7 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -139,7 +144,6 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    margin-top: -15px;
     padding-top: 100px;
 }
 
@@ -237,19 +241,6 @@ footer {
     margin-left: -300px;
 }
 
-/* Table Box */
-.table-box {
-    width: 100%;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    min-height: 600px;
-    display: flex;
-    flex-direction: column;
-    margin-top: 20px;
-}
 
 .username {
     position: absolute;
@@ -264,9 +255,30 @@ footer {
     margin-left: 5px;
 }
 
+.export-btn {
+    display: inline-block;
+    background-color: #63c216;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 190px;
+    top: 32px;
+}
+
+
+.export-btn:hover {
+    background-color: #7494ec;
+}
+
+
 .add-user-btn {
     position: absolute;
-    top: 45px;
+    top: 30px;
     right: 20px;
     display: inline-flex;
     align-items: center;
@@ -293,7 +305,7 @@ footer {
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 20px;
+    margin-top: 50px;
 }
 
 .tab-btn {
@@ -338,15 +350,24 @@ footer {
 #archived-users-tab.active {
     display: flex;
 }
+.table-box {
+    width: 100%;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 60vh;
+    overflow: visible;
+}
 
-/* Table */
+/* Optimized Table Structure */
 table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-   
-    margin-top: 10px;
-    table-layout: auto;
+    border-collapse: collapse;
+    margin-top: 15px;
+    table-layout: fixed; /* Essential for equal column widths */
+    margin-top: 75px;
 }
 
 thead {
@@ -358,28 +379,21 @@ thead {
 }
 
 th {
-    padding: 15px;
+    padding: clamp(10px, 1.5vw, 15px);
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
 }
 
-th:first-child {
-    border-top-left-radius: 10px;
-}
-
-th:last-child {
-    border-top-right-radius: 10px;
-}
-
 td {
-    padding: 10px;
+    padding: 8px 5px;
     border-bottom: 1px solid #eee;
-    vertical-align: middle;
     text-align: center;
-    word-wrap: break-word;
-    white-space: normal;
+    font-size: 0.9rem;
+    word-break: break-word;
+    line-height: 1.3;
 }
+
 tr:last-child td {
     border-bottom: none;
 }
@@ -403,81 +417,54 @@ tr:hover td {
 }
 
 /* Action Buttons */
-/* Style for the delete button */
-.delete-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px; /* Adjust size as needed */
-    height: 30px;
-    background-color: #ff6200; /* Orange background */
-    color: #fff; /* White icon color */
-    border-radius: 5px; /* Rounded corners */
-    text-decoration: none; /* Remove underline */
-    margin-left: 5px; /* Space between buttons */
-    transition: background-color 0.3s ease; /* Smooth hover transition */
-}
-
-/* Hover effect for delete button */
-.delete-btn:hover {
-    background-color: #e55a00; /* Slightly darker orange on hover */
-    color: #fff; /* Keep icon white */
-}
-
-/* Icon inside delete button */
-.delete-btn i {
-    font-size: 16px; /* Adjust icon size */
-}
-
-/* Ensure consistency with other action buttons */
 .action-buttons {
     display: flex;
-    gap: 5px; /* Space between action buttons */
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
 }
 
-/* Optional: Adjust other buttons for consistency */
-.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+.action-buttons a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 5px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    color: white;
     text-decoration: none;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s;
+    cursor: pointer;
+    margin-top: 10px
 }
 
-/* Example colors for other buttons (optional) */
-.view-btn {
-    background-color: #3498db; /* Blue */
-    color: #fff;
-}
-.view-btn:hover {
-    background-color: #2980b9;
+.action-buttons a.view-btn {
+    background: var(--success);
 }
 
-.edit-btn {
-    background-color: #2ecc71; /* Green */
-    color: #fff;
-}
-.edit-btn:hover {
-    background-color: #27ae60;
+.action-buttons a.edit-btn {
+    background: var(--info);
 }
 
-.archive-btn {
-    background-color: #f1c40f; /* Yellow */
-    color: #fff;
-}
-.archive-btn:hover {
-    background-color: #d4ac0d;
+.action-buttons a.archive-btn {
+    background: var(--warning);
 }
 
-.unarchive-btn {
-    background-color: #9b59b6; /* Purple */
-    color: #fff;
+.action-buttons a.delete-btn {
+    background: var(--danger);
 }
+
+.action-buttons a.unarchive-btn {
+    background-color: #2196F3;
+}
+
+.action-buttons a:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 .unarchive-btn:hover {
-    background-color: #8e44ad;
+    background-color: #1976D2;
 }
 
 /* Pagination */
@@ -642,7 +629,7 @@ tr:hover td {
 
 .settings-link {
     position: absolute;
-    right: 40px;
+    right: 45px;
     margin-top: -15px;
     display: flex;
     align-items: center;
@@ -676,3 +663,5 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
+
+
