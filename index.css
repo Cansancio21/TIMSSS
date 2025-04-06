@@ -1,0 +1,390 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-image: url('cap.jpg');
+}
+
+.container{
+   align-items: center;
+    position: relative;
+    width: 80vw;
+    height: 80vh;
+    max-width: 1000px;
+    max-height: 650px;
+    background: #fff;
+    border-radius: 30px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, .2);
+    margin: 20px;
+    overflow: hidden;
+}
+
+
+.form-box {
+    position: absolute;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    align-items: center;
+    display: flex;
+    color: #333;
+    text-align: center;
+    padding: 60px;
+    z-index: 1;
+    transition: .6s ease-in-out 1.2s, visibility 0s 1s;
+}
+
+.container.active .form-box{
+    right: 50%;
+}
+
+.form-box.register{
+    visibility: hidden;
+}
+
+.container.active .form-box.register{
+    visibility: visible;
+}
+
+form{
+    width: 100%;
+}
+
+.container h1 {
+    font-size: 36px;
+    margin: 20px 0; /* Adjust margin to create space */
+    align-self: flex-end; /* Align the heading to the right */
+    text-align: right; /* Align text to the right */
+    width: 80%; /* Make the heading take full width */
+}
+
+.input-box {
+    position: relative;
+    margin-bottom: 30px;
+    width: 50%;
+    text-align: left;
+    margin-left: 52%;
+}
+
+.input-box input {
+    width: 100%; /* Full width for input fields */
+    padding: 13px 20px 13px 50px; /* Ensure enough space for the icon on the left */
+    padding-right: 40px; /* Increase space for the icon on the right */
+    background: #eee;
+    border-radius: 8px;
+    border: 1px solid #ccc; 
+    color: #333;
+    font-weight: 500;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Add ellipsis if the text overflows */
+}
+
+.input-box .error {
+    color: red; /* Error message color */
+    font-size: 0.9em; /* Font size for error messages */
+    margin-top: 5px; /* Space above error messages */
+    position: absolute; /* Positioning the error message */
+    bottom: -20px; /* Position below the input field */
+    left: 0; /* Align to the left */
+}
+
+/* Adjusting icon position */
+.input-box i {
+    position: absolute;
+    right: 15px; /* Ensure the icon is positioned well */
+    top: 50%;
+    transform: translateY(-50%); /* Vertically center the icon */
+    font-size: 20px;
+    color: #888;
+}
+
+/* Prevent placeholder text from overflowing */
+.input-box input::placeholder {
+    color: #888;
+    font-weight: 400;
+}
+
+.forgot-pass {
+    margin: -15px 0 15px;
+    margin-left: 50%;
+}
+
+.forgot-pass a {
+    font-size: 14.5px;
+    color: #333;
+    text-decoration: none;
+}
+
+.btn {
+    width: 100%; /* Full width */
+    max-width: 300px; /* Maximum width */
+    height: 48px; /* Height of the button */
+    background-color: #1b4d80; /* Background color */
+    border: none; /* No border */
+    border-radius: 8px; /* Rounded corners */
+    color: #fff; /* Text color */
+    font-size: 16px; /* Font size */
+    font-weight: 600; /* Font weight */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Transition effects */
+    margin: 20px 0; /* Margin for spacing */
+    margin-left: 50%;
+}
+
+.btn:hover {
+    background-color: #1b4d80; 
+    transform: translateY(-2px); 
+}
+
+.btn:active {
+    transform: translateY(0); 
+    background-color: #1b4d80; 
+}
+
+.btn:disabled {
+    background-color: #ccc; 
+    color: #888; 
+    cursor: not-allowed; 
+}
+
+.button {
+    width: 100%; 
+    max-width: 300px;
+    height: 48px; 
+    background-color: #1b4d80;
+    border: none; 
+    border-radius: 8px; 
+    color: #fff; 
+    font-size: 16px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: background-color 0.3s ease, transform 0.2s ease; 
+    margin: 20px 0; 
+    margin-left: 50%;
+    margin-top: -20px
+}
+
+.button:hover {
+    background-color: #1b4d80;
+    transform: translateY(-2px); 
+}
+
+.button:active {
+    transform: translateY(0); 
+    background-color: #1b4d80;
+}
+
+.button:disabled {
+    background-color: #ccc; 
+    color: #888; 
+    cursor: not-allowed; 
+}
+
+.container p {
+    font-size: 14.5px;
+    margin: 15px 0;
+    margin-left: 50%;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: center;
+    margin-left: 50%;
+}
+
+.social-icons a {
+    display: inline-flex;
+    padding: 8px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 24px;
+    color: #333;
+    text-decoration: none;
+    margin: 0 8px;
+}
+
+.toggle-box {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.toggle-box::before {
+    content: "";
+    position: absolute;
+    left: -250%;
+    width: 300%;
+    height: 100%;
+    background-color: #1b4d80;
+    border-radius: 150px;
+    z-index: 2;
+    transition: 1.8s ease-in-out;
+}
+
+.container.active .toggle-box::before {
+    left: 50%;
+}
+
+.toggle-panel {
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    transition: .6s ease-in-out;
+}
+
+.toggle-panel.toggle-left {
+    left: 0;
+    transition-delay: 1.2s;
+}
+
+.container.active .toggle-panel.toggle-left {
+    left: -50%;
+    transition-delay: .6s;
+}
+
+.toggle-panel.toggle-right {
+    right: -50%;
+    transition-delay: .6s;
+}
+
+.container.active .toggle-panel.toggle-right {
+    right: 0;
+    transition-delay: 1.2s;
+}
+
+.toggle-panel h1 {
+    margin-right: 20%;
+}
+
+.toggle-panel p {
+    margin: 0; 
+    text-align: center; 
+}
+
+.toggle-panel .btn {
+    width: 160px;
+    height: 46px;
+    background: transparent;
+    border: 2px solid #fff;
+    box-shadow: none;
+    margin-right: 50%;
+}
+
+.settings-link {
+   position: absolute;
+   top: 15px;
+   right: 20px;
+   display: flex;
+   align-items: center;
+   text-decoration: none;
+   color: #333;
+   font-size: 16px;
+   font-weight: 600;
+   transition: 0.3s ease-in-out;
+}
+
+.settings-link i {
+   font-size: 24px;
+   margin-right: 5px;
+   transition: 0.3s ease-in-out;
+}
+
+.settings-link span {
+   opacity: 0;
+   transform: translateX(-10px);
+   transition: 0.3s ease-in-out;
+}
+
+.settings-link:hover span {
+   opacity: 1;
+   transform: translateX(0);
+}
+
+.input-box select {
+    width: 100%; 
+    padding: 10px 40px 10px 20px; 
+    border: 1px solid #ccc; 
+    border-radius: 5px; 
+    font-size: 16px; 
+    appearance: none; 
+    background-color: #fff; 
+    background-repeat: no-repeat; 
+    background-position: right 10px center; 
+}
+
+.input-box select:focus {
+    border-color: #007bff; 
+    outline: none; 
+}
+
+.input-box i {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+}
+
+/* Custom Icon Colors */
+.input-box i.firstname-icon {
+    color: black; /* Blue */
+}
+.input-box i.lastname-icon {
+    color: black; /* Yellow */
+}
+.input-box i.email-icon {
+    color:  black; /* Yellow */
+    ; /* Red-Orange */
+}
+.input-box i.username-icon {
+    color: black; /* Purple */
+}
+.input-box i.password-icon {
+    color: black; /* Pink */
+}
+.input-box i.type-icon {
+    color: black; /* Green */
+}
+.input-box i.status-icon {
+    color: black; /* Orange */
+}
+
+.error {
+    position: absolute;
+    bottom: -18px; /* Keeps the error message below the input */
+    left: 0;
+    color: red;
+    font-size: 0.9em;
+}
+
+.error-message {
+    position: absolute;
+    bottom: -35px; /* Keeps the error message below the input */
+    right: 0;
+    color: red;
+    font-size: 0.9em;
+}
+
+.errors-message {  
+    top: -30px;
+    color: red;
+    font-size: 0.9em;
+}
+
+
