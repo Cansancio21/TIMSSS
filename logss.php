@@ -59,7 +59,7 @@ $log_query = "SELECT * FROM tbl_logs ORDER BY l_stamp ASC LIMIT $offset, $logs_p
 $logResult = $conn->query($log_query);
 
 if (!$logResult) {
-    die("Error fetching logs: " . $conn->error);
+    die("Error fetching logs: " . $conn->error . " Query: " . $log_query);
 }
 ?>
 
@@ -85,7 +85,7 @@ if (!$logResult) {
             <li><a href="customersT.php"><i class="fas fa-users"></i> View Customers</a></li>
             <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> Ticket Registration</a></li>
             <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> Register Assets</a></li>
-            <li><a href="logs.php" class="active"><i class="fas fa-history"></i> View Logs</a></li>
+            <li><a href="logss.php" class="active"><i class="fas fa-history"></i> View Logs</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>

@@ -82,33 +82,32 @@ if ($conn) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="adminsD.css"> 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
-    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css"> 
+    <title>Admin Dashboard | User Management</title>
+    <link rel="stylesheet" href="adminD.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
- 
 </head>
 <body>
 <div class="wrapper">
-    <!-- Sidebar -->
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-        <li><a href="adminD.php"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="viewU.php"><i class="fas fa-users-cog"></i> View Users</a></li>
-        <li><a href="view_service_record.php"><i class="fas fa-clipboard-list"></i> View Service Record</a></li>
-        <li><a href="view_logs.php"><i class="fas fa-history"></i> View Logs</a></li>
-        <li><a href="borrowedT.php"><i class="fas fa-folder-open"></i> deployed records</a></li>
-        <li><a href="returnT.php"><i class="fas fa-undo"></i> Return Records</a></li>
+            <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
+            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
+            <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
+            <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+            <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
         </footer>
     </div>
 
     <div class="container">
-        <div class="dashboard-header">
+        <div class="upper"> 
             <h1>Admin Dashboard</h1>
             <div class="search-container">
                 <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
@@ -117,12 +116,8 @@ if ($conn) {
             <div class="user-profile">
                 <div class="user-icon">
                     <?php 
-                    if (!empty($avatarPath)) {
-                        if ($avatarPath !== 'default-avatar.png' && file_exists(str_replace('?' . time(), '', $avatarPath))) {
-                            echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
-                        } else {
-                            echo "<i class='fas fa-user-circle'></i>";
-                        }
+                    if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
+                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
                     } else {
                         echo "<i class='fas fa-user-circle'></i>";
                     }
@@ -138,7 +133,7 @@ if ($conn) {
                 </a>
             </div>
         </div>
-
+          
         <div class="table-box">
             <div class="welcome-card">
                 <h2>Welcome Back, <?php echo htmlspecialchars($firstName); ?>! 

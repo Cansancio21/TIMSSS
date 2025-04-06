@@ -19,7 +19,6 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
-    min-height: 100vh;
 }
 
 .glass-container {
@@ -34,7 +33,6 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
-    width: 100%;
 }
 
 /* Sidebar */
@@ -49,7 +47,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -63,7 +60,6 @@ body {
     transition: all 0.3s;
     width: 100%;
     margin-left: -10px;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .sidebar ul {
@@ -91,7 +87,6 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
-    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -143,8 +138,8 @@ footer {
 .container {
     flex: 1;
     margin-left: 200px;
-    padding: 2vw;
-    transition: margin-left 0.3s ease;
+    padding: 30px;
+    margin-top: -15px;
 }
 
 /* Header */
@@ -152,23 +147,22 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1vw;
+    padding: 10px;
     background: linear-gradient(135deg, #6c5ce7, #a29bfe);
     color: white;
     border-radius: 10px;
-    margin-bottom: 2vw;
-    flex-wrap: wrap;
+    margin-bottom: 20px;
 }
 
 .upper h1 {
     margin: 0;
-    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-size: 24px;
     font-weight: 600;
 }
 
 .search-container {
     position: relative;
-    width: clamp(200px, 30%, 300px);
+    width: 300px;
 }
 
 .search-bar {
@@ -176,7 +170,7 @@ footer {
     padding: 10px 40px 10px 15px;
     border: 1px solid #ccc;
     border-radius: 20px;
-    font-size: clamp(0.875rem, 2vw, 1rem);
+    font-size: 14px;
     outline: none;
     transition: border-color 0.3s;
 }
@@ -234,6 +228,18 @@ footer {
     margin-left: -300px;
 }
 
+/* Table Box */
+.table-box {
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
 
 .username {
     position: absolute;
@@ -248,30 +254,9 @@ footer {
     margin-left: 5px;
 }
 
-.export-btn {
-    display: inline-block;
-    background-color: #63c216;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: lighter;
-    transition: 0.3s;
-    position: absolute;
-    right: 190px;
-    top: 32px;
-}
-
-
-.export-btn:hover {
-    background-color: #7494ec;
-}
-
-
 .add-user-btn {
     position: absolute;
-    top: 30px;
+    top: 65px;
     right: 20px;
     display: inline-flex;
     align-items: center;
@@ -343,24 +328,15 @@ footer {
 #archived-users-tab.active {
     display: flex;
 }
-.table-box {
-    width: 100%;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    min-height: 60vh;
-    overflow: visible;
-}
 
-/* Optimized Table Structure */
+/* Table */
 table {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    table-layout: fixed; /* Essential for equal column widths */
-    margin-top: 75px;
+    border-collapse: separate;
+    border-spacing: 0;
+   
+    margin-top: 10px;
+    table-layout: auto;
 }
 
 thead {
@@ -372,21 +348,28 @@ thead {
 }
 
 th {
-    padding: clamp(10px, 1.5vw, 15px);
+    padding: 15px;
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
 }
 
-td {
-    padding: 8px 5px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
-    font-size: 0.9rem;
-    word-break: break-word;
-    line-height: 1.3;
+th:first-child {
+    border-top-left-radius: 10px;
 }
 
+th:last-child {
+    border-top-right-radius: 10px;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+    text-align: center;
+    word-wrap: break-word;
+    white-space: normal;
+}
 tr:last-child td {
     border-bottom: none;
 }
@@ -414,7 +397,6 @@ tr:hover td {
     display: flex;
     gap: 5px;
     justify-content: center;
-    margin-top: 10px;
 }
 
 .action-buttons a {
@@ -428,7 +410,6 @@ tr:hover td {
     text-decoration: none;
     transition: all 0.3s;
     cursor: pointer;
-    margin-top: 10px
 }
 
 .action-buttons a.view-btn {
@@ -618,7 +599,7 @@ tr:hover td {
 
 .settings-link {
     position: absolute;
-    right: 30px;
+    right: 40px;
     margin-top: -15px;
     display: flex;
     align-items: center;
@@ -652,5 +633,3 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
-
-

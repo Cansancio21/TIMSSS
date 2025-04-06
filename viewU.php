@@ -220,7 +220,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | User Management</title>
-    <link rel="stylesheet" href="viewU.css"> 
+    <link rel="stylesheet" href="viewUs.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -230,10 +230,11 @@ if ($conn) {
         <h2>Task Management</h2>
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="viewU.php" class="active"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> <span>Service Records</span></a></li>
-            <li><a href="view_incident_report.php"><i class="fas fa-exclamation-triangle"></i> <span>Incident Reports</span></a></li>
-            <li><a href="logs.php"><i class="fas fa-book"></i> <span>View Logs</span></a></li>
+            <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
+            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
+            <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
+            <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>

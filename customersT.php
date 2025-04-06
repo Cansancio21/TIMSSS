@@ -9,11 +9,109 @@ if (!isset($_SESSION['username'])) {
 }
 
 $firstName = '';
+$lastName = '';
 $userType = '';
+$avatarPath = 'default-avatar.png';
+$avatarFolder = 'uploads/avatars/';
+$userAvatar = $avatarFolder . $_SESSION['username'] . '.png';
+
+if (file_exists($userAvatar)) {
+    $_SESSION['avatarPath'] = $userAvatar . '?' . time();
+} else {
+    $_SESSION['avatarPath'] = 'default-avatar.png';
+}
+
+$avatarPath = $_SESSION['avatarPath'];
+
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+    if (isset($_POST['add_customer'])) {
+        $fname = $_POST['c_fname'];
+        $lname = $_POST['c_lname'];
+        $area = $_POST['c_area'];
+        $contact = $_POST['c_contact'];
+        $email = $_POST['c_email'];
+        $onu = $_POST['c_onu'];
+        $caller = $_POST['c_caller'];
+        $address = $_POST['c_address'];
+        $rem = $_POST['c_rem'];
+
+        $sql = "INSERT INTO tbl_customer (c_fname, c_lname, c_area, c_contact, c_email, c_date, c_onu, c_caller, c_address, c_rem) 
+                VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
+        $stmt->bind_param("sssssssss", $fname, $lname, $area, $contact, $email, $onu, $caller, $address, $rem);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Customer added successfully!";
+        } else {
+            $_SESSION['error'] = "Error adding customer: " . $stmt->error;
+        }
+        $stmt->close();
+    
+    } elseif (isset($_POST['edit_customer'])) {
+        $id = $_POST['c_id'];
+        $fname = $_POST['c_fname'];
+        $lname = $_POST['c_lname'];
+        $area = $_POST['c_area'];
+        $contact = $_POST['c_contact'];
+        $email = $_POST['c_email'];
+        $onu = $_POST['c_onu'];
+        $caller = $_POST['c_caller'];
+        $address = $_POST['c_address'];
+        $rem = $_POST['c_rem'];
+
+        $sql = "UPDATE tbl_customer SET c_fname=?, c_lname=?, c_area=?, c_contact=?, c_email=?, c_onu=?, c_caller=?, c_address=?, c_rem=? WHERE c_id=?";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
+        $stmt->bind_param("sssssssssi", $fname, $lname, $area, $contact, $email, $onu, $caller, $address, $rem, $id);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Customer updated successfully!";
+        } else {
+            $_SESSION['error'] = "Error updating customer: " . $stmt->error;
+        }
+        $stmt->close();
+    } elseif (isset($_POST['delete_customer'])) {
+        $id = $_POST['c_id'];
+
+        // First archive the customer
+        $sql = "INSERT INTO tbl_customer_archive 
+                SELECT * FROM tbl_customer WHERE c_id=?";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
+
+        // Then delete from main table
+        $sql = "DELETE FROM tbl_customer WHERE c_id=?";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            die("Prepare failed: " . $conn->error);
+        }
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Customer archived successfully!";
+        } else {
+            $_SESSION['error'] = "Error archiving customer: " . $stmt->error;
+        }
+        $stmt->close();
+    }
+
+    header("Location: customersT.php?page=$page");
+    exit();
+}
 
 if ($conn) {
     // Fetch user data based on the logged-in username
-    $sqlUser = "SELECT u_fname, u_type FROM tbl_user WHERE u_username = ?";
+    $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
     $stmt = $conn->prepare($sqlUser);
     $stmt->bind_param("s", $_SESSION['username']);
     $stmt->execute();
@@ -22,6 +120,7 @@ if ($conn) {
     if ($resultUser->num_rows > 0) {
         $row = $resultUser->fetch_assoc();
         $firstName = $row['u_fname'];
+        $lastName = $row['u_lname'];
         $userType = $row['u_type'];
     }
 
@@ -55,91 +154,81 @@ if ($conn) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard | Customer Management</title>
     <link rel="stylesheet" href="customerT.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .table-box {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Keep the table content to the top, and push the pagination to the bottom */
-        .table-box table {
-            flex-grow: 1; /* This will make the table take up the available space */
-            margin-bottom: 10px; /* Ensure space for pagination */
-        }
-
-        /* Pagination styling */
-        .pagination {
-            text-align: center; /* Center the pagination links */
-            padding: 10px 0;
-            width: 100%; /* Full width */
-            margin-left: 45%;
-        }
-
-        .pagination-link {
-            display: inline-block;
-            margin: 0 5px;
-            padding: 8px 12px;
-            background-color: #007bff; /* Bootstrap primary color */
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-
-        .pagination-link:hover {
-            background-color: #0056b3; /* Darker shade on hover */
-        }
-
-        .pagination-link.active {
-            background-color: #0056b3; /* Active page color */
-            font-weight: bold; /* Bold text for active page */
-        }
-
-        .disabled {
-            background-color: #ccc; /* Gray background for disabled */
-            pointer-events: none; /* Disable click events */
-            color: #666; /* Gray text */
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
 </head>
 <body>
 <div class="wrapper">
-    <div class="sidebar">
+    <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> View Tickets</a></li>
-            <li><a href="assetsT.php"><i class="fas fa-box"></i> View Assets</a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> Ticket Registration</a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> Add Customer</a></li>
-            <li><a href="assetsT.php"><i class="fas fa-user-plus"></i> Register Assets</a></li>
+            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
+            <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
+            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
+            <li><a href="addC.php" class="active"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+            <li><a href="assetsT.php"><i class="fas fa-user-plus"></i> <span>Register Assets</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+            <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
         </footer>
     </div>
 
     <div class="container">
-        <div class="upper">
+        <div class="upper"> 
             <h1>Customers Info</h1>
+            <div class="search-container">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search customers..." onkeyup="searchCustomers()">
+                <span class="search-icon"><i class="fas fa-search"></i></span>
+            </div>
+            <div class="user-profile">
+                <div class="user-icon">
+                    <?php 
+                    if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
+                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
+                    } else {
+                        echo "<i class='fas fa-user-circle'></i>";
+                    }
+                    ?>
+                </div>
+                <div class="user-details">
+                    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
+                </div>
+                <a href="settings.php" class="settings-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
         </div>
-        <div class="search-container">
-            <input type="text" class="search-bar" placeholder="Search...">
-            <span class="search-icon">🔍</span>
+          
+        <div class="alert-container">
+            <?php if (isset($_SESSION['message'])): ?>
+                <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+            <?php endif; ?>
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <?php endif; ?>
         </div>
 
-        <div class="table-box">
+        <div class="table-box glass-container">
             <?php if ($userType === 'staff'): ?>
                 <div class="username">
                     Welcome Back, <?php echo htmlspecialchars($firstName); ?>!
                     <i class="fas fa-user-shield admin-icon"></i>
                 </div>
             <?php endif; ?>
-            <h2>Reports</h2>
-            <a href="addC.php" class="add-btn"><i class="fas fa-user-plus"></i> Add Customer</a>
-            <a href="export.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
-            <table>
+            
+            <div class="customer-actions">
+            <form action="addC.php" method="get" style="display: inline;">
+    <button type="submit" class="add-user-btn"><i class="fas fa-user-plus"></i> Add Customer</button>
+</form>
+                <button class="action-btn export-btn"><i class="fas fa-download"></i> Export</button>
+            </div>
+            
+            <table id="customers-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -172,40 +261,167 @@ if ($conn) {
                                     <td>{$row['c_caller']}</td> 
                                     <td>{$row['c_address']}</td> 
                                     <td>{$row['c_rem']}</td> 
-                                    <td>
-                                        <a href='editC.php?id={$row['c_id']}'><i class='fas fa-edit'></i></a>
-                                        <a href='deleteC.php?id={$row['c_id']}'><i class='fas fa-trash'></i></a>
+                                    <td class='action-buttons'>
+                                        <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '{$row['c_rem']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                        <a class='edit-btn' onclick=\"showEditModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '{$row['c_rem']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                        <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                     </td>
                                   </tr>";
                         }
                     } else {
-                        echo "<tr><td colspan='12'>No customers found.</td></tr>";
+                        echo "<tr><td colspan='12' style='text-align: center;'>No customers found.</td></tr>";
                     }
                     ?>
                 </tbody>
             </table>
 
             <div class="pagination">
-            <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page - 1; ?>" class="pagination-link">&lt;</a> <!-- Previous Page -->
-            <?php else: ?>
-                <span class="pagination-link disabled">&lt;</span> <!-- Disabled Previous -->
-            <?php endif; ?>
+                <?php if ($page > 1): ?>
+                    <a href="?page=<?php echo $page - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
+                <?php endif; ?>
 
-            <span class="current-page">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
+                <span class="current-page">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
 
-            <?php if ($page < $totalPages): ?>
-                <a href="?page=<?php echo $page + 1; ?>" class="pagination-link">&gt;</a> <!-- Next Page -->
-            <?php else: ?>
-                <span class="pagination-link disabled">&gt;</span> <!-- Disabled Next -->
-            <?php endif; ?>
-        </div>
+                <?php if ($page < $totalPages): ?>
+                    <a href="?page=<?php echo $page + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
+
+
+
+<!-- View Customer Modal -->
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Customer Details</h2>
+        </div>
+        <div id="viewContent"></div>
+        <div class="modal-footer">
+            <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Customer</h2>
+        </div>
+        <form method="POST" class="modal-form" id="editForm">
+            <input type="hidden" name="c_id" id="editCustomerId">
+            <input type="text" name="c_fname" id="editFname" placeholder="First Name" required>
+            <input type="text" name="c_lname" id="editLname" placeholder="Last Name" required>
+            <input type="text" name="c_area" id="editArea" placeholder="Area" required>
+            <input type="text" name="c_contact" id="editContact" placeholder="Contact Number" required>
+            <input type="email" name="c_email" id="editEmail" placeholder="Email">
+            <input type="text" name="c_onu" id="editOnu" placeholder="ONU Name">
+            <input type="text" name="c_caller" id="editCaller" placeholder="Caller ID">
+            <input type="text" name="c_address" id="editAddress" placeholder="MAC Address">
+            <textarea name="c_rem" id="editRem" placeholder="Remarks"></textarea>
+            <input type="hidden" name="edit_customer" value="1">
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('editModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Customer Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Archive Customer</h2>
+        </div>
+        <p>Are you sure you want to archive <span id="deleteCustomerName"></span>?</p>
+        <form method="POST" id="deleteForm">
+            <input type="hidden" name="c_id" id="deleteCustomerId">
+            <input type="hidden" name="delete_customer" value="1">
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="modal-btn delete">Archive</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function searchCustomers() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const table = document.getElementById('customers-table');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let match = false;
+            for (let j = 0; j < cells.length - 1; j++) { // Skip the last cell (actions)
+                if (cells[j].textContent.toLowerCase().includes(input)) {
+                    match = true;
+                    break;
+                }
+            }
+            rows[i].style.display = match ? '' : 'none';
+        }
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+
+    function showViewModal(id, fname, lname, area, contact, email, date, onu, caller, address, rem) {
+        document.getElementById('viewContent').innerHTML = `
+            <div class="customer-details">
+                <p><strong>ID:</strong> ${id}</p>
+                <p><strong>Name:</strong> ${fname} ${lname}</p>
+                <p><strong>Area:</strong> ${area}</p>
+                <p><strong>Contact:</strong> ${contact}</p>
+                <p><strong>Email:</strong> ${email || 'N/A'}</p>
+                <p><strong>Date Added:</strong> ${date}</p>
+                <p><strong>ONU Name:</strong> ${onu || 'N/A'}</p>
+                <p><strong>Caller ID:</strong> ${caller || 'N/A'}</p>
+                <p><strong>MAC Address:</strong> ${address || 'N/A'}</p>
+                <p><strong>Remarks:</strong> ${rem || 'N/A'}</p>
+            </div>
+        `;
+        document.getElementById('viewModal').style.display = 'block';
+    }
+
+    function showEditModal(id, fname, lname, area, contact, email, onu, caller, address, rem) {
+        document.getElementById('editCustomerId').value = id;
+        document.getElementById('editFname').value = fname;
+        document.getElementById('editLname').value = lname;
+        document.getElementById('editArea').value = area;
+        document.getElementById('editContact').value = contact;
+        document.getElementById('editEmail').value = email || '';
+        document.getElementById('editOnu').value = onu || '';
+        document.getElementById('editCaller').value = caller || '';
+        document.getElementById('editAddress').value = address || '';
+        document.getElementById('editRem').value = rem || '';
+        
+        document.getElementById('editModal').style.display = 'block';
+    }
+
+    function showDeleteModal(id, name) {
+        document.getElementById('deleteCustomerId').value = id;
+        document.getElementById('deleteCustomerName').innerText = name;
+        document.getElementById('deleteModal').style.display = 'block';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
-
-<?php
-$conn->close();
-?>
