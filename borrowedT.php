@@ -51,9 +51,10 @@ $avatarPath = $_SESSION['avatarPath'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="borrowed.css"> 
+    <link rel="stylesheet" href="borrowedT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+ 
 </head>
 <body>
 <div class="wrapper">
@@ -76,14 +77,14 @@ $avatarPath = $_SESSION['avatarPath'];
         <div class="upper"> 
             <h1>Borrowed Assets</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search borrowed assets..." onkeyup="searchUsers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
                 <div class="user-icon">
                     <?php 
                     if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
-                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
+                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User  Avatar'>";
                     } else {
                         echo "<i class='fas fa-user-circle'></i>";
                     }
@@ -125,7 +126,7 @@ $avatarPath = $_SESSION['avatarPath'];
                 <table>
                     <thead>
                         <tr>
-                            <th>Borrowed Id</th>
+                            <th>Borrowed ID</th>
                             <th>Asset Name</th>
                             <th>Quantity</th>
                             <th>Technician Name</th>
@@ -140,14 +141,15 @@ $avatarPath = $_SESSION['avatarPath'];
                             while ($row = $resultBorrowed->fetch_assoc()) { 
                                 echo "<tr> 
                                         <td>{$row['b_id']}</td> 
-                                        <td>{$row['b_assets_name']}</td>  
+                                        <td>" . (isset($row['b_assets_name']) ? htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
                                         <td>{$row['b_quantity']}</td>
                                         <td>{$row['b_technician_name']}</td>
                                         <td>{$row['b_technician_id']}</td>    
                                         <td>{$row['b_date']}</td> 
                                         <td>
-                                            <a href='editR.php?id={$row['b_id']}'><i class='fas fa-edit'></i></a>
-                                            <a href='deleteR.php?id={$row['b_id']}' onclick='return confirm(\"Are you sure you want to delete this record?\")'><i class='fas fa-trash'></i></a>
+                                          <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a href='editR.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                                            <a href='#' class='delete-btn' onclick='showDeleteModal({$row['b_id']})' title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>"; 
                             } 
@@ -162,7 +164,33 @@ $avatarPath = $_SESSION['avatarPath'];
     </div>
 </div>
 
+<!-- View Modal -->
+<div id="viewModal" class="modal-background">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('viewModal')">&times;</span>
+        <h2>View Borrowed Asset</h2>
+        <div id="viewModalContent" style="margin-top: 20px;">
+            <!-- Content will be populated here -->
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal-background">
+    <div class="modal-content delete-modal-content">
+        <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this borrowed asset record?</p>
+        <div style="margin-top: 25px;">
+            <button onclick="closeModal('deleteModal')">Cancel</button>
+            <button onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
+let currentDeleteId = null;
+
 function searchUsers() {
     const input = document.getElementById('searchInput');
     const filter = input.value.toUpperCase();
@@ -186,6 +214,42 @@ function searchUsers() {
         tr[i].style.display = found ? '' : 'none';
     }
 }
+
+function showViewModal(id, assetName, quantity, technicianName, technicianId, date) {
+    // Populate the modal with the asset details
+    const modalContent = `
+        <p><strong>Asset Name:</strong> ${assetName}</p>
+        <p><strong>Quantity:</strong> ${quantity}</p>
+        <p><strong>Technician Name:</strong> ${technicianName}</p>
+        <p><strong>Technician ID:</strong> ${technicianId}</p>
+        <p><strong>Borrowed Date:</strong> ${date}</p>
+    `;
+    document.getElementById('viewModalContent').innerHTML = modalContent;
+    document.getElementById('viewModal').style.display = 'flex';
+}
+
+function showDeleteModal(id) {
+    currentDeleteId = id;
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function confirmDelete() {
+    if (currentDeleteId) {
+        // Use a relative URL for the delete action
+        window.location.href = `deleteR.php?id=${currentDeleteId}`;
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal-background')) {
+        event.target.style.display = 'none';
+    }
+});
 </script>
 
 </body>

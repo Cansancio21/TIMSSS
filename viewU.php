@@ -281,7 +281,7 @@ if ($conn) {
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
             <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
-            <li><a href="logss.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
+            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
             <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
             <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
         </ul>
@@ -346,10 +346,9 @@ if ($conn) {
             </div>
             
             <div id="active-users-tab" class="active">
-                <div>
-                    <button class="add-user-btn" onclick="showAddModal()"><i class="fas fa-user-plus"></i> Add New User</button>
-                </div>
-                
+            <div>
+    <button class="add-user-btn" onclick="window.location.href='addU.php'"><i class="fas fa-user-plus"></i> Add New User</button>
+</div>
                 <table id="active-users-table">
                     <thead>
                         <tr>
@@ -377,7 +376,7 @@ if ($conn) {
                                         <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
                                         <td class='action-buttons'>
                                             <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='edit-btn' onclick=\"showEditModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                           <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
                                         </td>
                                       </tr>"; 
@@ -473,34 +472,7 @@ if ($conn) {
     </div>
 </div>
 
-<!-- Add User Modal -->
-<div id="addModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Add New User</h2>
-        </div>
-        <form method="POST" class="modal-form">
-            <input type="text" name="u_fname" placeholder="First Name" required>
-            <input type="text" name="u_lname" placeholder="Last Name" required>
-            <input type="email" name="u_email" placeholder="Email" required>
-            <input type="text" name="u_username" placeholder="Username" required>
-            <select name="u_type" required>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-            </select>
-            <select name="u_status" required>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-            </select>
-            <input type="password" name="u_password" placeholder="Password" required>
-            <input type="hidden" name="add_user" value="1">
-            <div class="modal-footer">
-                <button type="button" class="modal-btn cancel" onclick="closeModal('addModal')">Cancel</button>
-                <button type="submit" class="modal-btn confirm">Add User</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- View User Modal -->
 <div id="viewModal" class="modal">
@@ -515,34 +487,7 @@ if ($conn) {
     </div>
 </div>
 
-<!-- Edit User Modal -->
-<div id="editModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Edit User</h2>
-        </div>
-        <form method="POST" class="modal-form" id="editForm">
-            <input type="hidden" name="u_id" id="editUserId">
-            <input type="text" name="u_fname" id="editFname" placeholder="First Name" required>
-            <input type="text" name="u_lname" id="editLname" placeholder="Last Name" required>
-            <input type="email" name="u_email" id="editEmail" placeholder="Email" required>
-            <input type="text" name="u_username" id="editUsername" placeholder="Username" required>
-            <select name="u_type" id="editType" required>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-            </select>
-            <select name="u_status" id="editStatus" required>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-            </select>
-            <input type="hidden" name="edit_user" value="1">
-            <div class="modal-footer">
-                <button type="button" class="modal-btn cancel" onclick="closeModal('editModal')">Cancel</button>
-                <button type="submit" class="modal-btn confirm">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- Archive User Modal -->
 <div id="archiveModal" class="modal">
@@ -647,9 +592,7 @@ if ($conn) {
         document.getElementById(modalId).style.display = 'none';
     }
 
-    function showAddModal() {
-        document.getElementById('addModal').style.display = 'block';
-    }
+   
 
     function showViewModal(id, fname, lname, email, username, type, status) {
         document.getElementById('viewContent').innerHTML = `
@@ -664,31 +607,7 @@ if ($conn) {
         document.getElementById('viewModal').style.display = 'block';
     }
 
-    function showEditModal(id, fname, lname, email, username, type, status) {
-        document.getElementById('editUserId').value = id;
-        document.getElementById('editFname').value = fname;
-        document.getElementById('editLname').value = lname;
-        document.getElementById('editEmail').value = email;
-        document.getElementById('editUsername').value = username;
-        
-        const typeSelect = document.getElementById('editType');
-        for (let i = 0; i < typeSelect.options.length; i++) {
-            if (typeSelect.options[i].value === type.toLowerCase()) {
-                typeSelect.options[i].selected = true;
-                break;
-            }
-        }
-        
-        const statusSelect = document.getElementById('editStatus');
-        for (let i = 0; i < statusSelect.options.length; i++) {
-            if (statusSelect.options[i].value === status.toLowerCase()) {
-                statusSelect.options[i].selected = true;
-                break;
-            }
-        }
-        
-        document.getElementById('editModal').style.display = 'block';
-    }
+ 
 
     function showArchiveModal(id, name) {
         document.getElementById('archiveUserId').value = id;

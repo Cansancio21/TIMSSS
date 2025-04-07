@@ -153,7 +153,6 @@ footer {
     border-radius: 10px;
     position: fixed;
     margin-top: 15px;
-    margin-bottom: 15px;
     top: 0;
     left: 230px; /* Match sidebar width */
     right: 30px; /* Match container padding */
@@ -252,7 +251,7 @@ footer {
 .username {
     position: absolute;
     left: 25px;
-    top: 25px;
+    top: 5px;
     font-weight: 500;
     color: var(--primary);
 }
@@ -343,7 +342,7 @@ table {
     border-collapse: separate;
     border-spacing: 0;
    
-    margin-top: 10px;
+    margin-top: 40px;
     table-layout: auto;
 }
 
@@ -401,52 +400,81 @@ tr:hover td {
 }
 
 /* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-}
-
-.action-buttons a {
+/* Style for the delete button */
+.delete-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    color: white;
+    width: 30px; /* Adjust size as needed */
+    height: 30px;
+    background-color: #ff6200; /* Orange background */
+    color: #fff; /* White icon color */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    margin-left: 5px; /* Space between buttons */
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
+
+/* Hover effect for delete button */
+.delete-btn:hover {
+    background-color: #e55a00; /* Slightly darker orange on hover */
+    color: #fff; /* Keep icon white */
+}
+
+/* Icon inside delete button */
+.delete-btn i {
+    font-size: 16px; /* Adjust icon size */
+}
+
+/* Ensure consistency with other action buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px; /* Space between action buttons */
+}
+
+/* Optional: Adjust other buttons for consistency */
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
     text-decoration: none;
-    transition: all 0.3s;
-    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.action-buttons a.view-btn {
-    background: var(--success);
+/* Example colors for other buttons (optional) */
+.view-btn {
+    background-color: #3498db; /* Blue */
+    color: #fff;
+}
+.view-btn:hover {
+    background-color: #2980b9;
 }
 
-.action-buttons a.edit-btn {
-    background: var(--info);
+.edit-btn {
+    background-color: #2ecc71; /* Green */
+    color: #fff;
+}
+.edit-btn:hover {
+    background-color: #27ae60;
 }
 
-.action-buttons a.archive-btn {
-    background: var(--warning);
+.archive-btn {
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
+}
+.archive-btn:hover {
+    background-color: #d4ac0d;
 }
 
-.action-buttons a.restore-btn {
-    background: var(--info);
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
 }
-
-.action-buttons a.unarchive-btn {
-    background-color: #2196F3;
-}
-
-.action-buttons a:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
 .unarchive-btn:hover {
-    background-color: #1976D2;
+    background-color: #8e44ad;
 }
 
 /* Pagination */
@@ -621,6 +649,104 @@ tr:hover td {
     font-weight: 600;
     transition: 0.3s ease-in-out;
 }
+
+.add-btn {
+    display: inline-block;
+    background-color: #cf752b;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 90px;
+    margin-top: -10px;
+    
+}
+
+.add-btn:hover {
+    background-color: #7494ec;
+}
+
+.export-btn {
+    display: inline-block;
+    background-color: #63c216;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 225px;
+    margin-top: -10px;
+}
+
+
+.export-btn:hover {
+    background-color: #7494ec;
+}
+
+.borrow-btn {
+    background-color: #c23e16;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 90px;
+    margin-top: -80px;
+    margin-bottom: 50px;
+}
+
+
+.deploy-btn {
+    background-color: #d12e11;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 5px;
+    margin-top: -100px;
+    margin-bottom: 50px;
+}
+
+
+.deploy-btn:hover {
+    background-color: #7494ec;
+}
+
+.borrow-btn:hover {
+    background-color: #7494ec;
+}
+
+.return-btn {
+    background-color: #c2b116;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 5px;
+    margin-top: -100px;
+    margin-bottom: 50px;
+}
+
+
+.return-btn:hover {
+    background-color: #7494ec;
+}
+
 
 .settings-link i {
     font-size: 24px;

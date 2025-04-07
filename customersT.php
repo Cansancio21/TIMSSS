@@ -265,7 +265,7 @@ if ($conn) {
                                     <td>{$row['c_rem']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '{$row['c_rem']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a class='edit-btn' onclick=\"showEditModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '{$row['c_rem']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                        <a href='editC.php?id={$row['c_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                     </td>
                                   </tr>";

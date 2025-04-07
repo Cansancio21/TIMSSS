@@ -161,7 +161,7 @@ if ($conn) {
                                     <td>{$row['r_date']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['r_id']}', '{$row['r_assets_name']}', '{$row['r_quantity']}', '{$row['r_technician_name']}', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a class='edit-btn' onclick=\"showEditModal('{$row['r_id']}', '{$row['r_assets_name']}', '{$row['r_quantity']}', '{$row['r_technician_name']}', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                           <a href='editB.php?id={$row['r_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='delete-btn' onclick=\"showDeleteModal('{$row['r_id']}', '{$row['r_assets_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                     </td>
                                   </tr>"; 

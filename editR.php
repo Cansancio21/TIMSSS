@@ -65,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="wrapper">
         <div class="container">
-            <a href="assetsT.php" class="back-icon">
+            <a href="borrowedT.php" class="back-icon">
                 <i class='bx bx-arrow-back'></i>
             </a>
             <h1>Enter Details to Borrow:</h1>

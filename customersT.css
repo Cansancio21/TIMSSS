@@ -416,58 +416,6 @@ tr:hover td {
     font-weight: 500;
 }
 
-/* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    margin-top: 10px;
-}
-
-.action-buttons a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    color: white;
-    text-decoration: none;
-    transition: all 0.3s;
-    cursor: pointer;
-    margin-top: 10px
-}
-
-.action-buttons a.view-btn {
-    background: var(--success);
-}
-
-.action-buttons a.edit-btn {
-    background: var(--info);
-}
-
-.action-buttons a.archive-btn {
-    background: var(--warning);
-}
-
-.action-buttons a.delete-btn {
-    background: var(--danger);
-}
-
-.action-buttons a.unarchive-btn {
-    background-color: #2196F3;
-}
-
-.action-buttons a:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.unarchive-btn:hover {
-    background-color: #1976D2;
-}
-
-/* Pagination */
 .pagination {
     display: flex;
     justify-content: center;
@@ -664,4 +612,66 @@ tr:hover td {
     margin-top: 10px;
 }
 
+
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; /* Adjust size as needed */
+    height: 30px;
+    background-color: #ff6200; /* Orange background */
+    color: #fff; /* White icon color */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+   
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
+
+/* Hover effect for delete button */
+.delete-btn:hover {
+    background-color: #e55a00; /* Slightly darker orange on hover */
+    color: #fff; /* Keep icon white */
+}
+
+/* Icon inside delete button */
+.delete-btn i {
+    font-size: 16px; /* Adjust icon size */
+}
+
+/* Ensure consistency with other action buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px; /* Space between action buttons */
+    padding: 23px 5px;
+}
+
+/* Optional: Adjust other buttons for consistency */
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+ 
+}
+
+/* Example colors for other buttons (optional) */
+.view-btn {
+    background-color: #3498db; /* Blue */
+    color: #fff;
+}
+.view-btn:hover {
+    background-color: #2980b9;
+}
+
+.edit-btn {
+    background-color: #2ecc71; /* Green */
+    color: #fff;
+}
+.edit-btn:hover {
+    background-color: #27ae60;
+}
 

@@ -139,7 +139,7 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    margin-top: -15px;
+    padding-top: 85px;
 }
 
 /* Header */
@@ -153,6 +153,7 @@ footer {
     border-radius: 10px;
     position: fixed;
     margin-top: 15px;
+    margin-bottom: 15px;
     top: 0;
     left: 230px; /* Match sidebar width */
     right: 30px; /* Match container padding */
@@ -431,6 +432,10 @@ tr:hover td {
     background: var(--warning);
 }
 
+.action-buttons a.restore-btn {
+    background: var(--info);
+}
+
 .action-buttons a.unarchive-btn {
     background-color: #2196F3;
 }
@@ -639,4 +644,33 @@ tr:hover td {
     border: 1px dashed #ddd;
     border-radius: 8px;
     margin-top: 10px;
+}
+
+.tickets-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.tickets-table th, .tickets-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.tickets-table th {
+    background-color: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+}
+.tickets-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.hidden {
+    display: none;
+}
+.tab-badge {
+    background-color: #ff4757;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 12px;
+    margin-left: 5px;
 }

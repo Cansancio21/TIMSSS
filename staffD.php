@@ -149,39 +149,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | Ticket Reports</title>
-    <link rel="stylesheet" href="staffDash.css"> 
+    <link rel="stylesheet" href="staffD.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .tickets-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .tickets-table th, .tickets-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .tickets-table th {
-            background-color: rgba(255, 255, 255, 0.05);
-            font-weight: 600;
-        }
-        .tickets-table tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-        .hidden {
-            display: none;
-        }
-        .tab-badge {
-            background-color: #ff4757;
-            color: white;
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 12px;
-            margin-left: 5px;
-        }
-    </style>
+ 
 </head>
 <body>
 <div class="wrapper">
@@ -288,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td>{$row['t_date']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '{$row['t_aname']}', '{$row['t_type']}', '{$row['t_status']}', '{$row['t_details']}', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a class='edit-btn' onclick=\"showEditModal('{$row['t_id']}', '{$row['t_aname']}', '{$row['t_type']}', '{$row['t_status']}', '{$row['t_details']}', '{$row['t_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                       <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '{$row['t_aname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
                                     </td>
                                   </tr>"; 
@@ -400,39 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<!-- Edit Ticket Modal -->
-<div id="editModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Edit Ticket</h2>
-        </div>
-        <form method="POST" class="modal-form" id="editForm">
-            <input type="hidden" name="t_id" id="editTicketId">
-            <input type="text" name="t_aname" id="editAname" placeholder="Account Name" required>
-            <select name="t_type" id="editType" required>
-                <option value="">Select Issue Type</option>
-                <option value="hardware">Hardware</option>
-                <option value="software">Software</option>
-                <option value="network">Network</option>
-                <option value="other">Other</option>
-            </select>
-            <select name="t_status" id="editStatus" required>
-                <option value="">Select Status</option>
-                <option value="open">Open</option>
-                <option value="in progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="archived">Archived</option>
-            </select>
-            <textarea name="t_details" id="editDetails" placeholder="Ticket Details" required></textarea>
-            <input type="date" name="t_date" id="editDate" required>
-            <input type="hidden" name="edit_ticket" value="1">
-            <div class="modal-footer">
-                <button type="button" class="modal-btn cancel" onclick="closeModal('editModal')">Cancel</button>
-                <button type="submit" class="modal-btn confirm">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- Delete Ticket Modal -->
 <div id="deleteModal" class="modal">
@@ -512,15 +451,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.getElementById('viewModal').style.display = 'block';
     }
 
-    function showEditModal(id, aname, type, status, details, date) {
-        document.getElementById('editTicketId').value = id;
-        document.getElementById('editAname').value = aname;
-        document.getElementById('editType').value = type;
-        document.getElementById('editStatus').value = status;
-        document.getElementById('editDetails').value = details;
-        document.getElementById('editDate').value = date;
-        document.getElementById('editModal').style.display = 'block';
-    }
 
     function showArchiveModal(id, aname) {
         document.getElementById('archiveTicketId').value = id;

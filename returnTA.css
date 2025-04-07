@@ -399,53 +399,84 @@ tr:hover td {
 }
 
 /* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-}
-
-.action-buttons a {
+/* Action Buttons */
+/* Style for the delete button */
+.delete-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    color: white;
+    width: 30px; /* Adjust size as needed */
+    height: 30px;
+    background-color: #ff6200; /* Orange background */
+    color: #fff; /* White icon color */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+ 
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
+
+/* Hover effect for delete button */
+.delete-btn:hover {
+    background-color: #e55a00; /* Slightly darker orange on hover */
+    color: #fff; /* Keep icon white */
+}
+
+/* Icon inside delete button */
+.delete-btn i {
+    font-size: 16px; /* Adjust icon size */
+}
+
+/* Ensure consistency with other action buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px; /* Space between action buttons */
+}
+
+/* Optional: Adjust other buttons for consistency */
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
     text-decoration: none;
-    transition: all 0.3s;
-    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.action-buttons a.view-btn {
-    background: var(--success);
+/* Example colors for other buttons (optional) */
+.view-btn {
+    background-color: #3498db; /* Blue */
+    color: #fff;
+}
+.view-btn:hover {
+    background-color: #2980b9;
 }
 
-.action-buttons a.delete-btn {
-    background: var(--danger);
+.edit-btn {
+    background-color: #2ecc71; /* Green */
+    color: #fff;
+}
+.edit-btn:hover {
+    background-color: #27ae60;
 }
 
-.action-buttons a.edit-btn {
-    background: var(--info);
+.archive-btn {
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
+}
+.archive-btn:hover {
+    background-color: #d4ac0d;
 }
 
-.action-buttons a.archive-btn {
-    background: var(--warning);
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
 }
-
-.action-buttons a.unarchive-btn {
-    background-color: #2196F3;
-}
-
-.action-buttons a:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
 .unarchive-btn:hover {
-    background-color: #1976D2;
+    background-color: #8e44ad;
 }
+
 
 /* Pagination */
 .pagination {
