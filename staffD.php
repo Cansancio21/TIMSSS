@@ -225,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="table-box glass-container">
             <?php if ($userType === 'staff'): ?>
                 <div class="username">
-                    Welcome Back, <?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?>!
+                    Welcome to TIMS, <?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?>!
                     <i class="fas fa-user-shield admin-icon"></i>
                 </div>
             <?php endif; ?>
@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <table id="active-tickets-table" class="tickets-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Ticket ID</th>
                         <th>Account Name</th>
                         <th>Type</th>
                         <th>Status</th>

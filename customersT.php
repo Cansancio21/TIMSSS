@@ -154,10 +154,9 @@ if ($conn) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Customer Management</title>
-    <link rel="stylesheet" href="customersT.css">
+    <title>Registered Customer </title>
+    <link rel="stylesheet" href="customerT.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
 </head>
@@ -215,14 +214,7 @@ if ($conn) {
             <?php endif; ?>
         </div>
 
-        <div class="table-box glass-container">
-            <?php if ($userType === 'staff'): ?>
-                <div class="username">
-                    Welcome Back, <?php echo htmlspecialchars($firstName); ?>!
-                    <i class="fas fa-user-shield admin-icon"></i>
-                </div>
-            <?php endif; ?>
-            
+        <div class="table-box glass-container"> 
             <div class="customer-actions">
             <form action="addC.php" method="get" style="display: inline;">
     <button type="submit" class="add-user-btn"><i class="fas fa-user-plus"></i> Add Customer</button>
@@ -233,7 +225,7 @@ if ($conn) {
             <table id="customers-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Customer ID</th>
                         <th>First Name</th>
                         <th>Last Name</th>
                         <th>Area</th>
@@ -265,7 +257,7 @@ if ($conn) {
                                     <td>{$row['c_rem']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '{$row['c_rem']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a href='editC.php?id={$row['c_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                                        <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                     </td>
                                   </tr>";
@@ -311,31 +303,7 @@ if ($conn) {
     </div>
 </div>
 
-<!-- Edit Customer Modal -->
-<div id="editModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Edit Customer</h2>
-        </div>
-        <form method="POST" class="modal-form" id="editForm">
-            <input type="hidden" name="c_id" id="editCustomerId">
-            <input type="text" name="c_fname" id="editFname" placeholder="First Name" required>
-            <input type="text" name="c_lname" id="editLname" placeholder="Last Name" required>
-            <input type="text" name="c_area" id="editArea" placeholder="Area" required>
-            <input type="text" name="c_contact" id="editContact" placeholder="Contact Number" required>
-            <input type="email" name="c_email" id="editEmail" placeholder="Email">
-            <input type="text" name="c_onu" id="editOnu" placeholder="ONU Name">
-            <input type="text" name="c_caller" id="editCaller" placeholder="Caller ID">
-            <input type="text" name="c_address" id="editAddress" placeholder="MAC Address">
-            <textarea name="c_rem" id="editRem" placeholder="Remarks"></textarea>
-            <input type="hidden" name="edit_customer" value="1">
-            <div class="modal-footer">
-                <button type="button" class="modal-btn cancel" onclick="closeModal('editModal')">Cancel</button>
-                <button type="submit" class="modal-btn confirm">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- Delete Customer Modal -->
 <div id="deleteModal" class="modal">

@@ -55,35 +55,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Debugging: Log input values
     error_log("Asset Name: $return_assetsname, Technician Name: $return_techname, Technician ID: $return_techid");
 
-    // Validate asset name in the database
-    if (!$hasError) {
-        $sqlCheckAsset = "SELECT b_quantity FROM tbl_borrowed WHERE b_assets_name = ?";
-        $stmtCheckAsset = $conn->prepare($sqlCheckAsset);
-        $stmtCheckAsset->bind_param("s", $return_assetsname);
-        $stmtCheckAsset->execute();
-        $resultCheckAsset = $stmtCheckAsset->get_result();
+   // Validate asset name in the database
+     if (!$hasError) {
+    // Modify the SQL query to sum up the quantities of the same asset name across different b_id values
+    $sqlCheckAsset = "SELECT SUM(b_quantity) AS total_quantity FROM tbl_borrowed WHERE b_assets_name = ? AND b_quantity > 0"; 
+    $stmtCheckAsset = $conn->prepare($sqlCheckAsset);
+    $stmtCheckAsset->bind_param("s", $return_assetsname);
+    $stmtCheckAsset->execute();
+    $resultCheckAsset = $stmtCheckAsset->get_result();
 
-        if ($resultCheckAsset->num_rows == 0) {
-            $return_assetsnameErr = "Asset not found in the borrowed records.";
+    if ($resultCheckAsset->num_rows == 0) {
+        $return_assetsnameErr = "Asset not found in the borrowed records.";
+        $hasError = true;
+    } else {
+        $row = $resultCheckAsset->fetch_assoc();
+        $availableQuantity = $row['total_quantity'];  // Now we have the total available quantity
+
+        // Debugging: Log the available quantity
+        error_log("Available Quantity: $availableQuantity");
+
+        // Check if quantity to return is valid
+        if ($availableQuantity <= 0) {
+            $return_quantityErr = "There are no assets to return.";
             $hasError = true;
-        } else {
-            $row = $resultCheckAsset->fetch_assoc();
-            $availableQuantity = $row['b_quantity'];
-
-            // Debugging: Log the available quantity
-            error_log("Available Quantity: $availableQuantity");
-
-            // Check if quantity to return is valid
-            if ($availableQuantity <= 0) {
-                $return_quantityErr = "There are no assets to return.";
-                $hasError = true;
-            } elseif ($returnquantity > $availableQuantity) {
-                $return_quantityErr = "Return quantity exceeds borrowed quantity.";
-                $hasError = true;
-            }
+        } elseif ($returnquantity > $availableQuantity) {
+            $return_quantityErr = "Return quantity exceeds borrowed quantity.";
+            $hasError = true;
         }
-        $stmtCheckAsset->close();
     }
+    $stmtCheckAsset->close();
+}
+
 
     // Validate Technician ID
     if (!$hasError) {

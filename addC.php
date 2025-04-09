@@ -136,9 +136,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="addC.css"> 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
+    <title>Add Customer</title>
+    <link rel="stylesheet" href="addCu.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
    
 </head>
 <body>
@@ -146,11 +147,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> View Tickets</a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-box"></i> View Assets</a></li>
-            <li><a href="customersT.php"><i class="fas fa-box"></i> View Customers</a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> Ticket Registration</a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-user-plus"></i> Register Assets</a></li>
+            <li><a href="staffD.php" class="active"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
+            <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
+            <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
+            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
+            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
+            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
@@ -159,11 +161,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div class="container">
         <div class="upper"> 
-            <h1>Registered User</h1>
-            <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
-                <span class="search-icon"><i class="fas fa-search"></i></span>
-            </div>
+            <h1>Add Customer</h1>
+           
             <div class="user-profile">
                 <div class="user-icon">
                     <?php 

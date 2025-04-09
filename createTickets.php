@@ -22,6 +22,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!preg_match("/^[a-zA-Z\s-]+$/", $accountname)) {
         $accountnameErr = "Account Name should not contain numbers.";
         $hasError = true;
+    } else {
+        // Check if account name exists in tbl_customer
+        $nameParts = explode(" ", $accountname);
+        if (count($nameParts) < 2) {
+            $accountnameErr = "Account Name must consist of first and last name.";
+            $hasError = true;
+        } else {
+            $firstName = $nameParts[0];
+            $lastName = $nameParts[1];
+
+            $sql = "SELECT COUNT(*) FROM tbl_customer WHERE c_fname = ? AND c_lname = ?";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                die("Prepare failed: " . $conn->error);
+            }
+
+            $stmt->bind_param("ss", $firstName, $lastName);
+            $stmt->execute();
+            $stmt->bind_result($count);
+            $stmt->fetch();
+            $stmt->close();
+
+            if ($count == 0) {
+                $accountnameErr = "Account Name does not exist.";
+                $hasError = true;
+            }
+        }
     }
 
     // Validate required fields

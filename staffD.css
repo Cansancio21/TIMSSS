@@ -275,6 +275,8 @@ footer {
     text-decoration: none;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    border: none; /* Remove border */
+    outline: none; /* Remove outline on focus */
 }
 
 .add-user-btn:hover {
@@ -290,7 +292,7 @@ footer {
 /* Tabs */
 .tab-buttons {
     display: flex;
-    margin-top: 15px;
+    margin-top: 45px;
   
 }
 
@@ -337,14 +339,13 @@ footer {
     display: flex;
 }
 
-/* Table */
+/* Optimized Table Structure */
 table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0;
-   
-    margin-top: 10px;
-    table-layout: auto;
+    margin-top: 15px;
+    table-layout: fixed; /* Essential for equal column widths */
+    margin-top: 75px;
 }
 
 thead {
@@ -356,28 +357,41 @@ thead {
 }
 
 th {
-    padding: 15px;
+    padding: clamp(10px, 1.5vw, 15px);
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
 }
 
-th:first-child {
-    border-top-left-radius: 10px;
-}
-
-th:last-child {
-    border-top-right-radius: 10px;
-}
-
-td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    vertical-align: middle;
+/* More specific selector */
+table td {
+    border-bottom: 1px solid #eee !important;
+    padding: 8px 5px;
     text-align: center;
-    word-wrap: break-word;
-    white-space: normal;
+    font-size: 0.9rem;
+    word-break: break-word;
+    line-height: 1.3;
 }
+
+table th:first-child {
+    text-align: center;
+}
+
+table td:first-child {
+    text-align: center;
+}
+
+/* Style for the fifth header cell */
+table th:nth-child(5) {
+    text-align: left; /* Align text to the left */
+}
+
+/* Style for the fifth cell in each row */
+table td:nth-child(5) {
+    text-align: left; /* Align text to the left */
+    width: 150px;
+}
+
 tr:last-child td {
     border-bottom: none;
 }

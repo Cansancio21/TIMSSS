@@ -13,6 +13,7 @@ $borrow_assetsnameErr = "";
 $borrow_techidErr = "";
 $borrow_technameErr = "";
 $borrow_quantityErr = ""; 
+$borrow_returnErr = ""; // New error variable for return validation
 $hasError = false; 
 $successMessage = "";
 
@@ -83,6 +84,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $hasError = true;
         }
         $stmtCheckTechName->close();
+    }
+
+    // Check if technician has borrowed assets
+    if (!$hasError) {
+        $sqlCheckBorrowed = "SELECT SUM(b_quantity) AS total_borrowed FROM tbl_borrowed WHERE b_technician_id = ?";
+        $stmtCheckBorrowed = $conn->prepare($sqlCheckBorrowed);
+        $stmtCheckBorrowed->bind_param("s", $borrow_techid);
+        $stmtCheckBorrowed->execute();
+        $resultCheckBorrowed = $stmtCheckBorrowed->get_result();
+        $row = $resultCheckBorrowed->fetch_assoc();
+
+        if ($row['total_borrowed'] > 0) {
+            $borrow_returnErr = "Technician must return the borrowed assets to borrow again.";
+            $hasError = true;
+        }
+        $stmtCheckBorrowed->close();
     }
 
     // Check if asset exists
@@ -176,6 +193,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
      <button type="submit">Enter</button>
      </form>
+
+    <div class="form-row">
+    <span class="error"><?php echo $borrow_returnErr; ?></span>
+    </div>
 
      </div>
 </body>

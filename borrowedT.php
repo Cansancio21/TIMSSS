@@ -75,7 +75,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="borrowedT.css"> 
+    <link rel="stylesheet" href="borrowedTA.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -144,6 +144,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
             <div class="borrowed">
                 <div class="button-container">
                     <a href="borrowA.php" class="borrow-btn"><i class="fas fa-plus"></i> Borrow</a>
+                    <a href="return.php" class="return-btn"><i class="fas fa-undo"></i> Return</a>
                     <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
                 </div>
                 <table id="borrowedTable">

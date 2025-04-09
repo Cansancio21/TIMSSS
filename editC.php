@@ -30,6 +30,43 @@ if (isset($_GET['id'])) {
     exit();
 }
 
+
+// Initialize variables for user data
+$username = $_SESSION['username'];
+$lastName = '';
+$firstName = '';
+$userType = '';
+$avatarPath = 'default-avatar.png';
+$avatarFolder = 'uploads/avatars/';
+$userAvatar = $avatarFolder . $username . '.png';
+
+if (file_exists($userAvatar)) {
+    $_SESSION['avatarPath'] = $userAvatar . '?' . time(); // Prevent caching issues
+} else {
+    $_SESSION['avatarPath'] = 'default-avatar.png';
+}
+$avatarPath = $_SESSION['avatarPath'];
+
+// Fetch user data from the database
+if ($conn) {
+    $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
+    $stmt = $conn->prepare($sqlUser);
+    $stmt->bind_param("s", $_SESSION['username']);
+    $stmt->execute();
+    $resultUser = $stmt->get_result();
+
+    if ($resultUser->num_rows > 0) {
+        $row = $resultUser->fetch_assoc();
+        $firstName = $row['u_fname'];
+        $lastName = $row['u_lname'];
+        $userType = $row['u_type'];
+    }
+    $stmt->close();
+} else {
+    echo "Database connection failed.";
+    exit();
+}
+
 // Handle form submission for updating the customer
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $firstName = $_POST['firstname'];
@@ -62,18 +99,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Customer</title>
-    <link rel="stylesheet" href="editC.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="editCu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
    
 </head>
 <body>
     <div class="wrapper">
+    <div class="sidebar glass-container">
+        <h2>Task Management</h2>
+        <ul>
+            <li><a href="staffD.php" class="active"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
+            <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
+            <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
+            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
+            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
+            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+        </ul>
+        <footer>
+            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+        </footer>
+    </div>
+
     <div class="container">
-       
-       <div class="upper">
-       <h1>Edit Customer</h1>
-       </div>  
-       
+        <div class="upper"> 
+            <h1>Edit Customer</h1>
+           
+            <div class="user-profile">
+                <div class="user-icon">
+                    <?php 
+                    if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
+                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
+                    } else {
+                        echo "<i class='fas fa-user-circle'></i>";
+                    }
+                    ?>
+                </div>
+                <div class="user-details">
+                    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
+                </div>
+                <a href="settings.php" class="settings-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+          
+        <div class="alert-container">
+            <?php if (isset($_SESSION['message'])): ?>
+                <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+            <?php endif; ?>
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+            <?php endif; ?>
+        </div>
+
+    
     <div class="table-box">
     <h2>Customer Profile</h2>
     <hr class="title-line"> <!-- Add this line -->

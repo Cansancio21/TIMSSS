@@ -293,7 +293,7 @@ footer {
     transition: 0.3s;
     position: absolute;
     right: 30px;
-    top: 15px;
+    top: 50px;
 }
 
 
@@ -340,7 +340,7 @@ table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 2.5vw;
+    margin-top: 4.0vw;
     table-layout: auto;
 }
 
