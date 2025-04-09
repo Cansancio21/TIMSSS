@@ -622,7 +622,7 @@ tr:hover td {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 15px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -675,4 +675,14 @@ tr:hover td {
     border: 1px dashed #ddd;
     border-radius: 8px;
     margin-top: 10px;
+}
+
+
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.alert-hidden {
+    opacity: 0;
 }

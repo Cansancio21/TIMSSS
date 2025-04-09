@@ -411,7 +411,6 @@ tr:hover td {
     color: #fff; /* White icon color */
     border-radius: 5px; /* Rounded corners */
     text-decoration: none; /* Remove underline */
-    margin-left: 5px; /* Space between buttons */
     transition: background-color 0.3s ease; /* Smooth hover transition */
 }
 
@@ -619,7 +618,7 @@ tr:hover td {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 15px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -771,3 +770,12 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
+
+.alert {
+    transition: opacity 0.5s ease-out;
+}
+.alert-hidden {
+    opacity: 0;
+    display: none;
+}
+

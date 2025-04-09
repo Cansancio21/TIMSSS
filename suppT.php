@@ -38,22 +38,68 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
 // Get total number of tickets
-$totalQuery = "SELECT COUNT(*) as total FROM tbl_supp_tickets WHERE c_id = '$c_id'";
-$totalResult = mysqli_query($conn, $totalQuery);
-$totalRow = mysqli_fetch_assoc($totalResult);
+$totalQuery = "SELECT COUNT(*) as total FROM tbl_supp_tickets WHERE c_id = ?";
+$stmt = $conn->prepare($totalQuery);
+$stmt->bind_param("s", $c_id);
+$stmt->execute();
+$totalResult = $stmt->get_result();
+$totalRow = $totalResult->fetch_assoc();
 $totalTickets = $totalRow['total'];
 $totalPages = ceil($totalTickets / $limit);
+$stmt->close();
 
 // Query with pagination
 $query = "SELECT id, c_id, c_lname, c_fname, s_subject, s_type, s_message, s_status 
           FROM tbl_supp_tickets 
-          WHERE c_id = '$c_id' 
+          WHERE c_id = ? 
           ORDER BY id ASC 
-          LIMIT $limit OFFSET $offset";
-$result = mysqli_query($conn, $query);
+          LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("sii", $c_id, $limit, $offset);
+$stmt->execute();
+$result = $stmt->get_result();
 
 if (!$result) {
     die("Query Failed: " . mysqli_error($conn));
+}
+
+// Handle form submissions (create or close ticket)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['close_ticket'])) {
+        $ticketId = (int)$_POST['t_id'];
+        $updateQuery = "UPDATE tbl_supp_tickets SET s_status = 'Closed' WHERE id = ? AND c_id = ?";
+        $stmt = $conn->prepare($updateQuery);
+        $stmt->bind_param("is", $ticketId, $c_id);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Ticket closed successfully!";
+        } else {
+            $_SESSION['error'] = "Error closing ticket: " . $stmt->error;
+        }
+        $stmt->close();
+        header("Location: suppT.php?page=$page");
+        exit();
+    } elseif (isset($_POST['create_ticket'])) {
+        $c_id = $_POST['c_id'];
+        $c_lname = $_POST['c_lname'];
+        $c_fname = $_POST['c_fname'];
+        $s_subject = $_POST['subject'];
+        $s_type = $_POST['type'];
+        $s_message = $_POST['message'];
+        $s_status = 'Open'; // Default status for new tickets
+
+        $insertQuery = "INSERT INTO tbl_supp_tickets (c_id, c_lname, c_fname, s_subject, s_type, s_message, s_status) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($insertQuery);
+        $stmt->bind_param("sssssss", $c_id, $c_lname, $c_fname, $s_subject, $s_type, $s_message, $s_status);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Ticket created successfully!";
+        } else {
+            $_SESSION['error'] = "Error creating ticket: " . $stmt->error;
+        }
+        $stmt->close();
+        header("Location: suppT.php?page=$page");
+        exit();
+    }
 }
 ?>
 
@@ -66,6 +112,7 @@ if (!$result) {
     <link rel="stylesheet" href="suppsT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
 </head>
 <body>
     <div class="wrapper">
@@ -140,7 +187,7 @@ if (!$result) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                        <?php while ($row = $result->fetch_assoc()) { ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($row['id']); ?></td>
                                 <td><?php echo htmlspecialchars($row['c_id']); ?></td>
@@ -148,7 +195,7 @@ if (!$result) {
                                 <td><?php echo htmlspecialchars($row['s_subject']); ?></td>
                                 <td><?php echo htmlspecialchars($row['s_type']); ?></td>
                                 <td><?php echo htmlspecialchars($row['s_message']); ?></td>
-                                <td onclick="openCloseModal('<?php echo $row['id']; ?>', '<?php echo htmlspecialchars($row['s_status']); ?>')">
+                                <td class="status-clickable" onclick="openCloseModal('<?php echo $row['id']; ?>', '<?php echo htmlspecialchars($row['c_lname'] . ', ' . $row['c_fname']); ?>', '<?php echo htmlspecialchars($row['s_status']); ?>')">
                                     <?php echo htmlspecialchars($row['s_status']); ?>
                                 </td>
                             </tr>
@@ -173,16 +220,17 @@ if (!$result) {
             </div>
 
             <!-- Modal Background -->
-            <div id="modalBackground" class="modal-background"></div>
+            <div id="modalBackground" class="modal-background" style="display: none;"></div>
 
             <!-- Modal for Creating Ticket -->
             <div id="createTicketModal" class="modal-content" style="display:none;">
                 <span onclick="closeModal()" class="close">×</span>
                 <h2>Create New Ticket</h2>
-                <form id="createTicketForm" onsubmit="return createTicket(event)">
+                <form id="createTicketForm" method="POST">
                     <input type="hidden" name="c_id" value="<?php echo htmlspecialchars($c_id); ?>">
                     <input type="hidden" name="c_lname" value="<?php echo htmlspecialchars($c_lname); ?>">
                     <input type="hidden" name="c_fname" value="<?php echo htmlspecialchars($c_fname); ?>">
+                    <input type="hidden" name="create_ticket" value="1">
 
                     <label for="subject">Subject:</label>
                     <input type="text" id="subject" name="subject" readonly>
@@ -202,56 +250,50 @@ if (!$result) {
                 </form>
             </div>
 
-            <!-- Modal for Closing Ticket -->
-            <div id="closeTicketModal" class="modal-content" style="display:none;">
-                <span onclick="closeCloseModal()" class="close">×</span>
-                <input type="text" id="closeTicketId" placeholder="Enter Ticket ID to close the ticket">
-                <div class="button-container">
-                    <button class="close-ticket" onclick="confirmClose()">Close Ticket</button>
+            <!-- Close Ticket Modal -->
+            <div id="closeModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Close Ticket</h2>
+                    </div>
+                    <p>Enter Report Id to close <span id="closeTicketName"></span>:</p>
+                    <form method="POST" id="closeForm">
+                        <input type="number" name="t_id" id="closeTicketIdInput" placeholder="Ticket ID" required>
+                        <input type="hidden" name="close_ticket" value="1">
+                        <div class="modal-footer">
+                            <button type="button" class="modal-btn cancel" onclick="closeModal('closeModal')">Cancel</button>
+                            <button type="submit" class="modal-btn confirm">Close Ticket</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let currentTicketId = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab') || 'active';
+            showTab(tab);
 
-        function openCloseModal(ticketId, status) {
-            if (status === "Open") {
-                currentTicketId = ticketId;
-                document.getElementById('closeTicketModal').style.display = 'block';
-                document.getElementById('modalBackground').style.display = 'block';
-            } else {
-                alert("This ticket is already closed.");
-            }
-        }
+            // Handle alert messages disappearing after 2 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.add('alert-hidden');
+                    setTimeout(() => alert.remove(), 500); // Remove after fade-out
+                }, 2000); // 2 seconds delay
+            });
 
-        function closeCloseModal() {
-            document.getElementById('closeTicketModal').style.display = 'none';
+            // Ensure modals are closed on page load
+            document.getElementById('closeModal').style.display = 'none';
+            document.getElementById('createTicketModal').style.display = 'none';
             document.getElementById('modalBackground').style.display = 'none';
-        }
+        });
 
-        function confirmClose() {
-            const confirmationId = document.getElementById('closeTicketId').value;
-            if (confirmationId === currentTicketId) {
-                const xhr = new XMLHttpRequest();
-                xhr.open("POST", "updateS.php", true);
-                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        const logXhr = new XMLHttpRequest();
-                        logXhr.open("POST", "log_activity.php", true);
-                        logXhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                        logXhr.send("action=close_ticket&ticket_id=" + currentTicketId + "&username=<?php echo $username; ?>");
-                        
-                        alert("Ticket closed successfully!");
-                        location.reload();
-                    }
-                };
-                xhr.send("id=" + currentTicketId + "&status=Closed");
-            } else {
-                alert("Incorrect ID entered. Ticket not closed.");
-            }
+        function showTab(tab) {
+            // Placeholder: Add logic here if you implement tabs later
+            console.log(`Showing tab: ${tab}`);
         }
 
         function openModal() {
@@ -267,29 +309,24 @@ if (!$result) {
             document.getElementById('modalBackground').style.display = 'block';
         }
 
-        function closeModal() {
-            document.getElementById('createTicketModal').style.display = 'none';
+        function closeModal(modalId) {
+            if (modalId === 'closeModal') {
+                document.getElementById('closeModal').style.display = 'none';
+            } else {
+                document.getElementById('createTicketModal').style.display = 'none';
+            }
             document.getElementById('modalBackground').style.display = 'none';
         }
 
-        function createTicket(event) {
-            event.preventDefault();
-            const formData = new FormData(document.getElementById('createTicketForm'));
-
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "ticket.php", true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200 && xhr.responseText.trim() === "success") {
-                        alert("✅ Ticket created successfully!");
-                        closeModal();
-                        setTimeout(() => { location.reload(); }, 500);
-                    } else {
-                        alert("❌ Error creating ticket: " + xhr.responseText);
-                    }
-                }
-            };
-            xhr.send(formData);
+        function openCloseModal(ticketId, name, status) {
+            if (status.toLowerCase() === 'closed') {
+                alert("This ticket is already closed.");
+                return;
+            }
+            document.getElementById('closeTicketIdInput').value = ticketId; // Pre-fill the ID
+            document.getElementById('closeTicketName').textContent = name;
+            document.getElementById('closeModal').style.display = 'block';
+            document.getElementById('modalBackground').style.display = 'block';
         }
 
         function searchUsers() {

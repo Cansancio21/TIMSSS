@@ -740,6 +740,15 @@ button:hover {
     display: block; /* Ensure the error message appears on a new line */
 }
 
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+.alert-hidden {
+    opacity: 0;
+}
+
 
 
 /* Responsive Design */

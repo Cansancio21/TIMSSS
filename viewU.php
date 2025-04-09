@@ -561,7 +561,7 @@ if ($conn) {
 </div>
 
 <script>
-    function showTab(tabName) {
+   function showTab(tabName) {
         const activeTab = document.getElementById('active-users-tab');
         const archivedTab = document.getElementById('archived-users-tab');
         const buttons = document.querySelectorAll('.tab-btn');
@@ -586,13 +586,20 @@ if ($conn) {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab') || 'active';
         showTab(tab);
+
+        // Your alert handling code here
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.classList.add('alert-hidden');
+                setTimeout(() => alert.remove(), 500); // Remove after fade-out (500ms)
+            }, 2000); // 2 seconds delay before starting fade-out
+        });
     });
 
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
     }
-
-   
 
     function showViewModal(id, fname, lname, email, username, type, status) {
         document.getElementById('viewContent').innerHTML = `
@@ -606,8 +613,6 @@ if ($conn) {
         `;
         document.getElementById('viewModal').style.display = 'block';
     }
-
- 
 
     function showArchiveModal(id, name) {
         document.getElementById('archiveUserId').value = id;

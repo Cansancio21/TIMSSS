@@ -353,14 +353,14 @@ tr:hover td {
 /* Alerts */
 .alert-container {
     position: relative;
-    margin-bottom: 20px;
+   
 }
 
 .alert {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 35px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -445,20 +445,14 @@ tr:hover td {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Close Ticket Modal - Centered with specific width */
-#closeTicketModal {
-    width: 250px;
-    height: auto;
-    padding: 15px;
+.modal-btn.confirm {
+    background: var(--primary);
+    color: white;
 }
 
-.close {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
+.modal-btn.cancel {
+    background: var(--light);
+    color: var(--dark);
 }
 
 .modal-content h2 {
@@ -518,3 +512,7 @@ button.close-ticket {
     margin: 10px 0;
 }
 
+.status-clickable {
+    cursor: pointer;
+ 
+}

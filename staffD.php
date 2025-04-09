@@ -137,6 +137,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['error'] = "Error restoring ticket: " . $stmt->error;
         }
         $stmt->close();
+    } elseif (isset($_POST['close_ticket'])) {
+        $t_id = $_POST['t_id'];
+        $sql = "UPDATE tbl_ticket SET t_status='closed' WHERE t_id=?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $t_id);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Ticket closed successfully!";
+        } else {
+            $_SESSION['error'] = "Error closing ticket: " . $stmt->error;
+        }
+        $stmt->close();
     }
     header("Location: staffD.php?page=$page"); // Redirect to current page
     exit();
@@ -152,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="staffD.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
- 
+
 </head>
 <body>
 <div class="wrapper">
@@ -173,7 +184,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
         </footer>
     </div>
-
 
     <div class="container">
     <div class="upper">
@@ -212,7 +222,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
         </div>
         
-
         <div class="table-box glass-container">
             <?php if ($userType === 'staff'): ?>
                 <div class="username">
@@ -231,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </button>
             </div>
             
-            <button class="add-user-btn" onclick="showAddModal()"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
+            <button class="add-user-btn" onclick="window.location.href='createTickets.php'"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
             
             <!-- Active Tickets Table -->
             <table id="active-tickets-table" class="tickets-table">
@@ -254,12 +263,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td>{$row['t_id']}</td> 
                                     <td>{$row['t_aname']}</td> 
                                     <td>" . ucfirst(strtolower($row['t_type'])) . "</td> 
-                                    <td class='status-" . strtolower($row['t_status']) . "'>" . ucfirst(strtolower($row['t_status'])) . "</td>
+                                    <td class='status-" . strtolower($row['t_status']) . " status-clickable' onclick=\"showCloseModal('{$row['t_id']}', '{$row['t_aname']}', '{$row['t_status']}')\">" . ucfirst(strtolower($row['t_status'])) . "</td>
                                     <td>{$row['t_details']}</td>
                                     <td>{$row['t_date']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '{$row['t_aname']}', '{$row['t_type']}', '{$row['t_status']}', '{$row['t_details']}', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                       <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                        <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '{$row['t_aname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
                                     </td>
                                   </tr>"; 
@@ -327,36 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<div id="addModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Add New Ticket</h2>
-        </div>
-        <form method="POST" class="modal-form">
-            <input type="text" name="t_aname" placeholder="Account Name" required>
-            <select name="t_type" required>
-                <option value="">Select Issue Type</option>
-                <option value="hardware">Hardware</option>
-                <option value="software">Software</option>
-                <option value="network">Network</option>
-                <option value="other">Other</option>
-            </select>
-            <select name="t_status" required>
-                <option value="">Select Status</option>
-                <option value="open">Open</option>
-                <option value="in progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-            </select>
-            <textarea name="t_details" placeholder="Ticket Details" required></textarea>
-            <input type="date" name="t_date" required>
-            <input type="hidden" name="add_ticket" value="1">
-            <div class="modal-footer">
-                <button type="button" class="modal-btn cancel" onclick="closeModal('addModal')">Cancel</button>
-                <button type="submit" class="modal-btn confirm">Add Ticket</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- View Ticket Modal -->
 <div id="viewModal" class="modal">
@@ -370,8 +350,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
-
-
 
 <!-- Delete Ticket Modal -->
 <div id="deleteModal" class="modal">
@@ -390,7 +368,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 </div>
-
 
 <!-- Archive Ticket Modal -->
 <div id="archiveModal" class="modal">
@@ -428,86 +405,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<script>
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
-
-    function showAddModal() {
-        document.getElementById('addModal').style.display = 'block';
-    }
-
-    function showViewModal(id, aname, type, status, details, date) {
-        document.getElementById('viewContent').innerHTML = `
-            <div class="view-details">
-                <p><strong>ID:</strong> ${id}</p>
-                <p><strong>Account Name:</strong> ${aname}</p>
-                <p><strong>Issue Type:</strong> ${type}</p>
-                <p><strong>Ticket Status:</strong> <span class="status-${status.toLowerCase()}">${status}</span></p>
-                <p><strong>Ticket Details:</strong> ${details}</p>
-                <p><strong>Date:</strong> ${date}</p>
+<!-- Close Ticket Modal -->
+<div id="closeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Close Ticket</h2>
+        </div>
+        <p>Enter Ticket Id to close <span id="closeTicketName"></span>:</p>
+        <form method="POST" id="closeForm">
+            <input type="number" name="t_id" id="closeTicketIdInput" placeholder="Ticket ID" required>
+            <input type="hidden" name="close_ticket" value="1">
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('closeModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Close Ticket</button>
             </div>
-        `;
-        document.getElementById('viewModal').style.display = 'block';
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab') || 'active';
+    showTab(tab);
+
+    // Handle alert messages disappearing after 2 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.classList.add('alert-hidden');
+            setTimeout(() => alert.remove(), 500); // Remove after fade-out
+        }, 2000); // 2 seconds delay
+    });
+});
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showAddModal() {
+    document.getElementById('addModal').style.display = 'block';
+}
+
+function showViewModal(id, aname, type, status, details, date) {
+    document.getElementById('viewContent').innerHTML = `
+        <div class="view-details">
+            <p><strong>ID:</strong> ${id}</p>
+            <p><strong>Account Name:</strong> ${aname}</p>
+            <p><strong>Issue Type:</strong> ${type}</p>
+            <p><strong>Ticket Status:</strong> <span class="status-${status.toLowerCase()}">${status}</span></p>
+            <p><strong>Ticket Details:</strong> ${details}</p>
+            <p><strong>Date:</strong> ${date}</p>
+        </div>
+    `;
+    document.getElementById('viewModal').style.display = 'block';
+}
+
+function showArchiveModal(id, aname) {
+    document.getElementById('archiveTicketId').value = id;
+    document.getElementById('archiveTicketName').textContent = aname;
+    document.getElementById('archiveModal').style.display = 'block';
+}
+
+function showRestoreModal(id, aname) {
+    document.getElementById('restoreTicketId').value = id;
+    document.getElementById('restoreTicketName').textContent = aname;
+    document.getElementById('restoreModal').style.display = 'block';
+}
+
+function showCloseModal(id, aname, status) {
+    if (status.toLowerCase() === 'closed') {
+        alert("This ticket is already closed!");
+        return;
     }
+    document.getElementById('closeTicketIdInput').value = id; // Pre-fill the ID
+    document.getElementById('closeTicketName').textContent = aname;
+    document.getElementById('closeModal').style.display = 'block';
+}
 
-
-    function showArchiveModal(id, aname) {
-        document.getElementById('archiveTicketId').value = id;
-        document.getElementById('archiveTicketName').textContent = aname;
-        document.getElementById('archiveModal').style.display = 'block';
-    }
-
-    function showRestoreModal(id, aname) {
-        document.getElementById('restoreTicketId').value = id;
-        document.getElementById('restoreTicketName').textContent = aname;
-        document.getElementById('restoreModal').style.display = 'block';
-    }
-
-    function searchTickets() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        const activeTable = document.getElementById('active-tickets-table');
-        const archivedTable = document.getElementById('archived-tickets-table');
-        
-        const tables = [activeTable, archivedTable];
-        
-        tables.forEach(table => {
-            if (table.style.display !== 'none') {
-                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-                
-                for (let i = 0; i < rows.length; i++) {
-                    const cells = rows[i].getElementsByTagName('td');
-                    let match = false;
-                    for (let j = 0; j < cells.length - 1; j++) { // Exclude action column
-                        if (cells[j].textContent.toLowerCase().includes(input)) {
-                            match = true;
-                            break;
-                        }
+function searchTickets() {
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const activeTable = document.getElementById('active-tickets-table');
+    const archivedTable = document.getElementById('archived-tickets-table');
+    
+    const tables = [activeTable, archivedTable];
+    
+    tables.forEach(table => {
+        if (table.style.display !== 'none') {
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let match = false;
+                for (let j = 0; j < cells.length - 1; j++) { // Exclude action column
+                    if (cells[j].textContent.toLowerCase().includes(input)) {
+                        match = true;
+                        break;
                     }
-                    rows[i].style.display = match ? '' : 'none';
                 }
+                rows[i].style.display = match ? '' : 'none';
             }
-        });
-    }
-
-    function showTab(tabName) {
-        // Update active tab styling
-        document.querySelector('.tab-btn.active').classList.remove('active');
-        document.querySelector(`.tab-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
-        
-        // Show/hide tables
-        if (tabName === 'active') {
-            document.getElementById('active-tickets-table').classList.remove('hidden');
-            document.getElementById('archived-tickets-table').classList.add('hidden');
-        } else {
-            document.getElementById('active-tickets-table').classList.add('hidden');
-            document.getElementById('archived-tickets-table').classList.remove('hidden');
         }
-        
-        // Reset search when switching tabs
-        document.getElementById('searchInput').value = '';
-        searchTickets();
+    });
+}
+
+function showTab(tabName) {
+    // Update active tab styling
+    document.querySelector('.tab-btn.active').classList.remove('active');
+    document.querySelector(`.tab-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
+    
+    // Show/hide tables
+    if (tabName === 'active') {
+        document.getElementById('active-tickets-table').classList.remove('hidden');
+        document.getElementById('archived-tickets-table').classList.add('hidden');
+    } else {
+        document.getElementById('active-tickets-table').classList.add('hidden');
+        document.getElementById('archived-tickets-table').classList.remove('hidden');
     }
+    
+    // Reset search when switching tabs
+    document.getElementById('searchInput').value = '';
+    searchTickets();
+}
 </script>
 
 </body>
@@ -516,3 +535,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php 
 $conn->close(); // Close the database connection 
 ?>
+
