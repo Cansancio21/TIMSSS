@@ -310,7 +310,7 @@ footer {
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 50px;
+    margin-top: 20px;
 }
 
 .tab-btn {
@@ -373,7 +373,7 @@ table {
     border-collapse: collapse;
     margin-top: 15px;
     table-layout: fixed; /* Essential for equal column widths */
-    margin-top: 75px;
+    margin-top: 25px;
 }
 
 thead {
@@ -651,7 +651,7 @@ tr:hover td {
     padding: 23px 5px;
 }
 
-/* Optional: Adjust other buttons for consistency */
+
 .view-btn, .edit-btn, .archive-btn, .unarchive-btn {
     display: inline-flex;
     align-items: center;
@@ -661,7 +661,6 @@ tr:hover td {
     border-radius: 5px;
     text-decoration: none;
     transition: background-color 0.3s ease;
- 
 }
 
 /* Example colors for other buttons (optional) */
@@ -679,5 +678,21 @@ tr:hover td {
 }
 .edit-btn:hover {
     background-color: #27ae60;
+}
+
+.archive-btn {
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
+}
+.archive-btn:hover {
+    background-color: #d4ac0d;
+}
+
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
+}
+.unarchive-btn:hover {
+    background-color: #8e44ad;
 }
 

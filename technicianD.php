@@ -69,7 +69,8 @@ if ($conn) {
     $totalRegular = $resultTotalRegular->fetch_assoc()['total'];
     $totalRegularPages = ceil($totalRegular / $limit);
 
-    $sqlTickets = "SELECT t_id, t_aname, t_details, t_status FROM tbl_ticket ORDER BY t_date ASC LIMIT ? OFFSET ?";
+    // Updated query to include t_type and t_date
+    $sqlTickets = "SELECT t_id, t_aname, t_type, t_details, t_status, t_date FROM tbl_ticket ORDER BY t_date ASC LIMIT ? OFFSET ?";
     $stmtTickets = $conn->prepare($sqlTickets);
     $stmtTickets->bind_param("ii", $limit, $regularOffset);
     $stmtTickets->execute();
@@ -82,7 +83,8 @@ if ($conn) {
     $totalSupport = $resultTotalSupport->fetch_assoc()['total'];
     $totalSupportPages = ceil($totalSupport / $limit);
 
-    $sqlSuppTickets = "SELECT id as t_id, CONCAT(c_fname, ' ', c_lname) as t_aname, s_message as t_details, s_status as t_status 
+    // Updated query to include s_type
+    $sqlSuppTickets = "SELECT id AS t_id, CONCAT(c_fname, ' ', c_lname) AS t_aname, s_type, s_message AS t_details, s_status AS t_status 
                       FROM tbl_supp_tickets 
                       ORDER BY id ASC LIMIT ? OFFSET ?";
     $stmtSuppTickets = $conn->prepare($sqlSuppTickets);
@@ -107,7 +109,6 @@ if ($conn) {
     <title>ISP Technician Dashboard</title>
     <link rel="stylesheet" href="technicianD.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
 </head>
 <body>
 <div class="wrapper">
@@ -126,7 +127,7 @@ if ($conn) {
         <div class="upper"> 
             <h1>Technician Dashboard</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchTickets()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -178,23 +179,23 @@ if ($conn) {
             </div>
         </div>
 
-      
         <div class="tab-container">
-         
+            <!-- Regular Tickets Tab -->
             <div id="regularTickets" class="tab-content active">
                 <div class="table-box">
                     <div class="tab-buttons">
                         <button class="tab-button active" onclick="openTab('regularTickets')">Regular Tickets</button>
                         <button class="tab-button" onclick="openTab('supportTickets')">Support Tickets</button>
                     </div>
-                   
                     <table class="tickets-table">
                         <thead>
                             <tr>
                                 <th>Ticket ID</th>
                                 <th>Customer Name</th>
+                                <th>Type</th>
                                 <th>Message</th>
                                 <th>Status</th>
+                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody id="regularTicketTableBody">
@@ -204,12 +205,14 @@ if ($conn) {
                                     echo "<tr>
                                             <td>{$row['t_id']}</td>
                                             <td>" . htmlspecialchars($row['t_aname']) . "</td>
+                                            <td>" . htmlspecialchars(ucfirst(strtolower($row['t_type']))) . "</td>
                                             <td>" . htmlspecialchars($row['t_details']) . "</td>
                                             <td class='status-" . strtolower(str_replace(' ', '-', $row['t_status'])) . "'>" . ucfirst(strtolower($row['t_status'])) . "</td>
+                                            <td>" . htmlspecialchars($row['t_date']) . "</td>
                                           </tr>";
                                 }
                             } else {
-                                echo "<tr><td colspan='4' style='text-align: center;'>No regular ticket messages found.</td></tr>";
+                                echo "<tr><td colspan='6' style='text-align: center;'>No regular ticket messages found.</td></tr>";
                             }
                             ?>
                         </tbody>
@@ -242,6 +245,7 @@ if ($conn) {
                             <tr>
                                 <th>Ticket ID</th>
                                 <th>Customer Name</th>
+                                <th>Type</th>
                                 <th>Message</th>
                                 <th>Status</th>
                             </tr>
@@ -253,12 +257,13 @@ if ($conn) {
                                     echo "<tr>
                                             <td>{$row['t_id']}</td>
                                             <td>" . htmlspecialchars($row['t_aname']) . "</td>
+                                            <td>" . htmlspecialchars(ucfirst(strtolower($row['s_type']))) . "</td>
                                             <td>" . htmlspecialchars($row['t_details']) . "</td>
                                             <td class='status-" . strtolower(str_replace(' ', '-', $row['t_status'])) . "'>" . ucfirst(strtolower($row['t_status'])) . "</td>
                                           </tr>";
                                 }
                             } else {
-                                echo "<tr><td colspan='4' style='text-align: center;'>No support ticket messages found.</td></tr>";
+                                echo "<tr><td colspan='5' style='text-align: center;'>No support ticket messages found.</td></tr>";
                             }
                             ?>
                         </tbody>
