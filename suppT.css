@@ -21,6 +21,14 @@ body {
     color: var(--dark);
 }
 
+.glass-container {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
 
 .wrapper {
     display: flex;
@@ -158,34 +166,33 @@ footer {
     width: 400px;
 }
 
-/* Search bar styling */
+.search-container {
+    position: relative;
+    width: 300px;
+    margin-left: 20px;
+}
+
 .search-bar {
-    width: 120%;
+    width: 100%;
     padding: 10px 40px 10px 15px;
     border: 1px solid #ccc;
-    border-radius: 20px !important;
+    border-radius: 20px;
     font-size: 14px;
     outline: none;
-    margin-top: 10px;
-    background-color: #fff;
-
+    transition: border-color 0.3s;
 }
 
-/* Focus state - removed margin change */
 .search-bar:focus {
     border-color: #007bff;
-    /* Removed the margin-top property that was causing movement */
 }
 
-/* Search icon positioning */
 .search-icon {
     position: absolute;
-    right: 90px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     color: #666;
 }
-
 .user-profile {
     display: flex;
     align-items: center;
@@ -260,8 +267,8 @@ table {
     border-spacing: 0;
     margin-top: 10px;
     table-layout: auto;
-    border: none; /* Remove default HTML border */
-    color: #555; /* Lighter text color */
+    border: none;
+    color: #555;
 }
 
 thead {
@@ -353,14 +360,13 @@ tr:hover td {
 /* Alerts */
 .alert-container {
     position: relative;
-   
 }
 
 .alert {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: 35px;
+    top: -10px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -412,7 +418,7 @@ tr:hover td {
     color: #666;
     border: 1px dashed #ddd;
     border-radius: 8px;
-    margin-top: 10 CHIpx;
+    margin-top: 10px;
 }
 
 /* Modal Background */
@@ -427,8 +433,8 @@ tr:hover td {
     z-index: 999;
 }
 
-/* Updated Modal Content - Centered */
-.modal-content {
+/* Modal for Create Ticket */
+.modal-content.create-ticket {
     background-color: #fefefe;
     padding: 20px;
     border: 1px solid #888;
@@ -445,38 +451,28 @@ tr:hover td {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.modal-btn.confirm {
-    background: var(--primary);
-    color: white;
-}
-
-.modal-btn.cancel {
-    background: var(--light);
-    color: var(--dark);
-}
-
-.modal-content h2 {
+.modal-content.create-ticket h2 {
     margin-bottom: 20px;
     color: var(--primary);
 }
 
-form {
+.modal-content.create-ticket form {
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-label {
+.modal-content.create-ticket label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
     text-align: center;
 }
 
-input[type="text"],
-textarea,
-select {
+.modal-content.create-ticket input[type="text"],
+.modal-content.create-ticket textarea,
+.modal-content.create-ticket select {
     width: 80%;
     padding: 10px;
     margin-bottom: 15px;
@@ -485,12 +481,12 @@ select {
     box-sizing: border-box;
 }
 
-textarea {
+.modal-content.create-ticket textarea {
     height: 250px;
     resize: vertical;
 }
 
-button {
+.modal-content.create-ticket button {
     background-color: #007bff;
     color: white;
     padding: 10px 15px;
@@ -501,18 +497,272 @@ button {
     font-size: 16px;
 }
 
-button:hover {
-    background-color: #002244;
-    transform: scale(1.05);
+/* New Modal Styles for Other Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
 }
 
-/* Specific styles for close ticket button */
-button.close-ticket {
-    background-color: #007bff;
-    margin: 10px 0;
+.modal-content {
+    background: white;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.modal-footer {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.modal-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: all 0.3s;
+}
+
+.modal-btn.confirm {
+    background: var(--primary);
+    color: white;
+}
+
+.modal-btn.cancel {
+    background: var(--light);
+    color: var(--dark);
+}
+
+.modal-btn.delete {
+    background: #F44336;
+    color: white;
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-form input,
+.modal-form select,
+.modal-form textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.modal-form textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.modal-form label {
+    font-weight: bold;
+    color: var(--dark);
+}
+
+.field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.field-row label {
+    width: 120px;
+    font-weight: bold;
+    color: var(--dark);
+}
+
+.field-row p {
+    flex: 1;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn, .delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.view-btn {
+    background-color: #3498db; /* Blue */
+    color: #fff;
+}
+.view-btn:hover {
+    background-color: #2980b9;
+}
+
+.edit-btn {
+    background-color: #2ecc71; /* Green */
+    color: #fff;
+}
+.edit-btn:hover {
+    background-color: #27ae60;
+}
+
+.archive-btn {
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
+}
+.archive-btn:hover {
+    background-color: #d4ac0d;
+}
+
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
+}
+.unarchive-btn:hover {
+    background-color: #8e44ad;
+}
+
+.delete-btn {
+    background-color: #ff6200; /* Orange */
+    color: #fff;
+}
+.delete-btn:hover {
+    background-color: #e55a00;
+}
+
+.delete-btn i, .view-btn i, .edit-btn i, .archive-btn i, .unarchive-btn i {
+    font-size: 16px;
+}
+
+/* Close Button in Modals */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--dark);
+}
+
+/* Tab Buttons */
+.tab-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between buttons */
+    margin-bottom: 15px;
+    margin-top: 10px;
+}
+
+.tab-buttons .tab-btn:nth-child(1) {
+    order: 1; /* Active button first */
+}
+.tab-buttons .tab-btn:nth-child(2) {
+    order: 2; /* Archived button second */
+}
+.tab-buttons .create-ticket-btn {
+    order: 3; /* Create Ticket button last */
+    margin-left: auto; /* Push to the right */
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: #f1f1f1;
+    border: none;
+    cursor: pointer;
+    margin-right: 5px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    font-size: 14px;
+}
+
+.tab-btn.active {
+    background: #4CAF50;
+    color: white;
+}
+
+.tab-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff5722;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.create-ticket-btn {
+    background-color: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.create-ticket-btn:hover {
+    background-color: var(--secondary);
+    transform: translateY(-2px);
+}
+
+.table-box {
+    display: none;
+    width: 100%;
+}
+
+.table-box.active {
+    display: block;
 }
 
 .status-clickable {
     cursor: pointer;
- 
 }
