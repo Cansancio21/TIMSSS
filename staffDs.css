@@ -422,7 +422,6 @@ tr:hover td {
     font-size: 16px; /* Adjust icon size */
 }
 
-
 /* Action Buttons */
 .action-buttons {
     display: flex;
@@ -516,7 +515,7 @@ tr:hover td {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radus: 50%;
+    border-radius: 50%;
     background: white;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     transition: all 0.3s;
@@ -548,6 +547,8 @@ tr:hover td {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
@@ -602,6 +603,41 @@ tr:hover td {
     margin: 5px 0 15px;
     border: 1px solid #ddd;
     border-radius: 5px;
+}
+
+/* Close Ticket Modal Input */
+.close-ticket-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.ticket-id-input input {
+    width: 100px;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.ticket-id-input input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.3);
+}
+
+/* Responsive design for Close Ticket Modal */
+@media (max-width: 480px) {
+    .close-ticket-input {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .ticket-id-input input {
+        width: 100%;
+    }
 }
 
 /* Alerts */

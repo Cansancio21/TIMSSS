@@ -185,7 +185,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | Ticket Reports</title>
-    <link rel="stylesheet" href="staffD.css">
+    <link rel="stylesheet" href="staffDs.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -453,9 +453,13 @@ if ($conn) {
         <div class="modal-header">
             <h2>Close Ticket</h2>
         </div>
-        <p>Enter Ticket Id to close <span id="closeTicketName"></span>:</p>
         <form method="POST" id="closeForm">
-            <input type="number" name="t_id" id="closeTicketIdInput" placeholder="Ticket ID" required>
+            <p class="close-ticket-input">
+                Enter Ticket Id to close: <span id="closeTicketName"></span>
+                <span class="ticket-id-input">
+                    <input type="number" name="t_id" id="closeTicketIdInput" placeholder="Ticket ID" required>
+                </span>
+            </p>
             <input type="hidden" name="close_ticket" value="1">
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('closeModal')">Cancel</button>

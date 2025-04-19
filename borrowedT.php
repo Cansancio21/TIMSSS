@@ -6,11 +6,39 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Handle AJAX request for asset name
+if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated'])) {
+    error_log('AJAX handler triggered for id: ' . $_GET['id']);
+    header('Content-Type: application/json');
+    $id = (int)$_GET['id'];
+    $sql = "SELECT b_assets_name FROM tbl_borrowed WHERE b_id = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log('Prepare failed: ' . $conn->error);
+        echo json_encode(['assetName' => null, 'error' => 'Prepare failed: ' . $conn->error]);
+        $conn->close();
+        exit();
+    }
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        echo json_encode(['assetName' => $row['b_assets_name']]);
+    } else {
+        echo json_encode(['assetName' => null]);
+    }
+    
+    $stmt->close();
+    $conn->close();
+    exit();
+}
+
 $username = $_SESSION['username'] ?? '';
 $lastName = '';
 $firstName = '';
 $userType = '';
-$avatarFolder = 'uploads/avatars/';
+$avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
 $defaultAvatar = 'default-avatar.png';
 
@@ -75,7 +103,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="borrowedTA.css"> 
+    <link rel="stylesheet" href="borrowedT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -205,7 +233,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 </div>
 
 <!-- View Modal -->
-<div id="viewModal" class="modal-background">
+<div id="viewModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('viewModal')">×</span>
         <h2>View Borrowed Asset</h2>
@@ -215,14 +243,15 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal-background">
-    <div class="modal-content delete-modal-content">
-        <span class="close" onclick="closeModal('deleteModal')">×</span>
-        <h2>Confirm Deletion</h2>
-        <p>Are you sure you want to delete this borrowed asset record?</p>
-        <div style="margin-top: 25px;">
-            <button onclick="closeModal('deleteModal')">Cancel</button>
-            <button onclick="confirmDelete()">Delete</button>
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Delete Asset</h2>
+        </div>
+        <p>Are you sure you want to delete the returned asset: <span id="deleteAssetName"></span>?</p>
+        <div class="modal-footer">
+            <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
+            <button type="button" class="modal-btn confirm" onclick="confirmDelete()">Delete</button>
         </div>
     </div>
 </div>
@@ -266,22 +295,57 @@ function showViewModal(id, assetName, quantity, technicianName, technicianId, da
 }
 
 function showDeleteModal(id) {
+    console.log('showDeleteModal called with id:', id);
     currentDeleteId = id;
-    document.getElementById('deleteModal').style.display = 'flex';
+    const modal = document.getElementById('deleteModal');
+    console.log('Modal element:', modal);
+    fetch(`borrowedT.php?id=${id}`)
+        .then(response => {
+            console.log('Fetch response status:', response.status);
+            console.log('Fetch response headers:', response.headers.get('content-type'));
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Fetch response data:', data);
+            if (data.assetName) {
+                document.getElementById('deleteAssetName').textContent = data.assetName;
+            } else {
+                console.error('Asset name not found');
+                document.getElementById('deleteAssetName').textContent = 'Unknown Asset';
+            }
+            modal.style.display = 'flex';
+            console.log('Modal display set to flex');
+        })
+        .catch(error => {
+            console.error('Error fetching asset name:', error);
+            document.getElementById('deleteAssetName').textContent = 'Unknown Asset';
+            modal.style.display = 'flex';
+            console.log('Modal display set to flex (error case)');
+        });
 }
 
 function confirmDelete() {
     if (currentDeleteId) {
+        console.log('confirmDelete called with id:', currentDeleteId);
         fetch(`deleteR.php?id=${currentDeleteId}`, {
             method: 'GET'
         })
-        .then(response => response.text())
+        .then(response => {
+            console.log('Delete response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text();
+        })
         .then(data => {
             updateTable();
             closeModal('deleteModal');
             window.location.href = 'borrowedT.php?deleted=true';
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Error deleting record:', error));
     }
 }
 
@@ -299,11 +363,13 @@ function updateTable() {
 }
 
 function closeModal(modalId) {
+    console.log('closeModal called for:', modalId);
     document.getElementById(modalId).style.display = 'none';
 }
 
 window.addEventListener('click', function(event) {
-    if (event.target.classList.contains('modal-background')) {
+    if (event.target.classList.contains('modal')) {
+        console.log('Clicked outside modal, closing');
         event.target.style.display = 'none';
     }
 });
@@ -316,8 +382,8 @@ const alerts = document.querySelectorAll('.alert');
 alerts.forEach(alert => {
     setTimeout(() => {
         alert.classList.add('alert-hidden');
-        setTimeout(() => alert.remove(), 500); // Remove after fade-out (500ms)
-    }, 2000); // 2 seconds delay before starting fade-out
+        setTimeout(() => alert.remove(), 500);
+    }, 2000);
 });
 </script>
 

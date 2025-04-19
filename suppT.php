@@ -27,8 +27,8 @@ $limit = 10;
 $activePage = isset($_GET['active_page']) ? (int)$_GET['active_page'] : 1;
 $activeOffset = ($activePage - 1) * $limit;
 
-// Get total number of active tickets
-$totalActiveQuery = "SELECT COUNT(*) as total FROM tbl_supp_tickets WHERE c_id = ? AND s_status != 'Closed'";
+// Get total number of active tickets (Open or Closed)
+$totalActiveQuery = "SELECT COUNT(*) as total FROM tbl_supp_tickets WHERE c_id = ? AND s_status IN ('Open', 'Closed')";
 $stmt = $conn->prepare($totalActiveQuery);
 $stmt->bind_param("s", $c_id);
 $stmt->execute();
@@ -41,7 +41,7 @@ $stmt->close();
 // Query active tickets
 $activeQuery = "SELECT id, c_id, c_lname, c_fname, s_subject, s_type, s_message, s_status 
                 FROM tbl_supp_tickets 
-                WHERE c_id = ? AND s_status != 'Closed' 
+                WHERE c_id = ? AND s_status IN ('Open', 'Closed') 
                 ORDER BY id ASC 
                 LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($activeQuery);
@@ -55,7 +55,7 @@ $archivedPage = isset($_GET['archived_page']) ? (int)$_GET['archived_page'] : 1;
 $archivedOffset = ($archivedPage - 1) * $limit;
 
 // Get total number of archived tickets
-$totalArchivedQuery = "SELECT COUNT(*) as total FROM tbl_supp_tickets WHERE c_id = ? AND s_status = 'Closed'";
+$totalArchivedQuery = "SELECT COUNT(*) as total FROM tbl_supp_tickets WHERE c_id = ? AND s_status = 'Archived'";
 $stmt = $conn->prepare($totalArchivedQuery);
 $stmt->bind_param("s", $c_id);
 $stmt->execute();
@@ -68,7 +68,7 @@ $stmt->close();
 // Query archived tickets
 $archivedQuery = "SELECT id, c_id, c_lname, c_fname, s_subject, s_type, s_message, s_status 
                   FROM tbl_supp_tickets 
-                  WHERE c_id = ? AND s_status = 'Closed' 
+                  WHERE c_id = ? AND s_status = 'Archived' 
                   ORDER BY id ASC 
                   LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($archivedQuery);
@@ -100,9 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
         header("Location: suppT.php?active_page=$activePage&archived_page=$archivedPage");
         exit();
+    } elseif (isset($_POST['close_ticket'])) {
+        $ticketId = (int)$_POST['t_id'];
+        $currentStatusQuery = "SELECT s_status FROM tbl_supp_tickets WHERE id = ? AND c_id = ?";
+        $stmt = $conn->prepare($currentStatusQuery);
+        $stmt->bind_param("is", $ticketId, $c_id); 
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $currentStatus = $result->fetch_assoc()['s_status'];
+        $stmt->close();
+    
+        $newStatus = ($currentStatus === 'Open') ? 'Closed' : 'Open';
+        $updateQuery = "UPDATE tbl_supp_tickets SET s_status = ? WHERE id = ? AND c_id = ?";
+        $stmt = $conn->prepare($updateQuery);
+        $stmt->bind_param("sis", $newStatus, $ticketId, $c_id);
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Ticket " . ($newStatus === 'Closed' ? 'closed' : 'reopened') . " successfully!";
+        } else {
+            $_SESSION['error'] = "Error updating ticket: " . $stmt->error;
+        }
+        $stmt->close();
+        header("Location: suppT.php?active_page=$activePage&archived_page=$archivedPage");
+        exit();
+    
     } elseif (isset($_POST['archive_ticket'])) {
         $ticketId = (int)$_POST['t_id'];
-        $updateQuery = "UPDATE tbl_supp_tickets SET s_status = 'Closed' WHERE id = ? AND c_id = ?";
+        $updateQuery = "UPDATE tbl_supp_tickets SET s_status = 'Archived' WHERE id = ? AND c_id = ?";
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param("is", $ticketId, $c_id);
         if ($stmt->execute()) {
@@ -165,8 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Support Tickets</title>
-    <link rel="stylesheet" href="suppT.css"> 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="suppsT.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -257,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <td><?php echo htmlspecialchars($row['s_subject']); ?></td>
                                 <td><?php echo htmlspecialchars($row['s_type']); ?></td>
                                 <td><?php echo htmlspecialchars($row['s_message']); ?></td>
-                                <td class="status-clickable" onclick="openCloseModal('<?php echo $row['id']; ?>', '<?php echo htmlspecialchars($row['c_lname'] . ', ' . $row['c_fname']); ?>', '<?php echo htmlspecialchars($row['s_status']); ?>')">
+                                <td class="status-clickable status-<?php echo strtolower($row['s_status']); ?>" onclick="openCloseModal('<?php echo $row['id']; ?>', '<?php echo htmlspecialchars($row['c_lname'] . ', ' . $row['c_fname']); ?>', '<?php echo htmlspecialchars($row['s_status']); ?>')">
                                     <?php echo htmlspecialchars($row['s_status']); ?>
                                 </td>
                                 <td>
@@ -321,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <td><?php echo htmlspecialchars($row['s_subject']); ?></td>
                                 <td><?php echo htmlspecialchars($row['s_type']); ?></td>
                                 <td><?php echo htmlspecialchars($row['s_message']); ?></td>
-                                <td><?php echo htmlspecialchars($row['s_status']); ?></td>
+                                <td class="status-<?php echo strtolower($row['s_status']); ?>"><?php echo htmlspecialchars($row['s_status']); ?></td>
                                 <td>
                                     <div class="action-buttons">
                                         <a class="view-btn" onclick="openViewModal(<?php echo htmlspecialchars(json_encode($row)); ?>)" title="View"><i class="fas fa-eye"></i></a>
@@ -506,20 +529,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Close Ticket Modal (Archive) -->
+            <!-- Close Ticket Modal -->
             <div id="closeModal" class="modal" style="display: none;">
                 <div class="modal-content">
-                    <span onclick="closeModal('closeModal')" class="close">×</span>
                     <div class="modal-header">
-                        <h2>Archive Ticket</h2>
+                        <h2 id="closeModalTitle">Close Ticket</h2>
+                        <span onclick="closeModal('closeModal')" class="close">×</span>
                     </div>
-                    <p>Enter Report Id to archive <span id="closeTicketName"></span>:</p>
-                    <form class="modal-form" id="closeForm" method="POST">
-                        <input type="number" name="t_id" id="closeTicketIdInput" placeholder="Ticket ID" required>
-                        <input type="hidden" name="archive_ticket" value="1">
+                    <form method="POST" id="closeForm">
+                        <p id="closeModalMessage">Are you sure you want to close ticket <span id="closeTicketIdDisplay"></span> for <span id="closeTicketName"></span>?</p>
+                        <input type="hidden" name="t_id" id="closeTicketId">
+                        <input type="hidden" name="close_ticket" value="1">
                         <div class="modal-footer">
                             <button type="button" class="modal-btn cancel" onclick="closeModal('closeModal')">Cancel</button>
-                            <button type="submit" class="modal-btn confirm">Archive Ticket</button>
+                            <button type="submit" class="modal-btn confirm" id="closeModalButton">Close Ticket</button>
                         </div>
                     </form>
                 </div>
@@ -579,26 +602,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function closeModal(modalId) {
-            const modals = ['createTicketModal', 'viewTicketModal', 'editTicketModal', 'archiveModal', 'unarchiveModal', 'deleteModal', 'closeModal'];
-            modals.forEach(id => {
-                const modal = document.getElementById(id);
-                if (id === 'createTicketModal') {
-                    modal.style.display = 'none';
-                } else {
-                    const parentModal = modal.classList.contains('modal') ? modal : modal.parentElement;
-                    parentModal.style.display = 'none';
-                }
-            });
+            if (modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            } else {
+                document.getElementById('createTicketModal').style.display = 'none';
+            }
             document.getElementById('modalBackground').style.display = 'none';
         }
 
         function openCloseModal(ticketId, name, status) {
-            if (status.toLowerCase() === 'closed') {
-                alert("This ticket is already archived.");
-                return;
-            }
-            document.getElementById('closeTicketIdInput').value = ticketId;
+            document.getElementById('closeTicketId').value = ticketId;
+            document.getElementById('closeTicketIdDisplay').textContent = ticketId;
             document.getElementById('closeTicketName').textContent = name;
+            const isOpen = status.toLowerCase() === 'open';
+            document.getElementById('closeModalTitle').textContent = isOpen ? 'Close Ticket' : 'Reopen Ticket';
+            document.getElementById('closeModalMessage').textContent = `Are you sure you want to ${isOpen ? 'close' : 'reopen'} ticket ${ticketId} for ${name}?`;
+            document.getElementById('closeModalButton').textContent = isOpen ? 'Close Ticket' : 'Reopen Ticket';
             document.getElementById('closeModal').style.display = 'block';
             document.getElementById('modalBackground').style.display = 'block';
         }

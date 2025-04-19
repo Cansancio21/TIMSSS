@@ -1,11 +1,11 @@
-*{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
 }
 
-body{
+body {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -13,8 +13,8 @@ body{
     background-image: url('cap.jpg');
 }
 
-.container{
-   align-items: center;
+.container {
+    align-items: center;
     position: relative;
     width: 80vw;
     height: 80vh;
@@ -26,7 +26,6 @@ body{
     margin: 20px;
     overflow: hidden;
 }
-
 
 .form-box {
     position: absolute;
@@ -43,19 +42,19 @@ body{
     transition: .6s ease-in-out 1.2s, visibility 0s 1s;
 }
 
-.container.active .form-box{
+.container.active .form-box {
     right: 50%;
 }
 
-.form-box.register{
+.form-box.register {
     visibility: hidden;
 }
 
-.container.active .form-box.register{
+.container.active .form-box.register {
     visibility: visible;
 }
 
-form{
+form {
     width: 100%;
 }
 
@@ -287,33 +286,33 @@ form{
 }
 
 .settings-link {
-   position: absolute;
-   top: 15px;
-   right: 20px;
-   display: flex;
-   align-items: center;
-   text-decoration: none;
-   color: #333;
-   font-size: 16px;
-   font-weight: 600;
-   transition: 0.3s ease-in-out;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+    transition: 0.3s ease-in-out;
 }
 
 .settings-link i {
-   font-size: 24px;
-   margin-right: 5px;
-   transition: 0.3s ease-in-out;
+    font-size: 24px;
+    margin-right: 5px;
+    transition: 0.3s ease-in-out;
 }
 
 .settings-link span {
-   opacity: 0;
-   transform: translateX(-10px);
-   transition: 0.3s ease-in-out;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: 0.3s ease-in-out;
 }
 
 .settings-link:hover span {
-   opacity: 1;
-   transform: translateX(0);
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .input-box select {
@@ -349,8 +348,7 @@ form{
     color: black; /* Yellow */
 }
 .input-box i.email-icon {
-    color:  black; /* Yellow */
-    ; /* Red-Orange */
+    color: black; /* Yellow */
 }
 .input-box i.username-icon {
     color: black; /* Purple */
@@ -367,7 +365,7 @@ form{
 
 .error {
     position: absolute;
-    bottom: -18px; /* Keeps the error message below the input */
+    bottom: -18px;
     left: 0;
     color: red;
     font-size: 0.9em;
@@ -375,16 +373,29 @@ form{
 
 .error-message {
     position: absolute;
-    bottom: -35px; /* Keeps the error message below the input */
-    right: 0;
+    bottom: -35px;
     color: red;
     font-size: 0.9em;
 }
 
-.errors-message {  
-    top: -30px;
-    color: red;
-    font-size: 0.9em;
+/* Status Message Styling */
+.status-message {
+    position: absolute;
+    top: 80px; /* Below <h1>Login</h1> (36px font + 20px margin) */
+    left: 46.5%;
+    width: 50%;
+    color: #4CAF50; /* Green for active */
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
 }
 
+.status-message.pending {
+    color: #FF0000; /* Red for pending */
+}
 
+.status-message.fade-out {
+    opacity: 0;
+}

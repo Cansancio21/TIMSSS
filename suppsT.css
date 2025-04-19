@@ -357,6 +357,40 @@ tr:hover td {
     color: var(--dark);
 }
 
+.close-ticket-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.ticket-id-input input {
+    width: 100px;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.ticket-id-input input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.3);
+}
+
+/* Responsive design for Close Ticket Modal */
+@media (max-width: 480px) {
+    .close-ticket-input {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .ticket-id-input input {
+        width: 100%;
+    }
+}
+
 /* Alerts */
 .alert-container {
     position: relative;
@@ -763,6 +797,23 @@ tr:hover td {
     display: block;
 }
 
+/* Status Badges */
+.status-open {
+    color: var(--success);
+}
+
+.status-closed {
+    color: var(--danger);
+}
+
+.status-archived {
+    color: #6c757d;
+}
+
 .status-clickable {
     cursor: pointer;
+}
+
+.status-clickable:hover {
+    text-decoration: underline;
 }

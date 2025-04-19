@@ -2,11 +2,38 @@
 session_start(); // Start session for login management
 include 'db.php';
 
+// Handle AJAX status check
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['username']) && !isset($_POST['login']) && !isset($_POST['firstname'])) {
+    header('Content-Type: application/json');
+    $username = trim($_POST['username']);
+    
+    $sql = "SELECT u_status FROM tbl_user WHERE u_username = ?";
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        echo json_encode(['error' => 'Prepare failed']);
+        exit;
+    }
+    
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 1) {
+        $row = $result->fetch_assoc();
+        echo json_encode(['status' => $row['u_status']]);
+    } else {
+        echo json_encode(['error' => 'User not found']);
+    }
+    
+    $stmt->close();
+    exit;
+}
+
 // Initialize variables as empty (ensures fields are empty on initial load)
 $firstname = $lastname = $email = $username = "";
 $type = $status = ""; 
 
-$firstnameErr = $lastnameErr = $loginError = $passwordError = $typeError = $usernameError = "";
+$firstnameErr = $lastnameErr = $loginError = $passwordError = $usernameError = "";
 $hasError = false;
 
 // User Registration
@@ -78,14 +105,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['firstname'])) {
     }
 }
 
-// Initialize success message variable
-$successMessage = "";
-
-// Check if there's a session message for account status
-if (isset($_SESSION['account_status_message'])) {
-    $successMessage = $_SESSION['account_status_message'];
-    unset($_SESSION['account_status_message']); // Clear the message after displaying it
-}
+// Initialize status message variable
+$statusMessage = "";
+$statusClass = "";
 
 // User Login
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
@@ -101,7 +123,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
 
     $stmt->bind_param("s", $username);
     
-    // Execute and check for errors
     if ($stmt->execute() === false) {
         die("Execute failed: " . $stmt->error);
     }
@@ -112,13 +133,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         // Username exists
         $row = $result->fetch_assoc();
 
-        // Check if the account status is "pending"
+        // Set status message and class based on account status
         if (strtolower($row['u_status']) === "pending") {
-            $typeError = "Your account is pending approval.";
+            $statusMessage = "Your account is pending.";
+            $statusClass = "pending";
+        } elseif (strtolower($row['u_status']) === "active") {
+            $statusMessage = "Your account is active.";
+            $statusClass = "active";
+        }
+
+        // Proceed with password verification only if status is active
+        if (strtolower($row['u_status']) === "pending") {
+            // No additional error message; statusMessage handles it
         } elseif (password_verify($password, $row['u_password'])) {
             // Successful login
             $_SESSION['username'] = $row['u_username'];
             $_SESSION['user_type'] = $row['u_type'];
+            $_SESSION['logged_in'] = true; // Flag to track login
 
             // Redirect based on user type
             if ($row['u_type'] == 'admin') {
@@ -128,7 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 header("Location: staffD.php");
                 exit();
             } elseif ($row['u_type'] == 'technician') {
-                header("Location: technicianD.php"); // Redirect to portal.php for technicians
+                header("Location: technicianD.php");
                 exit();
             }
         } else {
@@ -148,8 +179,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration & Login</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="index.css">
-
+    <link rel="stylesheet" href="indexs.css">
     <script>
         // Function to validate password strength
         function validatePassword() {
@@ -162,15 +192,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
 
             if (strongPasswordPattern.test(password)) {
                 passwordError.textContent = "Password is strong.";
-                passwordError.style.color = "green"; // Change text color to green
+                passwordError.style.color = "green";
             } else {
                 passwordError.textContent = "Password is weak.";
-                passwordError.style.color = "red"; // Change text color to red
+                passwordError.style.color = "red";
             }
         }
 
-        // Toggle password visibility
+        // Toggle password visibility and status polling
         document.addEventListener('DOMContentLoaded', function () {
+            // Password visibility toggles
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             const loginPasswordInput = document.getElementById('loginPassword');
@@ -182,7 +213,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 this.classList.toggle('bx-hide');
             });
 
-            // Add event listener for login password toggle
             const toggleLoginPassword = document.getElementById('toggleLoginPassword');
             toggleLoginPassword.addEventListener('click', function () {
                 const type = loginPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -190,19 +220,86 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 this.classList.toggle('bx-show');
                 this.classList.toggle('bx-hide');
             });
+
+            // Fade out status message only for active status after 3 seconds
+            const statusMessage = document.querySelector('.status-message');
+            if (statusMessage && statusMessage.classList.contains('active')) {
+                setTimeout(() => {
+                    statusMessage.classList.add('fade-out');
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 500); // Match transition duration
+                }, 3000); // 3 seconds
+            }
+
+            // Poll for status updates
+            function checkStatus() {
+                const usernameInput = document.querySelector('input[name="username"]').value;
+                if (usernameInput) {
+                    fetch('', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'username=' + encodeURIComponent(usernameInput)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const statusDiv = document.querySelector('.status-message');
+                        if (data.status) {
+                            const newStatus = data.status.toLowerCase();
+                            const message = newStatus === 'pending' ? 'Your account is pending.' : 'Your account is active.';
+                            const statusClass = newStatus === 'pending' ? 'pending' : 'active';
+
+                            if (!statusDiv) {
+                                const newDiv = document.createElement('div');
+                                newDiv.className = `status-message ${statusClass}`;
+                                newDiv.textContent = message;
+                                document.querySelector('.form-box.login h1').insertAdjacentElement('afterend', newDiv);
+                                if (newStatus === 'active') {
+                                    setTimeout(() => {
+                                        newDiv.classList.add('fade-out');
+                                        setTimeout(() => {
+                                            newDiv.style.display = 'none';
+                                        }, 500);
+                                    }, 3000);
+                                }
+                            } else if (statusDiv.textContent !== message) {
+                                statusDiv.textContent = message;
+                                statusDiv.className = `status-message ${statusClass}`;
+                                statusDiv.style.display = 'block';
+                                statusDiv.classList.remove('fade-out');
+                                if (newStatus === 'active') {
+                                    setTimeout(() => {
+                                        statusDiv.classList.add('fade-out');
+                                        setTimeout(() => {
+                                            statusDiv.style.display = 'none';
+                                        }, 500);
+                                    }, 3000);
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error checking status:', error));
+                }
+            }
+
+            // Check status every 2 seconds if username is entered
+            setInterval(checkStatus, 2000);
         });
     </script>
 </head>
 <body>
-
     <div class="container <?php echo ($hasError) ? 'active' : ''; ?>">
         <!-- Login Form -->
         <div class="form-box login">
-       
-
             <form action="" method="POST">
                 <h1>Login</h1>
-                <?php if (!empty($typeError)) echo "<p class='errors-message'>$typeError</p>"; ?>
+                <?php if (!empty($statusMessage)) { ?>
+                    <div class="status-message <?php echo $statusClass; ?>">
+                        <?php echo htmlspecialchars($statusMessage); ?>
+                    </div>
+                <?php } ?>
                 <div class="input-box">
                     <input type="text" name="username" placeholder="Username" required>
                     <i class='bx bxs-user'></i>
@@ -233,7 +330,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                     <i class="bx bxs-user firstname-icon"></i>
                     <?php if (!empty($firstnameErr)) echo "<span class='error'>$firstnameErr</span>"; ?>
                 </div>
-
                 <div class="input-box">
                     <input type="text" name="lastname" placeholder="Lastname" value="<?php echo htmlspecialchars($lastname); ?>" required>
                     <i class="bx bxs-user lastname-icon"></i>
@@ -246,12 +342,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 <div class="input-box">
                     <input type="text" name="username" placeholder="Username" value="<?php echo htmlspecialchars($username); ?>" required>
                     <i class="bx bxs-user username-icon"></i>
-                    <?php if (!empty($usernameError)) echo "<span class='error'>$usernameError</span>"; ?><br>
+                    <?php if (!empty($usernameError)) echo "<span class='error'>$usernameError</span>"; ?>
                 </div>            
                 <div class="input-box">
                     <input type="password" id="password" name="password" placeholder="Password" oninput="validatePassword()" required>
                     <span id="passwordError" class="error"><?php echo $passwordError; ?></span>
-                    <i class='bx bxs-lock-alt' id="togglePassword" style="cursor: pointer;"></i>
+                    <i class='bx bxs-lock-alt password-icon' id="togglePassword" style="cursor: pointer;"></i>
                 </div>
                 <div class="input-box">
                     <select name="type" required>
@@ -288,7 +384,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
             </div>
         </div>
     </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             // Toggle between Login & Register
@@ -305,6 +400,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
             });
         });
     </script>
-
 </body>
 </html>
