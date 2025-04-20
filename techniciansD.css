@@ -266,10 +266,7 @@ footer {
 
 table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 10px;
-    table-layout: auto;
+    border-collapse: collapse; /* Ensure no gaps between cells */
 }
 
 thead {
@@ -285,6 +282,7 @@ th {
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
+    border: none; /* Remove any borders */
 }
 
 th:first-child {
@@ -294,6 +292,7 @@ th:first-child {
 th:last-child {
     border-top-right-radius: 10px;
 }
+
 td {
     padding: 10px;
     border-bottom: 1px solid #eee;
@@ -312,7 +311,7 @@ tr:hover td {
 }
 
 .status-open {
-    color: #ff9800;
+    color: #00b894;
     font-weight: 500;
 }
 
@@ -512,6 +511,7 @@ tr:hover td {
     text-decoration: none;
     transition: background-color 0.3s ease;
 }
+
 .delete-btn:hover {
     background-color: #e55a00;
     color: #fff;
@@ -521,18 +521,14 @@ tr:hover td {
     font-size: 16px;
 }
 
-
-.action-buttons a{
-    margin-left: 50px;
-}
-
-
 .action-buttons {
     display: flex;
+    justify-content: center;
+    align-items: center;
     gap: 5px;
-    padding: 23px 5px;
-  
+    padding: 10px;
 }
+
 .view-btn, .edit-btn, .archive-btn, .unarchive-btn {
     display: inline-flex;
     align-items: center;
@@ -640,6 +636,8 @@ tr:hover td {
 .modal-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+
 }
 
 .modal-form input,

@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 include 'db.php';
@@ -23,8 +24,8 @@ if (file_exists($userAvatar)) {
 }
 $avatarPath = $_SESSION['avatarPath'];
 
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle form submissions (only for non-technicians)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userType !== 'technician') {
     $pageActive = isset($_GET['page_active']) ? (int)$_GET['page_active'] : 1;
     $pageArchived = isset($_GET['page_archived']) ? (int)$_GET['page_archived'] : 1;
     $tab = isset($_GET['tab']) ? $_GET['tab'] : 'active';
@@ -197,9 +198,11 @@ if ($conn) {
             <li><a href="staffD.php" class="active"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
             <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
             <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+            <?php if ($userType !== 'technician'): ?>
+                <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
+                <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
+                <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+            <?php endif; ?>
             <?php if ($userType === 'admin'): ?>
                 <li><a href="logs.php"><i class="fas fa-book"></i> <span>View Logs</span></a></li>
             <?php endif; ?>
@@ -247,7 +250,7 @@ if ($conn) {
         </div>
 
         <div class="table-box glass-container">
-            <?php if ($userType === 'staff'): ?>
+            <?php if ($userType === 'staff' || $userType === 'technician'): ?>
                 <div class="username">
                     Welcome to TIMS, <?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?>!
                     <i class="fas fa-user-shield admin-icon"></i>
@@ -264,7 +267,11 @@ if ($conn) {
                         <?php endif; ?>
                     </button>
                 </div>
-                <button class="add-user-btn" onclick="window.location.href='createTickets.php'"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
+                <?php if ($userType !== 'technician'): ?>
+                    <button class="add-user-btn" onclick="window.location.href='createTickets.php'"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
+                <?php else: ?>
+                    <button class="add-user-btn disabled" onclick="showRestrictedMessage()"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
+                <?php endif; ?>
                 <table id="active-tickets-table">
                     <thead>
                         <tr>
@@ -281,18 +288,28 @@ if ($conn) {
                         <?php
                         if ($resultActive->num_rows > 0) {
                             while ($row = $resultActive->fetch_assoc()) {
+                                $statusClass = 'status-' . strtolower($row['t_status']);
+                                $isClickable = ($userType === 'technician' && strtolower($row['t_status']) === 'open');
+                                $clickableAttr = $isClickable ? " status-clickable' onclick=\"showCloseModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_status']}')\"" : "'";
+                                
                                 echo "<tr> 
                                         <td>{$row['t_id']}</td> 
                                         <td>" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td>" . ucfirst(strtolower($row['t_type'])) . "</td> 
-                                        <td class='status-" . strtolower($row['t_status']) . " status-clickable' onclick=\"showCloseModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_status']}')\">" . ucfirst(strtolower($row['t_status'])) . "</td>
+                                        <td class='$statusClass$clickableAttr>" . ucfirst(strtolower($row['t_status'])) . "</td>
                                         <td>" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "</td>
                                         <td>" . htmlspecialchars($row['t_date'], ENT_QUOTES, 'UTF-8') . "</td> 
-                                        <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
-                                        </td>
+                                        <td class='action-buttons'>";
+                                if ($userType !== 'technician') {
+                                    echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>";
+                                } else {
+                                    echo "<a class='view-btn disabled' onclick='showRestrictedMessage()' title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn disabled' onclick='showRestrictedMessage()' title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='archive-btn disabled' onclick='showRestrictedMessage()' title='Archive'><i class='fas fa-archive'></i></a>";
+                                }
+                                echo "</td>
                                       </tr>";
                             }
                         } else {
@@ -349,11 +366,17 @@ if ($conn) {
                                         <td class='status-" . strtolower($row['t_status']) . "'>" . ucfirst(strtolower($row['t_status'])) . "</td>
                                         <td>" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "</td>
                                         <td>" . htmlspecialchars($row['t_date'], ENT_QUOTES, 'UTF-8') . "</td> 
-                                        <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='restore-btn' onclick=\"showRestoreModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Restore'><i class='fas fa-trash-restore'></i></a>
-                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
-                                        </td>
+                                        <td class='action-buttons'>";
+                                if ($userType !== 'technician') {
+                                    echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='restore-btn' onclick=\"showRestoreModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Restore'><i class='fas fa-trash-restore'></i></a>
+                                          <a class='delete-btn' onclick=\"showDeleteModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>";
+                                } else {
+                                    echo "<a class='view-btn disabled' onclick='showRestrictedMessage()' title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='restore-btn disabled' onclick='showRestrictedMessage()' title='Restore'><i class='fas fa-trash-restore'></i></a>
+                                          <a class='delete-btn disabled' onclick='showRestrictedMessage()' title='Delete'><i class='fas fa-trash'></i></a>";
+                                }
+                                echo "</td>
                                       </tr>";
                             }
                         } else {
@@ -484,6 +507,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2000);
     });
 });
+
+function showRestrictedMessage() {
+    alert("Only staff can perform this action.");
+}
 
 function showTab(tab) {
     const activeSection = document.querySelector('.active-tickets');

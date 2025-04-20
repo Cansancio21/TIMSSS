@@ -1,3 +1,5 @@
+
+
 <?php
 session_start();
 include 'db.php';
@@ -44,8 +46,8 @@ if ($conn) {
     $_SESSION['error'] = "Database connection failed.";
 }
 
-// Handle archive/unarchive/delete requests
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// Handle archive/unarchive/delete requests (restricted for technicians)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userType !== 'technician') {
     if (isset($_POST['archive_asset'])) {
         $assetId = $_POST['a_id'];
         $assetType = $_POST['asset_type'];
@@ -97,6 +99,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $borrowTab = isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active';
     $deployTab = isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active';
     header("Location: assetsT.php?borrow_tab=$borrowTab&deploy_tab=$deployTab&borrowed_page=$borrowedPage&deployed_page=$deployedPage&archived_borrow_page=$archivedBorrowPage&archived_deploy_page=$archivedDeployPage");
+    exit();
+} elseif ($_SERVER['REQUEST_METHOD'] == 'POST' && $userType === 'technician') {
+    $_SESSION['error'] = "Only staff can add, view, edit, or archive assets.";
+    $borrowedPage = isset($_GET['borrowed_page']) ? $_GET['borrowed_page'] : 1;
+    $deployedPage = isset($_GET['deployed_page']) ? $_GET['deployed_page'] : 1;
+    $archivedBorrowPage = isset($_GET['archived_borrow_page']) ? $_GET['archived_borrow_page'] : 1;
+    $archivedDeployPage = isset($_GET['archived_deploy_page']) ? $_GET['archived_deploy_page'] : 1;
+    $borrowTab = isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active';
+    $deployTab = isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active';
+    header("Location: assetsT.php?borrow_tab=$borrowTab&deploy_tab=$deployTab&borrowed_page=$borrowedPage&deployed_page=$deployedPage&archigued_borrow_page=$archivedBorrowPage&archived_deploy_page=$archivedDeployPage");
     exit();
 }
 
@@ -186,7 +198,7 @@ if ($conn) {
 </head>
 <body>
 <div class="wrapper">
-    <div class="sidebar">
+<div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
             <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
@@ -252,7 +264,11 @@ if ($conn) {
                         <?php endif; ?>
                     </button>
                 </div>
-                <a href="registerAssets.php" class="add-btn"><i class="fas fa-user-plus"></i> Add Assets</a>
+                <?php if ($userType !== 'technician'): ?>
+                    <a href="registerAssets.php" class="add-btn"><i class="fas fa-user-plus"></i> Add Assets</a>
+                <?php else: ?>
+                    <a href="#" class="add-btn" onclick="showRestrictionMessage()"><i class="fas fa-user-plus"></i> Add Assets</a>
+                <?php endif; ?>
                 <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
                 <table id="borrowed-assets-table">
                     <thead>
@@ -275,12 +291,17 @@ if ($conn) {
                                         <td>{$row['a_status']}</td>
                                         <td>{$row['a_quantity']}</td>  
                                         <td>{$row['a_date']}</td> 
-                                        <td>
-                                            <a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='edit-btn' href='BorrowE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='archive-btn' onclick=\"showArchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>
-                                        </td>
-                                      </tr>"; 
+                                        <td>";
+                                if ($userType !== 'technician') {
+                                    echo "<a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn' href='BorrowE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='archive-btn' onclick=\"showArchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>";
+                                } else {
+                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn' onclick=\"showRestrictionMessage()\" title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='archive-btn' onclick=\"showRestrictionMessage()\" title='Archive'><i class='fas fa-archive'></i></a>";
+                                }
+                                echo "</td></tr>"; 
                             } 
                         } else { 
                             echo "<tr><td colspan='6'>No borrowed assets found.</td></tr>"; 
@@ -337,12 +358,17 @@ if ($conn) {
                                         <td>{$row['a_status']}</td>
                                         <td>{$row['a_quantity']}</td>  
                                         <td>{$row['a_date']}</td> 
-                                        <td>
-                                            <a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='edit-btn' href='DeployE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='archive-btn' onclick=\"showArchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>
-                                        </td>
-                                      </tr>"; 
+                                        <td>";
+                                if ($userType !== 'technician') {
+                                    echo "<a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn' href='DeployE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='archive-btn' onclick=\"showArchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>";
+                                } else {
+                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn' onclick=\"showRestrictionMessage()\" title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='archive-btn' onclick=\"showRestrictionMessage()\" title='Archive'><i class='fas fa-archive'></i></a>";
+                                }
+                                echo "</td></tr>"; 
                             } 
                         } else { 
                             echo "<tr><td colspan='6'>No deployment assets found.</td></tr>"; 
@@ -402,12 +428,17 @@ if ($conn) {
                                         <td>{$row['a_status']}</td>
                                         <td>{$row['a_quantity']}</td>  
                                         <td>{$row['a_date']}</td> 
-                                        <td>
-                                            <a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='unarchive-btn' onclick=\"showUnarchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                            <a class='delete-btn' onclick=\"showDeleteModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>
-                                        </td>
-                                      </tr>"; 
+                                        <td>";
+                                if ($userType !== 'technician') {
+                                    echo "<a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='unarchive-btn' onclick=\"showUnarchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                          <a class='delete-btn' onclick=\"showDeleteModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
+                                } else {
+                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='unarchive-btn' onclick=\"showRestrictionMessage()\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                          <a class='delete-btn' onclick=\"showRestrictionMessage()\" title='Delete'><i class='fas fa-trash'></i></a>";
+                                }
+                                echo "</td></tr>"; 
                             } 
                         } else { 
                             echo "<tr><td colspan='6'>No archived borrow assets found.</td></tr>"; 
@@ -464,12 +495,17 @@ if ($conn) {
                                         <td>{$row['a_status']}</td>
                                         <td>{$row['a_quantity']}</td>  
                                         <td>{$row['a_date']}</td> 
-                                        <td>
-                                            <a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='unarchive-btn' onclick=\"showUnarchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                            <a class='delete-btn' onclick=\"showDeleteModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>
-                                        </td>
-                                      </tr>"; 
+                                        <td>";
+                                if ($userType !== 'technician') {
+                                    echo "<a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='unarchive-btn' onclick=\"showUnarchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                          <a class='delete-btn' onclick=\"showDeleteModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
+                                } else {
+                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='unarchive-btn' onclick=\"showRestrictionMessage()\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                          <a class='delete-btn' onclick=\"showRestrictionMessage()\" title='Delete'><i class='fas fa-trash'></i></a>";
+                                }
+                                echo "</td></tr>"; 
                             } 
                         } else { 
                             echo "<tr><td colspan='6'>No archived deployment assets found.</td></tr>"; 
@@ -595,6 +631,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2000);
     });
 });
+
+function showRestrictionMessage() {
+    alert("Only staff can add, view, edit, or archive assets.");
+}
 
 function showBorrowViewModal(id, name, status, quantity, date) {
     document.getElementById('borrowViewContent').innerHTML = `
@@ -788,3 +828,8 @@ function searchAssets() {
 </html>
 
 <?php $conn->close(); ?>
+
+
+
+
+
