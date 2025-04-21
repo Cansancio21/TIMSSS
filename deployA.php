@@ -88,7 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Check if asset exists
     if (!$hasError) {
-        $sqlCheckAsset = "SELECT a_quantity FROM tbl_borrow_assets WHERE a_name = ?";
+        $sqlCheckAsset = "SELECT a_quantity FROM tbl_deployment_assets WHERE a_name = ?";
         $stmtCheckAsset = $conn->prepare($sqlCheckAsset);
         $stmtCheckAsset->bind_param("s", $borrow_assetsname);
         $stmtCheckAsset->execute();
@@ -98,17 +98,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $row = $resultCheckAsset->fetch_assoc();
             $availableQuantity = $row['a_quantity'];
 
-            // Check if there is enough quantity to borrow
+            
             if ($availableQuantity >= $borrowquantity) {
-                // Insert into the borrowed table
-                $sqlInsert = "INSERT INTO tbl_borrowed (b_assets_name, b_quantity, b_technician_name, b_technician_id, b_date) VALUES (?, ?, ?, ?, ?)";
+                
+                $sqlInsert = "INSERT INTO tbl_deployed (d_assets_name, d_quantity, d_technician_name, d_technician_id, d_date) VALUES (?, ?, ?, ?, ?)";
                 $stmtInsert = $conn->prepare($sqlInsert);
                 $stmtInsert->bind_param("sisis", $borrow_assetsname, $borrowquantity, $borrow_techname, $borrow_techid, $borrowdate);
 
                 if ($stmtInsert->execute()) {
-                    // Update the quantity in the assets table
+                   
                     $newQuantity = $availableQuantity - $borrowquantity;
-                    $sqlUpdate = "UPDATE tbl_borrow_assets SET a_quantity = ? WHERE a_name = ?";
+                    $sqlUpdate = "UPDATE tbl_deployment_assets SET a_quantity = ? WHERE a_name = ?";
                     $stmtUpdate = $conn->prepare($sqlUpdate);
                     $stmtUpdate->bind_param("is", $newQuantity, $borrow_assetsname);
                     $stmtUpdate->execute();
@@ -122,7 +122,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 $stmtInsert->close();
             } else {
-                $borrow_quantityErr = "Not enough quantity available to borrow.";
+                $borrow_quantityErr = "Not enough quantity available to deploy.";
             }
         } else {
             $borrow_assetsnameErr = "Asset not found in the inventory.";
@@ -137,7 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borrow Asset</title>
+    <title>Deploy Assets</title>
     <link rel="stylesheet" href="deployA.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
@@ -156,7 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <span class="error"><?php echo $borrow_assetsnameErr; ?></span>
         </div>
         <div class="form-row">
-        <label for="borrow_quantity">Enter Quantity to Borrow:</label>
+        <label for="borrow_quantity">Enter Quantity to Deploy:</label>
         <input type="text" id="borrow_quantity" name="borrow_quantity" placeholder="Quantity" required>
         <span class="error"><?php echo $borrow_quantityErr; ?></span>
         </div>
@@ -171,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <span class="error"><?php echo $borrow_techidErr; ?></span>
         </div>
         <div class="form-row">
-        <label for="date">Date Borrowed:</label>
+        <label for="date">Date for Deployment:</label>
         <input type="date" id="date" name="date" required>
         </div>
     

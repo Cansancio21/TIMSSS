@@ -203,9 +203,6 @@ if ($conn) {
                 <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
                 <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
             <?php endif; ?>
-            <?php if ($userType === 'admin'): ?>
-                <li><a href="logs.php"><i class="fas fa-book"></i> <span>View Logs</span></a></li>
-            <?php endif; ?>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>

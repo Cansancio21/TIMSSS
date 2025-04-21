@@ -100,6 +100,7 @@ if ($conn) {
             <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
             <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
             <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
+            <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
@@ -109,10 +110,7 @@ if ($conn) {
     <div class="container">
         <div class="upper"> 
             <h1>Admin Dashboard</h1>
-            <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
-                <span class="search-icon"><i class="fas fa-search"></i></span>
-            </div>
+            
             <div class="user-profile">
                 <div class="user-icon">
                     <?php 

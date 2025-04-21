@@ -47,6 +47,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -60,6 +61,7 @@ body {
     transition: all 0.3s;
     width: 100%;
     margin-left: -10px;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .sidebar ul {
@@ -87,6 +89,7 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -329,13 +332,11 @@ footer {
     display: flex;
 }
 
-/* Table */
 table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-   
-    margin-top: 10px;
+    margin-top: 90px;
     table-layout: auto;
 }
 
@@ -364,12 +365,13 @@ th:last-child {
 
 td {
     padding: 10px;
- 
+    border-bottom: 1px solid #eee;
     vertical-align: middle;
     text-align: center;
     word-wrap: break-word;
     white-space: normal;
 }
+
 tr:last-child td {
     border-bottom: none;
 }
@@ -393,48 +395,60 @@ tr:hover td {
 }
 
 /* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-}
-
-.action-buttons a {
+.delete-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    color: white;
+    width: 30px;
+    height: 30px;
+    background-color: #ff6200;
+    color: #fff;
+    border-radius: 5px;
     text-decoration: none;
-    transition: all 0.3s;
-    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.action-buttons a.view-btn {
-    background: var(--success);
+.delete-btn:hover {
+    background-color: #e55a00;
+    color: #fff;
 }
 
-.action-buttons a.edit-btn {
-    background: var(--info);
+.delete-btn i {
+    font-size: 16px;
 }
 
-.action-buttons a.archive-btn {
-    background: var(--warning);
+.action-buttons {
+    display: flex;
+    gap: 5px;
 }
 
-.action-buttons a.unarchive-btn {
-    background-color: #2196F3;
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
 }
 
-.action-buttons a:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+.view-btn {
+    background-color: #3498db;
+    color: #fff;
 }
 
-.unarchive-btn:hover {
-    background-color: #1976D2;
+.view-btn:hover {
+    background-color: #2980b9;
+}
+
+.edit-btn {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+.edit-btn:hover {
+    background-color: #27ae60;
 }
 
 /* Pagination */
@@ -490,6 +504,8 @@ tr:hover td {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
@@ -546,7 +562,6 @@ tr:hover td {
     border-radius: 5px;
 }
 
-/* Archive Header */
 .archive-header {
     display: flex;
     justify-content: space-between;
@@ -599,7 +614,7 @@ tr:hover td {
 
 .settings-link {
     position: absolute;
-    right: 30px;
+    right: 40px;
     margin-top: -15px;
     display: flex;
     align-items: center;
@@ -634,4 +649,48 @@ tr:hover td {
     margin-top: 10px;
 }
 
+.button-container {
+    position: relative;
+    margin-bottom: 20px;
+}
 
+.borrow-btn, .return-btn, .export-btn {
+    display: inline-block;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    top: 35px;
+    margin-bottom: 20px;
+}
+
+.borrow-btn {
+    background-color: #FFA500;
+    right: 225px;
+}
+
+.return-btn {
+    background-color: #8ea722d3;
+    right: 115px;
+}
+
+.export-btn {
+    background-color: #63c216;
+    right: 10px;
+}
+
+.borrow-btn:hover {
+    background-color: #7494ec;
+}
+
+.return-btn:hover {
+    background-color: #7494ec;
+}
+
+.export-btn:hover {
+    background-color: #7494ec;
+}

@@ -69,7 +69,7 @@ if (!$logResult) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Logs</title>
-    <link rel="stylesheet" href="log.css">
+    <link rel="stylesheet" href="logs.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -78,12 +78,13 @@ if (!$logResult) {
 <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> View Tickets</a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-box"></i> View Assets</a></li>
-            <li><a href="customersT.php"><i class="fas fa-users"></i> View Customers</a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> Ticket Registration</a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> Register Assets</a></li>
-            <li><a href="logss.php" class="active"><i class="fas fa-history"></i> View Logs</a></li>
+            <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
+            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
+            <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
+            <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
+            <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
@@ -94,7 +95,7 @@ if (!$logResult) {
         <div class="upper">
             <h1>System Logs</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search logs..." onkeyup="searchUsers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">

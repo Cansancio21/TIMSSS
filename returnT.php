@@ -98,6 +98,7 @@ if ($conn) {
             <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
             <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
             <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
+            <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>

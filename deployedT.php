@@ -62,15 +62,15 @@ if ($conn) {
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($page - 1) * $limit;
 
-    // Fetch total number of borrowed assets
-    $countQuery = "SELECT COUNT(*) as total FROM tbl_borrowed";
+    
+    $countQuery = "SELECT COUNT(*) as total FROM tbl_deployed";
     $countResult = $conn->query($countQuery);
     $totalRecords = $countResult->fetch_assoc()['total'];
     $totalPages = ceil($totalRecords / $limit);
 
     // Fetch borrowed assets with pagination
-    $sqlBorrowed = "SELECT b_id, b_assets_name, b_quantity, b_technician_name, b_technician_id, b_date 
-                    FROM tbl_borrowed 
+    $sqlBorrowed = "SELECT d_id, d_assets_name, d_quantity, d_technician_name, d_technician_id, d_date 
+                    FROM tbl_deployed 
                     LIMIT ?, ?";
     $stmt = $conn->prepare($sqlBorrowed);
     $stmt->bind_param("ii", $offset, $limit);
@@ -127,9 +127,9 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
     <div class="container">
         <div class="upper"> 
-            <h1>Borrowed Assets</h1>
+            <h1>Deployed Assets</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search borrowed assets..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search deployed assets..." onkeyup="searchUsers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -172,8 +172,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
             <div class="borrowed">
                 <div class="button-container">
-                    <a href="borrowA.php" class="borrow-btn"><i class="fas fa-plus"></i> Borrow</a>
-                    <a href="return.php" class="return-btn"><i class="fas fa-undo"></i> Return</a>
+                    <a href="deployA.php" class="return-btn"><i class="fas fa-cogs"></i> Deploy</a>
                     <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
                 </div>
                 <table id="borrowedTable">
@@ -193,16 +192,16 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                         if ($resultBorrowed && $resultBorrowed->num_rows > 0) { 
                             while ($row = $resultBorrowed->fetch_assoc()) { 
                                 echo "<tr> 
-                                        <td>{$row['b_id']}</td> 
-                                        <td>" . (isset($row['b_assets_name']) ? htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
-                                        <td>{$row['b_quantity']}</td>
-                                        <td>{$row['b_technician_name']}</td>
-                                        <td>{$row['b_technician_id']}</td>    
-                                        <td>{$row['b_date']}</td> 
+                                        <td>{$row['d_id']}</td> 
+                                        <td>" . (isset($row['d_assets_name']) ? htmlspecialchars($row['d_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
+                                        <td>{$row['d_quantity']}</td>
+                                        <td>{$row['d_technician_name']}</td>
+                                        <td>{$row['d_technician_id']}</td>    
+                                        <td>{$row['d_date']}</td> 
                                         <td>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a href='editR.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a href='#' class='delete-btn' onclick='showDeleteModal({$row['b_id']})' title='Delete'><i class='fas fa-trash'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['d_id']}', '" . htmlspecialchars($row['d_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['d_quantity']}', '{$row['d_technician_name']}', '{$row['d_technician_id']}', '{$row['d_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a href='editR.php?id={$row['d_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                                            <a href='#' class='delete-btn' onclick='showDeleteModal({$row['d_id']})' title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>"; 
                             } 
@@ -237,7 +236,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 <div id="viewModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('viewModal')">×</span>
-        <h2>View Borrowed Asset</h2>
+        <h2>View Deployed Asset</h2>
         <div id="viewModalContent" style="margin-top: 20px;">
         </div>
     </div>
