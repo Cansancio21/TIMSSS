@@ -62,15 +62,15 @@ if ($conn) {
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($page - 1) * $limit;
 
-    
-    $countQuery = "SELECT COUNT(*) as total FROM tbl_deployed";
+    // Fetch total number of borrowed assets
+    $countQuery = "SELECT COUNT(*) as total FROM tbl_borrowed";
     $countResult = $conn->query($countQuery);
     $totalRecords = $countResult->fetch_assoc()['total'];
     $totalPages = ceil($totalRecords / $limit);
 
     // Fetch borrowed assets with pagination
-    $sqlBorrowed = "SELECT d_id, d_assets_name, d_quantity, d_technician_name, d_technician_id, d_date 
-                    FROM tbl_deployed 
+    $sqlBorrowed = "SELECT b_id, b_assets_name, b_quantity, b_technician_name, b_technician_id, b_date 
+                    FROM tbl_borrowed 
                     LIMIT ?, ?";
     $stmt = $conn->prepare($sqlBorrowed);
     $stmt->bind_param("ii", $offset, $limit);
@@ -93,17 +93,15 @@ $avatarPath = $_SESSION['avatarPath'];
 if (isset($_GET['deleted']) && $_GET['deleted'] == 'true') {
     $_SESSION['message'] = "Record deleted successfully!";
 }
-if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
-    $_SESSION['message'] = "Record updated successfully!";
-}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="deployedT.css"> 
+    <title>Technician Borrowed Assets</title>
+    <link rel="stylesheet" href="borrowedT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -112,13 +110,11 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
-            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
-            <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
-            <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
-            <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
+            <li><a href="technicianD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li><a href="staffD.php"><i class="fas fa-users"></i> Regular Tickets</a></li>
+            <li><a href="suppT.php"><i class="fas fa-file-archive"></i> Support Tickets</a></li>
+            <li><a href="assetsT.php"><i class="fas fa-box"></i>View Assets</a></li>
+            <li><a href="techBorrowed.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
@@ -127,9 +123,9 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
     <div class="container">
         <div class="upper"> 
-            <h1>Deployed Assets</h1>
+            <h1>Borrowed Assets</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search deployed assets..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search borrowed assets..." onkeyup="searchUsers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -172,7 +168,8 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
             <div class="borrowed">
                 <div class="button-container">
-                    <a href="deployA.php" class="return-btn"><i class="fas fa-cogs"></i> Deploy</a>
+                    <a href="borrowA.php" class="borrow-btn"><i class="fas fa-plus"></i> Borrow</a>
+                    <a href="return.php" class="return-btn"><i class="fas fa-undo"></i> Return</a>
                     <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
                 </div>
                 <table id="borrowedTable">
@@ -192,16 +189,16 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                         if ($resultBorrowed && $resultBorrowed->num_rows > 0) { 
                             while ($row = $resultBorrowed->fetch_assoc()) { 
                                 echo "<tr> 
-                                        <td>{$row['d_id']}</td> 
-                                        <td>" . (isset($row['d_assets_name']) ? htmlspecialchars($row['d_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
-                                        <td>{$row['d_quantity']}</td>
-                                        <td>{$row['d_technician_name']}</td>
-                                        <td>{$row['d_technician_id']}</td>    
-                                        <td>{$row['d_date']}</td> 
+                                        <td>{$row['b_id']}</td> 
+                                        <td>" . (isset($row['b_assets_name']) ? htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
+                                        <td>{$row['b_quantity']}</td>
+                                        <td>{$row['b_technician_name']}</td>
+                                        <td>{$row['b_technician_id']}</td>    
+                                        <td>{$row['b_date']}</td> 
                                         <td>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['d_id']}', '" . htmlspecialchars($row['d_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['d_quantity']}', '{$row['d_technician_name']}', '{$row['d_technician_id']}', '{$row['d_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a href='editD.php?id={$row['d_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a href='#' class='delete-btn' onclick='showDeleteModal({$row['d_id']})' title='Delete'><i class='fas fa-trash'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a href='editBR.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                                            <a href='#' class='delete-btn' onclick='showDeleteModal({$row['b_id']})' title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>"; 
                             } 
@@ -236,7 +233,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 <div id="viewModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('viewModal')">×</span>
-        <h2>View Deployed Asset</h2>
+        <h2>View Borrowed Asset</h2>
         <div id="viewModalContent" style="margin-top: 20px;">
         </div>
     </div>

@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmtUpdate->execute()) {
         echo "<script type='text/javascript'>
                 alert('Record updated successfully.');
-                window.location.href = 'returnT.php'; // Redirect to returnT.php
+                window.location.href = 'deployedT.php';
               </script>";
     } else {
         die("Execution failed: " . $stmtUpdate->error);

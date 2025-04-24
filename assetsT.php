@@ -1,5 +1,3 @@
-
-
 <?php
 session_start();
 include 'db.php';
@@ -96,9 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userType !== 'technician') {
     $deployedPage = isset($_GET['deployed_page']) ? $_GET['deployed_page'] : 1;
     $archivedBorrowPage = isset($_GET['archived_borrow_page']) ? $_GET['archived_borrow_page'] : 1;
     $archivedDeployPage = isset($_GET['archived_deploy_page']) ? $_GET['archived_deploy_page'] : 1;
-    $borrowTab = isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active';
-    $deployTab = isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active';
-    header("Location: assetsT.php?borrow_tab=$borrowTab&deploy_tab=$deployTab&borrowed_page=$borrowedPage&deployed_page=$deployedPage&archived_borrow_page=$archivedBorrowPage&archived_deploy_page=$archivedDeployPage");
+    header("Location: assetsT.php?borrowed_page=$borrowedPage&deployed_page=$deployedPage&archived_borrow_page=$archivedBorrowPage&archived_deploy_page=$archivedDeployPage");
     exit();
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST' && $userType === 'technician') {
     $_SESSION['error'] = "Only staff can add, view, edit, or archive assets.";
@@ -106,9 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $userType !== 'technician') {
     $deployedPage = isset($_GET['deployed_page']) ? $_GET['deployed_page'] : 1;
     $archivedBorrowPage = isset($_GET['archived_borrow_page']) ? $_GET['archived_borrow_page'] : 1;
     $archivedDeployPage = isset($_GET['archived_deploy_page']) ? $_GET['archived_deploy_page'] : 1;
-    $borrowTab = isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active';
-    $deployTab = isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active';
-    header("Location: assetsT.php?borrow_tab=$borrowTab&deploy_tab=$deployTab&borrowed_page=$borrowedPage&deployed_page=$deployedPage&archigued_borrow_page=$archivedBorrowPage&archived_deploy_page=$archivedDeployPage");
+    header("Location: assetsT.php?borrowed_page=$borrowedPage&deployed_page=$deployedPage&archived_borrow_page=$archivedBorrowPage&archived_deploy_page=$archivedDeployPage");
     exit();
 }
 
@@ -198,7 +192,7 @@ if ($conn) {
 </head>
 <body>
 <div class="wrapper">
-<div class="sidebar glass-container">
+    <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
             <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
@@ -251,286 +245,259 @@ if ($conn) {
         </div>
 
         <div class="table-box glass-container">
-            <div class="borrow">
-                <h2>Borrow Assets</h2>
-                <div class="tab-buttons">
-                    <button class="tab-btn <?php echo (isset($_GET['borrow_tab']) && $_GET['borrow_tab'] === 'borrow_active') || !isset($_GET['borrow_tab']) ? 'active' : ''; ?>" onclick="showTab('borrow_active')">
-                        Active (<?php echo $totalBorrowed; ?>)
-                    </button>
-                    <button class="tab-btn <?php echo isset($_GET['borrow_tab']) && $_GET['borrow_tab'] === 'borrow_archived' ? 'active' : ''; ?>" onclick="showTab('borrow_archived')">
-                        Archived
-                        <?php if ($totalArchivedBorrow > 0): ?>
-                            <span class="tab-badge"><?php echo $totalArchivedBorrow; ?></span>
-                        <?php endif; ?>
-                    </button>
-                </div>
-                <?php if ($userType !== 'technician'): ?>
-                    <a href="registerAssets.php" class="add-btn"><i class="fas fa-user-plus"></i> Add Assets</a>
+    <div class="borrow">
+        <h2>Borrow Assets</h2>
+        <div class="header-controls">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showBorrowTab('active')">Active (<?php echo $totalBorrowed; ?>)</button>
+                <button class="tab-btn" onclick="showBorrowTab('archive')">Archive 
+                    <?php if ($totalArchivedBorrow > 0): ?>
+                        <span class="tab-badge"><?php echo $totalArchivedBorrow; ?></span>
+                    <?php endif; ?>
+                </button>
+            </div>
+        </div>
+        <?php if ($userType !== 'technician'): ?>
+            <a href="registerAssets.php" class="add-btn"><i class="fas fa-user-plus"></i> Add Assets</a>
+        <?php else: ?>
+            <a href="#" class="add-btn" onclick="showRestrictionMessage()"><i class="fas fa-user-plus"></i> Add Assets</a>
+        <?php endif; ?>
+        <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
+        <div id="borrow-active" class="tab-content">
+            <table id="borrowed-assets-table">
+                <thead>
+                    <tr>
+                        <th>Asset Id</th>
+                        <th>Asset Name</th>
+                        <th>Asset Status</th>
+                        <th>Asset Quantity</th>
+                        <th>Date Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($resultBorrowed && $resultBorrowed->num_rows > 0) { 
+                        while ($row = $resultBorrowed->fetch_assoc()) { 
+                            echo "<tr> 
+                                    <td>{$row['a_id']}</td> 
+                                    <td>{$row['a_name']}</td>  
+                                    <td>{$row['a_status']}</td>
+                                    <td>{$row['a_quantity']}</td>  
+                                    <td>{$row['a_date']}</td> 
+                                    <td>";
+                            if ($userType !== 'technician') {
+                                echo "<a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='edit-btn' href='BorrowE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                      <a class='archive-btn' onclick=\"showArchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>";
+                            } else {
+                                echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='edit-btn' onclick=\"showRestrictionMessage()\" title='Edit'><i class='fas fa-edit'></i></a>
+                                      <a class='archive-btn' onclick=\"showRestrictionMessage()\" title='Archive'><i class='fas fa-archive'></i></a>";
+                            }
+                            echo "</td></tr>"; 
+                        } 
+                    } else { 
+                        echo "<tr><td colspan='6'>No active borrowed assets found.</td></tr>"; 
+                    } 
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <?php if ($borrowedPage > 1): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage - 1; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                 <?php else: ?>
-                    <a href="#" class="add-btn" onclick="showRestrictionMessage()"><i class="fas fa-user-plus"></i> Add Assets</a>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
                 <?php endif; ?>
-                <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
-                <table id="borrowed-assets-table">
-                    <thead>
-                        <tr>
-                            <th>Asset Id</th>
-                            <th>Asset Name</th>
-                            <th>Asset Status</th>
-                            <th>Asset Quantity</th>
-                            <th>Date Registered</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        if ($resultBorrowed && $resultBorrowed->num_rows > 0) { 
-                            while ($row = $resultBorrowed->fetch_assoc()) { 
-                                echo "<tr> 
-                                        <td>{$row['a_id']}</td> 
-                                        <td>{$row['a_name']}</td>  
-                                        <td>{$row['a_status']}</td>
-                                        <td>{$row['a_quantity']}</td>  
-                                        <td>{$row['a_date']}</td> 
-                                        <td>";
-                                if ($userType !== 'technician') {
-                                    echo "<a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='edit-btn' href='BorrowE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                          <a class='archive-btn' onclick=\"showArchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>";
-                                } else {
-                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='edit-btn' onclick=\"showRestrictionMessage()\" title='Edit'><i class='fas fa-edit'></i></a>
-                                          <a class='archive-btn' onclick=\"showRestrictionMessage()\" title='Archive'><i class='fas fa-archive'></i></a>";
-                                }
-                                echo "</td></tr>"; 
-                            } 
-                        } else { 
-                            echo "<tr><td colspan='6'>No borrowed assets found.</td></tr>"; 
-                        } 
-                        ?>
-                    </tbody>
-                </table>
-                <div class="pagination">
-                    <?php if ($borrowedPage > 1): ?>
-                        <a href="?borrow_tab=borrow_active&deploy_tab=<?php echo isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active'; ?>&borrowed_page=<?php echo $borrowedPage - 1; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
-                    <?php endif; ?>
-                    <span class="current-page">Page <?php echo $borrowedPage; ?> of <?php echo $totalBorrowedPages; ?></span>
-                    <?php if ($borrowedPage < $totalBorrowedPages): ?>
-                        <a href="?borrow_tab=borrow_active&deploy_tab=<?php echo isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active'; ?>&borrowed_page=<?php echo $borrowedPage + 1; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
-                    <?php endif; ?>
-                </div>
+                <span class="current-page">Page <?php echo $borrowedPage; ?> of <?php echo $totalBorrowedPages; ?></span>
+                <?php if ($borrowedPage < $totalBorrowedPages): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage + 1; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
             </div>
-
-            <div class="deploy">
-                <h2>Deployment Assets</h2>
-                <div class="tab-buttons">
-                    <button class="tab-btn <?php echo (isset($_GET['deploy_tab']) && $_GET['deploy_tab'] === 'deploy_active') || !isset($_GET['deploy_tab']) ? 'active' : ''; ?>" onclick="showTab('deploy_active')">
-                        Active (<?php echo $totalDeployed; ?>)
-                    </button>
-                    <button class="tab-btn <?php echo isset($_GET['deploy_tab']) && $_GET['deploy_tab'] === 'deploy_archived' ? 'active' : ''; ?>" onclick="showTab('deploy_archived')">
-                        Archived
-                        <?php if ($totalArchivedDeploy > 0): ?>
-                            <span class="tab-badge"><?php echo $totalArchivedDeploy; ?></span>
-                        <?php endif; ?>
-                    </button>
-                </div>
-                <table id="deployed-assets-table">
-                    <thead>
-                        <tr>
-                            <th>Asset Id</th>
-                            <th>Asset Name</th>
-                            <th>Asset Status</th>
-                            <th>Asset Quantity</th>
-                            <th>Date Registered</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        if ($resultDeployment && $resultDeployment->num_rows > 0) { 
-                            while ($row = $resultDeployment->fetch_assoc()) { 
-                                echo "<tr> 
-                                        <td>{$row['a_id']}</td> 
-                                        <td>{$row['a_name']}</td>  
-                                        <td>{$row['a_status']}</td>
-                                        <td>{$row['a_quantity']}</td>  
-                                        <td>{$row['a_date']}</td> 
-                                        <td>";
-                                if ($userType !== 'technician') {
-                                    echo "<a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='edit-btn' href='DeployE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                          <a class='archive-btn' onclick=\"showArchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>";
-                                } else {
-                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='edit-btn' onclick=\"showRestrictionMessage()\" title='Edit'><i class='fas fa-edit'></i></a>
-                                          <a class='archive-btn' onclick=\"showRestrictionMessage()\" title='Archive'><i class='fas fa-archive'></i></a>";
-                                }
-                                echo "</td></tr>"; 
-                            } 
-                        } else { 
-                            echo "<tr><td colspan='6'>No deployment assets found.</td></tr>"; 
+        </div>
+        <div id="borrow-archive" class="tab-content" style="display: none;">
+            <table id="archived-borrow-assets-table">
+                <thead>
+                    <tr>
+                        <th>Asset Id</th>
+                        <th>Asset Name</th>
+                        <th>Asset Status</th>
+                        <th>Asset Quantity</th>
+                        <th>Date Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($resultArchivedBorrow && $resultArchivedBorrow->num_rows > 0) { 
+                        while ($row = $resultArchivedBorrow->fetch_assoc()) { 
+                            echo "<tr> 
+                                    <td>{$row['a_id']}</td> 
+                                    <td>{$row['a_name']}</td>  
+                                    <td>{$row['a_status']}</td>
+                                    <td>{$row['a_quantity']}</td>  
+                                    <td>{$row['a_date']}</td> 
+                                    <td>";
+                            if ($userType !== 'technician') {
+                                echo "<a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='unarchive-btn' onclick=\"showUnarchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                      <a class='delete-btn' onclick=\"showDeleteModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
+                            } else {
+                                echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='unarchive-btn' onclick=\"showRestrictionMessage()\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                      <a class='delete-btn' onclick=\"showRestrictionMessage()\" title='Delete'><i class='fas fa-trash'></i></a>";
+                            }
+                            echo "</td></tr>"; 
                         } 
-                        ?>
-                    </tbody>
-                </table>
-                <div class="pagination">
-                    <?php if ($deployedPage > 1): ?>
-                        <a href="?borrow_tab=<?php echo isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active'; ?>&deploy_tab=deploy_active&borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage - 1; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
-                    <?php endif; ?>
-                    <span class="current-page">Page <?php echo $deployedPage; ?> of <?php echo $totalDeployedPages; ?></span>
-                    <?php if ($deployedPage < $totalDeployedPages): ?>
-                        <a href="?borrow_tab=<?php echo isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active'; ?>&deploy_tab=deploy_active&borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage + 1; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
-                    <?php endif; ?>
-                </div>
-                <a href="borrowA.php" class="borrow-btn"><i class="fas fa-plus"></i> Borrow</a>
-                <a href="return.php" class="return-btn"><i class="fas fa-undo"></i> Return</a>
-                <a href="deployA.php" class="deploy-btn"><i class="fas fa-cogs"></i> Deploy</a>
-            </div>
-
-            <div class="archive-borrow">
-                <h2>Archived Borrow Assets</h2>
-                <div class="tab-buttons">
-                    <button class="tab-btn <?php echo isset($_GET['borrow_tab']) && $_GET['borrow_tab'] === 'borrow_active' ? 'active' : ''; ?>" onclick="showTab('borrow_active')">
-                        Active (<?php echo $totalBorrowed; ?>)
-                    </button>
-                    <button class="tab-btn <?php echo (isset($_GET['borrow_tab']) && $_GET['borrow_tab'] === 'borrow_archived') || !isset($_GET['borrow_tab']) ? 'active' : ''; ?>" onclick="showTab('borrow_archived')">
-                        Archived
-                        <?php if ($totalArchivedBorrow > 0): ?>
-                            <span class="tab-badge"><?php echo $totalArchivedBorrow; ?></span>
-                        <?php endif; ?>
-                    </button>
-                </div>
-                <table id="archived-borrow-assets-table">
-                    <thead>
-                        <tr>
-                            <th>Asset Id</th>
-                            <th>Asset Name</th>
-                            <th>Asset Status</th>
-                            <th>Asset Quantity</th>
-                            <th>Date Registered</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        if ($resultArchivedBorrow && $resultArchivedBorrow->num_rows > 0) { 
-                            while ($row = $resultArchivedBorrow->fetch_assoc()) { 
-                                echo "<tr> 
-                                        <td>{$row['a_id']}</td> 
-                                        <td>{$row['a_name']}</td>  
-                                        <td>{$row['a_status']}</td>
-                                        <td>{$row['a_quantity']}</td>  
-                                        <td>{$row['a_date']}</td> 
-                                        <td>";
-                                if ($userType !== 'technician') {
-                                    echo "<a class='view-btn' onclick=\"showBorrowViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='unarchive-btn' onclick=\"showUnarchiveModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                          <a class='delete-btn' onclick=\"showDeleteModal('borrow', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
-                                } else {
-                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='unarchive-btn' onclick=\"showRestrictionMessage()\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                          <a class='delete-btn' onclick=\"showRestrictionMessage()\" title='Delete'><i class='fas fa-trash'></i></a>";
-                                }
-                                echo "</td></tr>"; 
-                            } 
-                        } else { 
-                            echo "<tr><td colspan='6'>No archived borrow assets found.</td></tr>"; 
-                        } 
-                        ?>
-                    </tbody>
-                </table>
-                <div class="pagination">
-                    <?php if ($archivedBorrowPage > 1): ?>
-                        <a href="?borrow_tab=borrow_archived&deploy_tab=<?php echo isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active'; ?>&borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage - 1; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
-                    <?php endif; ?>
-                    <span class="current-page">Page <?php echo $archivedBorrowPage; ?> of <?php echo $totalArchivedBorrowPages; ?></span>
-                    <?php if ($archivedBorrowPage < $totalArchivedBorrowPages): ?>
-                        <a href="?borrow_tab=borrow_archived&deploy_tab=<?php echo isset($_GET['deploy_tab']) ? $_GET['deploy_tab'] : 'deploy_active'; ?>&borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage + 1; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div class="archive-deploy">
-                <h2>Archived Deployment Assets</h2>
-                <div class="tab-buttons">
-                    <button class="tab-btn <?php echo isset($_GET['deploy_tab']) && $_GET['deploy_tab'] === 'deploy_active' ? 'active' : ''; ?>" onclick="showTab('deploy_active')">
-                        Active (<?php echo $totalDeployed; ?>)
-                    </button>
-                    <button class="tab-btn <?php echo (isset($_GET['deploy_tab']) && $_GET['deploy_tab'] === 'deploy_archived') || !isset($_GET['deploy_tab']) ? 'active' : ''; ?>" onclick="showTab('deploy_archived')">
-                        Archived
-                        <?php if ($totalArchivedDeploy > 0): ?>
-                            <span class="tab-badge"><?php echo $totalArchivedDeploy; ?></span>
-                        <?php endif; ?>
-                    </button>
-                </div>
-                <table id="archived-deploy-assets-table">
-                    <thead>
-                        <tr>
-                            <th>Asset Id</th>
-                            <th>Asset Name</th>
-                            <th>Asset Status</th>
-                            <th>Asset Quantity</th>
-                            <th>Date Registered</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        if ($resultArchivedDeploy && $resultArchivedDeploy->num_rows > 0) { 
-                            while ($row = $resultArchivedDeploy->fetch_assoc()) { 
-                                echo "<tr> 
-                                        <td>{$row['a_id']}</td> 
-                                        <td>{$row['a_name']}</td>  
-                                        <td>{$row['a_status']}</td>
-                                        <td>{$row['a_quantity']}</td>  
-                                        <td>{$row['a_date']}</td> 
-                                        <td>";
-                                if ($userType !== 'technician') {
-                                    echo "<a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='unarchive-btn' onclick=\"showUnarchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                          <a class='delete-btn' onclick=\"showDeleteModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
-                                } else {
-                                    echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='unarchive-btn' onclick=\"showRestrictionMessage()\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                          <a class='delete-btn' onclick=\"showRestrictionMessage()\" title='Delete'><i class='fas fa-trash'></i></a>";
-                                }
-                                echo "</td></tr>"; 
-                            } 
-                        } else { 
-                            echo "<tr><td colspan='6'>No archived deployment assets found.</td></tr>"; 
-                        } 
-                        ?>
-                    </tbody>
-                </table>
-                <div class="pagination">
-                    <?php if ($archivedDeployPage > 1): ?>
-                        <a href="?borrow_tab=<?php echo isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active'; ?>&deploy_tab=deploy_archived&borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
-                    <?php endif; ?>
-                    <span class="current-page">Page <?php echo $archivedDeployPage; ?> of <?php echo $totalArchivedDeployPages; ?></span>
-                    <?php if ($archivedDeployPage < $totalArchivedDeployPages): ?>
-                        <a href="?borrow_tab=<?php echo isset($_GET['borrow_tab']) ? $_GET['borrow_tab'] : 'borrow_active'; ?>&deploy_tab=deploy_archived&borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
-                    <?php else: ?>
-                        <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
-                    <?php endif; ?>
-                </div>
+                    } else { 
+                        echo "<tr><td colspan='6'>No archived borrow assets found.</td></tr>"; 
+                    } 
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <?php if ($archivedBorrowPage > 1): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage - 1; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
+                <?php endif; ?>
+                <span class="current-page">Page <?php echo $archivedBorrowPage; ?> of <?php echo $totalArchivedBorrowPages; ?></span>
+                <?php if ($archivedBorrowPage < $totalArchivedBorrowPages): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage + 1; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
             </div>
         </div>
     </div>
-</div>
 
+    <div class="deploy">
+        <h2>Deployment Assets</h2>
+        <div class="header-controls">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showDeployTab('active')">Active (<?php echo $totalDeployed; ?>)</button>
+                <button class="tab-btn" onclick="showDeployTab('archive')">Archive 
+                    <?php if ($totalArchivedDeploy > 0): ?>
+                        <span class="tab-badge"><?php echo $totalArchivedDeploy; ?></span>
+                    <?php endif; ?>
+                </button>
+            </div>
+        </div>
+        <div id="deploy-active" class="tab-content">
+            <table id="deployed-assets-table">
+                <thead>
+                    <tr>
+                        <th>Asset Id</th>
+                        <th>Asset Name</th>
+                        <th>Asset Status</th>
+                        <th>Asset Quantity</th>
+                        <th>Date Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($resultDeployment && $resultDeployment->num_rows > 0) { 
+                        while ($row = $resultDeployment->fetch_assoc()) { 
+                            echo "<tr> 
+                                    <td>{$row['a_id']}</td> 
+                                    <td>{$row['a_name']}</td>  
+                                    <td>{$row['a_status']}</td>
+                                    <td>{$row['a_quantity']}</td>  
+                                    <td>{$row['a_date']}</td> 
+                                    <td>";
+                            if ($userType !== 'technician') {
+                                echo "<a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='edit-btn' href='DeployE.php?id=" . htmlspecialchars($row['a_id']) . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                      <a class='archive-btn' onclick=\"showArchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Archive'><i class='fas fa-archive'></i></a>";
+                            } else {
+                                echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='edit-btn' onclick=\"showRestrictionMessage()\" title='Edit'><i class='fas fa-edit'></i></a>
+                                      <a class='archive-btn' onclick=\"showRestrictionMessage()\" title='Archive'><i class='fas fa-archive'></i></a>";
+                            }
+                            echo "</td></tr>"; 
+                        } 
+                    } else { 
+                        echo "<tr><td colspan='6'>No active deployment assets found.</td></tr>"; 
+                    } 
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <?php if ($deployedPage > 1): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage - 1; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
+                <?php endif; ?>
+                <span class="current-page">Page <?php echo $deployedPage; ?> of <?php echo $totalDeployedPages; ?></span>
+                <?php if ($deployedPage < $totalDeployedPages): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage + 1; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div id="deploy-archive" class="tab-content" style="display: none;">
+            <table id="archived-deploy-assets-table">
+                <thead>
+                    <tr>
+                        <th>Asset Id</th>
+                        <th>Asset Name</th>
+                        <th>Asset Status</th>
+                        <th>Asset Quantity</th>
+                        <th>Date Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if ($resultArchivedDeploy && $resultArchivedDeploy->num_rows > 0) { 
+                        while ($row = $resultArchivedDeploy->fetch_assoc()) { 
+                            echo "<tr> 
+                                    <td>{$row['a_id']}</td> 
+                                    <td>{$row['a_name']}</td>  
+                                    <td>{$row['a_status']}</td>
+                                    <td>{$row['a_quantity']}</td>  
+                                    <td>{$row['a_date']}</td> 
+                                    <td>";
+                            if ($userType !== 'technician') {
+                                echo "<a class='view-btn' onclick=\"showDeployViewModal('{$row['a_id']}', '{$row['a_name']}', '{$row['a_status']}', '{$row['a_quantity']}', '{$row['a_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='unarchive-btn' onclick=\"showUnarchiveModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                      <a class='delete-btn' onclick=\"showDeleteModal('deploy', '{$row['a_id']}', '{$row['a_name']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
+                            } else {
+                                echo "<a class='view-btn' onclick=\"showRestrictionMessage()\" title='View'><i class='fas fa-eye'></i></a>
+                                      <a class='unarchive-btn' onclick=\"showRestrictionMessage()\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                      <a class='delete-btn' onclick=\"showRestrictionMessage()\" title='Delete'><i class='fas fa-trash'></i></a>";
+                            }
+                            echo "</td></tr>"; 
+                        } 
+                    } else { 
+                        echo "<tr><td colspan='6'>No archived deployment assets found.</td></tr>"; 
+                    } 
+                    ?>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <?php if ($archivedDeployPage > 1): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
+                <?php endif; ?>
+                <span class="current-page">Page <?php echo $archivedDeployPage; ?> of <?php echo $totalArchivedDeployPages; ?></span>
+                <?php if ($archivedDeployPage < $totalArchivedDeployPages): ?>
+                    <a href="?borrowed_page=<?php echo $borrowedPage; ?>&deployed_page=<?php echo $deployedPage; ?>&archived_borrow_page=<?php echo $archivedBorrowPage; ?>&archived_deploy_page=<?php echo $archivedDeployPage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <a href="borrowA.php" class="borrow-btn"><i class="fas fa-plus"></i> Borrow</a>
+        <a href="return.php" class="return-btn"><i class="fas fa-undo"></i> Return</a>
+        <a href="deployA.php" class="deploy-btn"><i class="fas fa-cogs"></i> Deploy</a>
+    </div>
+</div>
 <!-- Borrowed Assets View Modal -->
 <div id="borrowViewModal" class="modal">
     <div class="modal-content">
@@ -616,11 +583,9 @@ if ($conn) {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const borrowTab = urlParams.get('borrow_tab') || 'borrow_active';
-    const deployTab = urlParams.get('deploy_tab') || 'deploy_active';
-    showTab(borrowTab);
-    showTab(deployTab);
+    // Set default visibility: show active assets for both sections
+    showBorrowTab('active');
+    showDeployTab('active');
 
     // Handle alert messages disappearing after 2 seconds
     const alerts = document.querySelectorAll('.alert');
@@ -631,6 +596,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2000);
     });
 });
+
+function showBorrowTab(tab) {
+    // Get elements
+    const activeContent = document.getElementById('borrow-active');
+    const archiveContent = document.getElementById('borrow-archive');
+    const buttons = document.querySelectorAll('.borrow .tab-buttons .tab-btn');
+
+    // Update content visibility
+    if (tab === 'active') {
+        activeContent.style.display = 'block';
+        archiveContent.style.display = 'none';
+    } else {
+        activeContent.style.display = 'none';
+        archiveContent.style.display = 'block';
+    }
+
+    // Update button states
+    buttons.forEach(button => {
+        button.classList.remove('active');
+        if (button.getAttribute('onclick').includes(tab)) {
+            button.classList.add('active');
+        }
+    });
+}
+
+function showDeployTab(tab) {
+    // Get elements
+    const activeContent = document.getElementById('deploy-active');
+    const archiveContent = document.getElementById('deploy-archive');
+    const buttons = document.querySelectorAll('.deploy .tab-buttons .tab-btn');
+
+    // Update content visibility
+    if (tab === 'active') {
+        activeContent.style.display = 'block';
+        archiveContent.style.display = 'none';
+    } else {
+        activeContent.style.display = 'none';
+        archiveContent.style.display = 'block';
+    }
+
+    // Update button states
+    buttons.forEach(button => {
+        button.classList.remove('active');
+        if (button.getAttribute('onclick').includes(tab)) {
+            button.classList.add('active');
+        }
+    });
+}
 
 function showRestrictionMessage() {
     alert("Only staff can add, view, edit, or archive assets.");
@@ -687,77 +700,12 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-function showTab(tab) {
-    const borrowSection = document.querySelector('.borrow');
-    const deploySection = document.querySelector('.deploy');
-    const archiveBorrowSection = document.querySelector('.archive-borrow');
-    const archiveDeploySection = document.querySelector('.archive-deploy');
-
-    // Handle Borrow Tabs
-    if (tab === 'borrow_active') {
-        const borrowTabButtons = borrowSection.querySelectorAll('.tab-btn');
-        borrowTabButtons.forEach(button => button.classList.remove('active'));
-        const activeBorrowButton = Array.from(borrowTabButtons).find(button => button.onclick.toString().includes(`showTab('borrow_active')`));
-        if (activeBorrowButton) {
-            activeBorrowButton.classList.add('active');
-        }
-        borrowSection.style.display = 'block';
-        archiveBorrowSection.style.display = 'none';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('borrow_tab', tab);
-        history.replaceState(null, '', '?' + urlParams.toString());
-    } else if (tab === 'borrow_archived') {
-        const archiveBorrowTabButtons = archiveBorrowSection.querySelectorAll('.tab-btn');
-        archiveBorrowTabButtons.forEach(button => button.classList.remove('active'));
-        const activeArchiveBorrowButton = Array.from(archiveBorrowTabButtons).find(button => button.onclick.toString().includes(`showTab('borrow_archived')`));
-        if (activeArchiveBorrowButton) {
-            activeArchiveBorrowButton.classList.add('active');
-        }
-        borrowSection.style.display = 'none';
-        archiveBorrowSection.style.display = 'block';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('borrow_tab', tab);
-        history.replaceState(null, '', '?' + urlParams.toString());
-    }
-
-    // Handle Deploy Tabs
-    if (tab === 'deploy_active') {
-        const deployTabButtons = deploySection.querySelectorAll('.tab-btn');
-        deployTabButtons.forEach(button => button.classList.remove('active'));
-        const activeDeployButton = Array.from(deployTabButtons).find(button => button.onclick.toString().includes(`showTab('deploy_active')`));
-        if (activeDeployButton) {
-            activeDeployButton.classList.add('active');
-        }
-        deploySection.style.display = 'block';
-        archiveDeploySection.style.display = 'none';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('deploy_tab', tab);
-        history.replaceState(null, '', '?' + urlParams.toString());
-    } else if (tab === 'deploy_archived') {
-        const archiveDeployTabButtons = archiveDeploySection.querySelectorAll('.tab-btn');
-        archiveDeployTabButtons.forEach(button => button.classList.remove('active'));
-        const activeArchiveDeployButton = Array.from(archiveDeployTabButtons).find(button => button.onclick.toString().includes(`showTab('deploy_archived')`));
-        if (activeArchiveDeployButton) {
-            activeArchiveDeployButton.classList.add('active');
-        }
-        deploySection.style.display = 'none';
-        archiveDeploySection.style.display = 'block';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set('deploy_tab', tab);
-        history.replaceState(null, '', '?' + urlParams.toString());
-    }
-}
-
 function searchAssets() {
     const input = document.getElementById('searchInput').value.toLowerCase();
     
-    // Search Borrowed Assets
+    // Search Borrowed Assets (Active)
     const borrowedTable = document.getElementById('borrowed-assets-table');
-    if (borrowedTable && document.querySelector('.borrow').style.display !== 'none') {
+    if (borrowedTable && document.getElementById('borrow-active').style.display !== 'none') {
         const borrowedRows = borrowedTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
         for (let i = 0; i < borrowedRows.length; i++) {
             const cells = borrowedRows[i].getElementsByTagName('td');
@@ -772,26 +720,9 @@ function searchAssets() {
         }
     }
 
-    // Search Deployed Assets
-    const deployedTable = document.getElementById('deployed-assets-table');
-    if (deployedTable && document.querySelector('.deploy').style.display !== 'none') {
-        const deployedRows = deployedTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        for (let i = 0; i < deployedRows.length; i++) {
-            const cells = deployedRows[i].getElementsByTagName('td');
-            let match = false;
-            for (let j = 0; j < cells.length - 1; j++) {
-                if (cells[j].textContent.toLowerCase().includes(input)) {
-                    match = true;
-                    break;
-                }
-            }
-            deployedRows[i].style.display = match ? '' : 'none';
-        }
-    }
-
-    // Search Archived Borrow Assets
+    // Search Borrowed Assets (Archived)
     const archivedBorrowTable = document.getElementById('archived-borrow-assets-table');
-    if (archivedBorrowTable && document.querySelector('.archive-borrow').style.display !== 'none') {
+    if (archivedBorrowTable && document.getElementById('borrow-archive').style.display !== 'none') {
         const archivedBorrowRows = archivedBorrowTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
         for (let i = 0; i < archivedBorrowRows.length; i++) {
             const cells = archivedBorrowRows[i].getElementsByTagName('td');
@@ -806,9 +737,26 @@ function searchAssets() {
         }
     }
 
-    // Search Archived Deploy Assets
+    // Search Deployed Assets (Active)
+    const deployedTable = document.getElementById('deployed-assets-table');
+    if (deployedTable && document.getElementById('deploy-active').style.display !== 'none') {
+        const deployedRows = deployedTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        for (let i = 0; i < deployedRows.length; i++) {
+            const cells = deployedRows[i].getElementsByTagName('td');
+            let match = false;
+            for (let j = 0; j < cells.length - 1; j++) {
+                if (cells[j].textContent.toLowerCase().includes(input)) {
+                    match = true;
+                    break;
+                }
+            }
+            deployedRows[i].style.display = match ? '' : 'none';
+        }
+    }
+
+    // Search Deployed Assets (Archived)
     const archivedDeployTable = document.getElementById('archived-deploy-assets-table');
-    if (archivedDeployTable && document.querySelector('.archive-deploy').style.display !== 'none') {
+    if (archivedDeployTable && document.getElementById('deploy-archive').style.display !== 'none') {
         const archivedDeployRows = archivedDeployTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
         for (let i = 0; i < archivedDeployRows.length; i++) {
             const cells = archivedDeployRows[i].getElementsByTagName('td');
@@ -828,8 +776,4 @@ function searchAssets() {
 </html>
 
 <?php $conn->close(); ?>
-
-
-
-
 

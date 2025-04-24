@@ -127,7 +127,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
     <div class="container">
         <div class="upper"> 
-            <h1>Borrowed Assets</h1>
+            <h1>Borrowed Assets List</h1>
             <div class="search-container">
                 <input type="text" class="search-bar" id="searchInput" placeholder="Search borrowed assets..." onkeyup="searchUsers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
@@ -172,8 +172,6 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
             <div class="borrowed">
                 <div class="button-container">
-                    <a href="borrowA.php" class="borrow-btn"><i class="fas fa-plus"></i> Borrow</a>
-                    <a href="return.php" class="return-btn"><i class="fas fa-undo"></i> Return</a>
                     <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
                 </div>
                 <table id="borrowedTable">
@@ -201,7 +199,6 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                                         <td>{$row['b_date']}</td> 
                                         <td>
                                             <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a href='editR.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a href='#' class='delete-btn' onclick='showDeleteModal({$row['b_id']})' title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>"; 

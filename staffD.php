@@ -199,9 +199,9 @@ if ($conn) {
             <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
             <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
             <?php if ($userType !== 'technician'): ?>
-                <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
-                <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
-                <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
+            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
+            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
             <?php endif; ?>
         </ul>
         <footer>

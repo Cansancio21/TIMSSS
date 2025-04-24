@@ -179,7 +179,7 @@ if ($conn) {
                                     <td>{$row['r_date']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_quantity']}', '" . htmlspecialchars($row['r_technician_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a href='editB.php?id={$row['r_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                                        <a href='editR.php?id={$row['r_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='delete-btn' onclick=\"showDeleteModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                                     </td>
                                   </tr>"; 

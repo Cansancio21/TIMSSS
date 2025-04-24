@@ -3,13 +3,13 @@ session_start();
 include 'db.php';
 
 // Initialize variables
-$borrow_assetsname = $borrow_quantity = $borrow_techname = $borrow_techid = $borrow_date = "";
-$borrow_assetsnameErr = $borrow_quantityErr = $borrow_technameErr = $borrow_techidErr = "";
+$return_assetsname = $return_quantity = $return_techname = $return_techid = $return_date = "";
+$return_assetsnameErr = $return_quantityErr = $return_technameErr = $return_techidErr = "";
 
 // Check if the ID is set in the URL
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
-    $sql = "SELECT b_assets_name, b_quantity, b_technician_name, b_technician_id, b_date FROM tbl_borrowed WHERE b_id = ?";
+    $sql = "SELECT r_assets_name, r_quantity, r_technician_name, r_technician_id, r_date FROM tbl_returned WHERE r_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -17,34 +17,34 @@ if (isset($_GET['id'])) {
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
-        $borrow_assetsname = $row['b_assets_name'];
-        $borrow_quantity = $row['b_quantity'];
-        $borrow_techname = $row['b_technician_name'];
-        $borrow_techid = $row['b_technician_id'];
-        $borrow_date = $row['b_date'];
+        $return_assetsname = $row['r_assets_name'];
+        $return_quantity = $row['r_quantity'];
+        $return_techname = $row['r_technician_name'];
+        $return_techid = $row['r_technician_id'];
+        $return_date = $row['r_date'];
     }
     $stmt->close();
 }
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $borrow_assetsname = trim($_POST['asset_name']);
-    $borrow_quantity = trim($_POST['borrow_quantity']);
-    $borrow_techname = trim($_POST['tech_name']);
-    $borrow_techid = trim($_POST['tech_id']);
-    $borrow_date = trim($_POST['date']);
+    $return_assetsname = trim($_POST['asset_name']);
+    $return_quantity = trim($_POST['return_quantity']);
+    $return_techname = trim($_POST['tech_name']);
+    $return_techid = trim($_POST['tech_id']);
+    $return_date = trim($_POST['date']);
 
     // Validate inputs (add your validation logic here)
 
     // Update the record in the database
-    $sqlUpdate = "UPDATE tbl_borrowed SET b_assets_name = ?, b_quantity = ?, b_technician_name = ?, b_technician_id = ?, b_date = ? WHERE b_id = ?";
+    $sqlUpdate = "UPDATE tbl_returned SET r_assets_name = ?, r_quantity = ?, r_technician_name = ?, r_technician_id = ?, r_date = ? WHERE r_id = ?";
     $stmtUpdate = $conn->prepare($sqlUpdate);
-    $stmtUpdate->bind_param("sssssi", $borrow_assetsname, $borrow_quantity, $borrow_techname, $borrow_techid, $borrow_date, $id);
+    $stmtUpdate->bind_param("sssssi", $return_assetsname, $return_quantity, $return_techname, $return_techid, $return_date, $id);
 
     if ($stmtUpdate->execute()) {
         echo "<script type='text/javascript'>
                 alert('Record updated successfully.');
-                window.location.href = 'borrowedT.php'; // Redirect to borrowedT.php
+                window.location.href = 'returnT.php'; // Redirect to returnT.php
               </script>";
     } else {
         die("Execution failed: " . $stmtUpdate->error);
@@ -58,44 +58,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borrow Asset</title>
-    <link rel="stylesheet" href="borrow.css">
+    <title>Edit Returned Asset</title>
+    <link rel="stylesheet" href="return.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
     <div class="wrapper">
         <div class="container">
-            <a href="borrowedT.php" class="back-icon">
+            <a href="returnT.php" class="back-icon">
                 <i class='bx bx-arrow-back'></i>
             </a>
-            <h1>Edit Borrow:</h1>
+            <h1>Edit Returned Asset:</h1>
 
             <form method="POST" action="" class="form">
                 <div class="form-row">
                     <label for="asset_name">Asset Name:</label>
-                    <input type="text" id="asset_name" name="asset_name" placeholder="Asset Name" value="<?php echo htmlspecialchars($borrow_assetsname); ?>" required>
-                    <span class="error"><?php echo $borrow_assetsnameErr; ?></span>
+                    <input type="text" id="asset_name" name="asset_name" placeholder="Asset Name" value="<?php echo htmlspecialchars($return_assetsname); ?>" required>
+                    <span class="error"><?php echo $return_assetsnameErr; ?></span>
                 </div>
                 <div class="form-row">
-                    <label for="borrow_quantity">Enter Quantity to Borrow:</label>
-                    <input type="text" id="borrow_quantity" name="borrow_quantity" placeholder="Quantity" value="<?php echo htmlspecialchars($borrow_quantity); ?>" required>
-                    <span class="error"><?php echo $borrow_quantityErr; ?></span>
+                    <label for="return_quantity">Enter Quantity Returned:</label>
+                    <input type="text" id="return_quantity" name="return_quantity" placeholder="Quantity" value="<?php echo htmlspecialchars($return_quantity); ?>" required>
+                    <span class="error"><?php echo $return_quantityErr; ?></span>
                 </div>
                 <div class="form-row">
                     <label for="tech_name">Enter Technician Name:</label>
-                    <input type="text" id="tech_name" name="tech_name" placeholder="Technician Name" value="<?php echo htmlspecialchars($borrow_techname); ?>" required>
-                    <span class="error"><?php echo $borrow_technameErr; ?></span>
+                    <input type="text" id="tech_name" name="tech_name" placeholder="Technician Name" value="<?php echo htmlspecialchars($return_techname); ?>" required>
+                    <span class="error"><?php echo $return_technameErr; ?></span>
                 </div>
                 <div class="form-row">
                     <label for="tech_id">Enter Technician Id:</label>
-                    <input type="text" id="tech_id" name="tech_id" placeholder="Technician Id" value="<?php echo htmlspecialchars($borrow_techid); ?>" required>
-                    <span class="error"><?php echo $borrow_techidErr; ?></span>
+                    <input type="text" id="tech_id" name="tech_id" placeholder="Technician Id" value="<?php echo htmlspecialchars($return_techid); ?>" required>
+                    <span class="error"><?php echo $return_techidErr; ?></span>
                 </div>
                 <div class="form-row">
-                    <label for="date">Date Borrowed:</label>
-                    <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($borrow_date); ?>" required>
+                    <label for="date">Date Returned:</label>
+                    <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($return_date); ?>" required>
                 </div>
-                <button type="submit">Enter</button>
+                <button type="submit">Update</button>
             </form>
         </div>
     </div>

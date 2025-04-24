@@ -2,6 +2,14 @@
 session_start();
 include 'db.php'; // Include your database connection file
 
+$username = $_SESSION['username'] ?? '';
+$userId = $_SESSION['userId'] ?? 0;
+
+if (!$username || !$userId) {
+    echo "Unauthorized access. Please log in.";
+    exit();
+}
+
 // Get username from session
 $username = $_SESSION['username'] ?? 'tech_user';
 
@@ -269,6 +277,7 @@ if ($conn) {
     <title>ISP Technician Dashboard</title>
     <link rel="stylesheet" href="techniciansD.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
@@ -278,6 +287,8 @@ if ($conn) {
             <li><a href="technicianD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="staffD.php"><i class="fas fa-users"></i> Regular Tickets</a></li>
             <li><a href="suppT.php"><i class="fas fa-file-archive"></i> Support Tickets</a></li>
+            <li><a href="assetsT.php"><i class="fas fa-box"></i>View Assets</a></li>
+            <li><a href="techBorrowed.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>

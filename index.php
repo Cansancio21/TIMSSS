@@ -108,8 +108,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['firstname'])) {
 // Initialize status message variable
 $statusMessage = "";
 $statusClass = "";
-
-// User Login
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
@@ -130,10 +128,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
-        // Username exists
         $row = $result->fetch_assoc();
 
-        // Set status message and class based on account status
         if (strtolower($row['u_status']) === "pending") {
             $statusMessage = "Your account is pending.";
             $statusClass = "pending";
@@ -142,14 +138,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
             $statusClass = "active";
         }
 
-        // Proceed with password verification only if status is active
         if (strtolower($row['u_status']) === "pending") {
-            // No additional error message; statusMessage handles it
+            // Let status message show
         } elseif (password_verify($password, $row['u_password'])) {
-            // Successful login
+            // ✅ Store user info in session
             $_SESSION['username'] = $row['u_username'];
+            $_SESSION['userId']   = $row['u_id']; // ✅ THIS IS THE MISSING LINE
             $_SESSION['user_type'] = $row['u_type'];
-            $_SESSION['logged_in'] = true; // Flag to track login
+            $_SESSION['logged_in'] = true;
+
+            echo "<pre>Login successful. Session contents:\n";
+            print_r($_SESSION);
+            echo "</pre>";
+            
+
 
             // Redirect based on user type
             if ($row['u_type'] == 'admin') {
