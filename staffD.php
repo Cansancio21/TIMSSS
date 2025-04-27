@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 include 'db.php';
@@ -54,6 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userType !== 'technician') {
         $t_status = $_POST['t_status'];
         $t_details = $_POST['t_details'];
         $t_date = $_POST['t_date'];
+
+        // Check if the ticket is currently closed or open
+        $sqlCheck = "SELECT t_status FROM tbl_ticket WHERE t_id = ?";
+        $stmtCheck = $conn->prepare($sqlCheck);
+        $stmtCheck->bind_param("i", $t_id);
+        $stmtCheck->execute();
+        $resultCheck = $stmtCheck->get_result();
+        $currentTicket = $resultCheck->fetch_assoc();
+        $stmtCheck->close();
+
+        if ($currentTicket['t_status'] === 'Closed' && ($t_status === 'Open' || $t_status === 'Closed')) {
+            $_SESSION['error'] = "Cannot change status of a closed ticket to 'Open' or 'Closed'.";
+            header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
+            exit();
+        }
+        if ($currentTicket['t_status'] === 'Open' && ($t_status === 'Open' || $t_status === 'Closed')) {
+            $_SESSION['error'] = "Cannot change status of an open ticket to 'Open' or 'Closed'.";
+            header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
+            exit();
+        }
 
         $sql = "UPDATE tbl_ticket SET t_aname=?, t_type=?, t_status=?, t_details=?, t_date=? WHERE t_id=?";
         $stmt = $conn->prepare($sql);

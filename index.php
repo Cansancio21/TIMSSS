@@ -36,8 +36,21 @@ $type = $status = "";
 $firstnameErr = $lastnameErr = $loginError = $passwordError = $usernameError = "";
 $hasError = false;
 
+// Define the registration code
+define('REGISTRATION_CODE', 'ADMIN123');
+
 // User Registration
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['firstname'])) {
+    // Validate the registration code
+    $submittedCode = isset($_POST['reg_code']) ? trim($_POST['reg_code']) : '';
+    if ($submittedCode !== REGISTRATION_CODE) {
+        echo "<script type='text/javascript'>
+                alert('Invalid registration code.');
+                window.location.href = 'index.php';
+              </script>";
+        exit;
+    }
+
     $firstname = trim($_POST['firstname']);
     $lastname = trim($_POST['lastname']);
     $email = trim($_POST['email']);
@@ -96,7 +109,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['firstname'])) {
         if ($stmt->execute()) {
             echo "<script type='text/javascript'>
                 alert('Registration successful! Please log in.');
-            </script>";
+                window.location.href = 'index.php';
+              </script>";
         } else {
             die("Execution failed: " . $stmt->error);
         }
@@ -111,6 +125,11 @@ $statusClass = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
+
+    // Reset errors
+    $loginError = "";
+    $passwordError = "";
+    $userExists = false;
 
     // Check if username exists
     $sql = "SELECT u_id, u_username, u_password, u_type, u_status FROM tbl_user WHERE u_username = ?";
@@ -128,6 +147,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
+        $userExists = true;
         $row = $result->fetch_assoc();
 
         if (strtolower($row['u_status']) === "pending") {
@@ -141,17 +161,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         if (strtolower($row['u_status']) === "pending") {
             // Let status message show
         } elseif (password_verify($password, $row['u_password'])) {
-            // ✅ Store user info in session
+            // Store user info in session
             $_SESSION['username'] = $row['u_username'];
-            $_SESSION['userId']   = $row['u_id']; // ✅ THIS IS THE MISSING LINE
+            $_SESSION['userId'] = $row['u_id'];
             $_SESSION['user_type'] = $row['u_type'];
             $_SESSION['logged_in'] = true;
-
-            echo "<pre>Login successful. Session contents:\n";
-            print_r($_SESSION);
-            echo "</pre>";
-            
-
 
             // Redirect based on user type
             if ($row['u_type'] == 'admin') {
@@ -171,6 +185,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         $loginError = "Incorrect username. Try again.";
     }
 
+    // If user doesn't exist and password was provided (not empty)
+    if (!$userExists && !empty($password)) {
+        $passwordError = "Incorrect password. Try again.";
+    }
+
     $stmt->close();
 }
 ?>
@@ -183,6 +202,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="indexs.css">
     <script>
+        // Define the registration code client-side (for simplicity; ideally, validate server-side only)
+        const REGISTRATION_CODE = 'ADMIN123';
+
         // Function to validate password strength
         function validatePassword() {
             const passwordInput = document.getElementById('password');
@@ -233,6 +255,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                     }, 500); // Match transition duration
                 }, 3000); // 3 seconds
             }
+
+            // Toggle between Login & Register
+            const container = document.querySelector(".container");
+            const registerBtn = document.querySelector(".register-btn");
+            const loginBtn = document.querySelector(".login-btn");
+            const regForm = document.querySelector(".form-box.register form");
+            const regCodeInput = document.createElement('input');
+            regCodeInput.type = 'hidden';
+            regCodeInput.name = 'reg_code';
+            regForm.appendChild(regCodeInput);
+
+            registerBtn.addEventListener("click", () => {
+                const code = prompt("Enter the registration code:");
+                if (code === REGISTRATION_CODE) {
+                    regCodeInput.value = code; // Set the hidden input value
+                    container.classList.add("active");
+                } else {
+                    alert("Invalid registration code.");
+                }
+            });
+
+            loginBtn.addEventListener("click", () => {
+                container.classList.remove("active");
+            });
 
             // Poll for status updates
             function checkStatus() {
@@ -354,9 +400,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 <div class="input-box">
                     <select name="type" required>
                         <option value="" disabled selected>Select Type</option>
-                        <option value="technician" <?php if ($type == 'technician') echo 'selected'; ?>>Technician</option>
                         <option value="admin" <?php if ($type == 'admin') echo 'selected'; ?>>Admin</option>
-                        <option value="staff" <?php if ($type == 'staff') echo 'selected'; ?>>Staff</option>
+                
                     </select>
                     <i class='bx bxs-user type-icon'></i>
                 </div>
@@ -368,7 +413,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                     </select>
                     <i class='bx bxs-check-circle status-icon'></i>
                 </div>
-                <button type="submit" class="button">Register</button>
+                <button type="submit" class="btn">Register</button>
             </form>
         </div>
 
@@ -386,21 +431,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
             </div>
         </div>
     </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            // Toggle between Login & Register
-            const container = document.querySelector(".container");
-            const registerBtn = document.querySelector(".register-btn");
-            const loginBtn = document.querySelector(".login-btn");
-
-            registerBtn.addEventListener("click", () => {
-                container.classList.add("active");
-            });
-
-            loginBtn.addEventListener("click", () => {
-                container.classList.remove("active");
-            });
-        });
-    </script>
 </body>
 </html>

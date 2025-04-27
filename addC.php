@@ -2,6 +2,13 @@
 session_start(); // Start session for login management
 include 'db.php';
 
+// Include PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Load Composer's autoloader for PHPMailer
+require 'vendor/autoload.php'; // Adjust path if vendor is elsewhere
+
 // Check if the user is logged in
 if (!isset($_SESSION['username'])) {
     header("Location: index.php"); 
@@ -14,7 +21,7 @@ $lastName = '';
 $firstName = '';
 $userType = '';
 $avatarPath = 'default-avatar.png';
-$avatarFolder = 'uploads/avatars/';
+$avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
 
 if (file_exists($userAvatar)) {
@@ -76,7 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $lastnameErr = "Last Name should not contain numbers.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z\s-]+$/", $area)) {
+    if (!preg_match("/^[a-zA-Z\s-]+$/", $area)) { // Fixed regex
         $areaErr = "Area should not contain numbers.";
         $hasError = true;
     }
@@ -118,15 +125,67 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("ssssssssss", $firstname, $lastname, $area, $contact, $email, $dob, $ONU, $caller, $address, $remarks);
 
         if ($stmt->execute()) {
-            echo "<script type='text/javascript'>
-                    alert('Customer has been registered successfully.');
-                    window.location.href = 'customersT.php';
-                  </script>";
+            // Get the inserted customer ID
+            $customerId = $conn->insert_id;
+
+            // Send the confirmation email using PHPMailer
+            $mail = new PHPMailer(true); // Enable exceptions
+
+            try {
+                // Server settings
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'jonwilyammayormita@gmail.com'; // Your Gmail address
+                $mail->Password = 'mqkcqkytlwurwlks'; // Your Gmail App Password
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                // Recipients
+                $mail->setFrom('jonwilyammayormita@gmail.com', 'Your Website');
+                $mail->addAddress($email, "$firstname $lastname");
+
+                // Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Welcome to Our Platform!';
+                $mail->Body = "
+                    <html>
+                    <head>
+                        <title>Welcome to Our Platform</title>
+                    </head>
+                    <body>
+                        <p>Dear $firstname $lastname,</p>
+                        <p>Thank you for registering with us. Your account details are:</p>
+                        <p><strong>Customer ID:</strong> $customerId</p>
+                        <p><strong>Last Name:</strong> $lastname</p>
+                        <p>Please use these credentials to log in to our customer portal by clicking the link below:</p>
+                        <p><a href='http://localhost/TIMSSS/customerP.php'>Customer Portal</a></p>
+                        <p>Enter your Customer ID and Last Name to access your account.</p>
+                        <p>Best regards,<br>Your Platform Team</p>
+                    </body>
+                    </html>
+                ";
+                $mail->AltBody = "Dear $firstname $lastname,\n\nThank you for registering with us. Your account details are:\nCustomer ID: $customerId\nLast Name: $lastname\n\nPlease use these credentials to log in to our customer portal at http://localhost/customerP.php\n\nBest regards,\nYour Platform Team";
+
+                // Send the email
+                $mail->send();
+                
+                // Set success message and redirect
+                echo "<script type='text/javascript'>
+                        alert('Customer has been registered successfully. A confirmation email has been sent.');
+                        window.location.href = 'customersT.php';
+                      </script>";
+            } catch (Exception $e) {
+                echo "<script type='text/javascript'>
+                        alert('Customer registered, but error sending confirmation email: " . addslashes($mail->ErrorInfo) . "');
+                        window.location.href = 'customersT.php';
+                      </script>";
+            }
+            
+            $stmt->close();
         } else {
             die("Execution failed: " . $stmt->error);
         }
-        
-        $stmt->close();
     }
 }
 ?>
@@ -140,7 +199,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="addCu.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-   
 </head>
 <body>
 <div class="wrapper">
@@ -162,7 +220,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="container">
         <div class="upper"> 
             <h1>Add Customer</h1>
-           
             <div class="user-profile">
                 <div class="user-icon">
                     <?php 
@@ -193,88 +250,85 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <?php endif; ?>
         </div>
 
-       
-        
-            <div class="table-box">
-                <h2>Customer Profile</h2>
+        <div class="table-box">
+            <h2>Customer Profile</h2>
+            <hr class="title-line">
+
+            <form action="" method="POST">
+                <div class="row">
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="firstname">First Name:</label>
+                        <input type="text" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
+                        <span class="error"><?php echo $firstnameErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="lastname">Last Name:</label>
+                        <input type="text" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
+                        <span class="error"><?php echo $lastnameErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="area">Area:</label>
+                        <input type="text" name="area" placeholder="Enter Area" value="<?php echo htmlspecialchars($area); ?>">
+                        <span class="error"><?php echo $areaErr; ?></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="contact">Contact:</label>
+                        <input type="text" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
+                        <span class="error"><?php echo $contactErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="email">Email:</label>
+                        <input type="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
+                        <span class="error"><?php echo $emailErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="date">Date:</label>
+                        <input type="date" name="date" placeholder="Enter Subscription Date" value="<?php echo htmlspecialchars($dob); ?>">
+                        <span class="error"><?php echo $dobErr; ?></span>
+                    </div>
+                </div>
+
+                <h2>Advance Profile</h2>
                 <hr class="title-line">
-
-                <form action="" method="POST">
-                    <div class="row">
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="firstname">First Name:</label>
-                            <input type="text" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
-                            <span class="error"><?php echo $firstnameErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="lastname">Last Name:</label>
-                            <input type="text" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
-                            <span class="error"><?php echo $lastnameErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="area">Area:</label>
-                            <input type="text" name="area" placeholder="Enter Area" value="<?php echo htmlspecialchars($area); ?>">
-                            <span class="error"><?php echo $areaErr; ?></span>
-                        </div>
+                <div class="secondrow">
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="ONU">ONU Name:</label>
+                        <input type="text" name="ONU" placeholder="ONU Name" value="<?php echo htmlspecialchars($ONU); ?>">
+                        <span class="error"><?php echo $ONUErr; ?></span>
                     </div>
-
-                    <div class="row">
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="contact">Contact:</label>
-                            <input type="text" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
-                            <span class="error"><?php echo $contactErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="email">Email:</label>
-                            <input type="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
-                            <span class="error"><?php echo $emailErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="date">Date:</label>
-                            <input type="date" name="date" placeholder="Enter Subscription Date" value="<?php echo htmlspecialchars($dob); ?>">
-                            <span class="error"><?php echo $dobErr; ?></span>
-                        </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="caller">Caller ID:</label>
+                        <input type="text" name="caller" placeholder="Caller ID" value="<?php echo htmlspecialchars($caller); ?>">
+                        <span class="error"><?php echo $callerErr; ?></span>
                     </div>
-
-                    <h2>Advance Profile</h2>
-                    <hr class="title-line">
-                    <div class="secondrow">
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="ONU">ONU Name:</label>
-                            <input type="text" name="ONU" placeholder="ONU Name" value="<?php echo htmlspecialchars($ONU); ?>">
-                            <span class="error"><?php echo $ONUErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="caller">Caller ID:</label>
-                            <input type="text" name="caller" placeholder="Caller ID" value="<?php echo htmlspecialchars($caller); ?>">
-                            <span class="error"><?php echo $callerErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="address">Mac Address:</label>
-                            <input type="text" name="address" placeholder="Mac Address" value="<?php echo htmlspecialchars($address); ?>">
-                            <span class="error"><?php echo $addressErr; ?></span>
-                        </div>
-                        <div class="input-box">
-                            <i class="bx bxs-user"></i>
-                            <label for="remarks">Remarks:</label>
-                            <input type="text" name="remarks" placeholder="Remarks" value="<?php echo htmlspecialchars($remarks); ?>">
-                            <span class="error"><?php echo $remarksErr; ?></span>
-                        </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="address">Mac Address:</label>
+                        <input type="text" name="address" placeholder="Mac Address" value="<?php echo htmlspecialchars($address); ?>">
+                        <span class="error"><?php echo $addressErr; ?></span>
                     </div>
-                    <div class="button-container">
-                        <button type="submit">Submit</button>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="remarks">Remarks:</label>
+                        <input type="text" name="remarks" placeholder="Remarks" value="<?php echo htmlspecialchars($remarks); ?>">
+                        <span class="error"><?php echo $remarksErr; ?></span>
                     </div>
-                </form>
-            </div>
+                </div>
+                <div class="button-container">
+                    <button type="submit">Submit</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
