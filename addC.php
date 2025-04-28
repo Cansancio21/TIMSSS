@@ -52,23 +52,23 @@ if ($conn) {
 }
 
 // Initialize customer form variables
-$firstname = $lastname = $area = $contact = $email = $dob = "";
-$ONU = $caller = $address = $remarks = "";
-$firstnameErr = $lastnameErr = $areaErr = $contactErr = $emailErr = $dobErr = $ONUErr = $callerErr = $addressErr = $remarksErr = "";
+$firstname = $lastname = $address = $contact = $email = $dob = "";
+$napname = $napport = $macaddress = $status = "";
+$firstnameErr = $lastnameErr = $addressErr = $contactErr = $emailErr = $dobErr = $napnameErr = $napportErr = $macaddressErr = $statusErr = "";
 $hasError = false;
 
 // Handle customer registration form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $firstname = trim($_POST['firstname']);
     $lastname = trim($_POST['lastname']);
-    $area = trim($_POST['area']);
+    $address = trim($_POST['address']);
     $contact = trim($_POST['contact']);
     $email = trim($_POST['email']);
     $dob = trim($_POST['date']);
-    $ONU = trim($_POST['ONU']);
-    $caller = trim($_POST['caller']);
-    $address = trim($_POST['address']);
-    $remarks = trim($_POST['remarks']);
+    $napname = trim($_POST['napname']);
+    $napport = trim($_POST['napport']);
+    $macaddress = trim($_POST['macaddress']);
+    $status = trim($_POST['status']);
 
     // Validate inputs
     if (!preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
@@ -83,26 +83,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $lastnameErr = "Last Name should not contain numbers.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z\s-]+$/", $area)) { // Fixed regex
-        $areaErr = "Area should not contain numbers.";
+    if (!preg_match("/^[a-zA-Z\s-]+$/", $address)) { // Fixed regex
+        $addressErr = "Address should not contain numbers.";
         $hasError = true;
     }
-    if (!preg_match("/^[0-9]+$/", $caller)) {
-        $callerErr = "Caller ID must contain numbers only.";
+    if (!preg_match("/^[0-9]+$/", $napport)) {
+        $napportErr = "Nap Port must contain numbers only.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z0-9\s-]+$/", $ONU)) {
-        $ONUErr = "ONU Name should not contain special characters.";
+    if (!preg_match("/^[a-zA-Z]+$/", $napname)) {
+        $napnameErr = "Nap Name must contain letters only.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z0-9\s-]+$/", $address)) {
-        $addressErr = "Mac Address should not contain special characters.";
+    if (!preg_match("/^[a-zA-Z0-9\s-]+$/", $macaddress)) {
+        $macaddressErr = "Mac Address should not contain special characters.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z0-9\s-]+$/", $remarks)) {
-        $remarksErr = "Remarks should not contain special characters.";
-        $hasError = true;
-    }
+   
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $emailErr = "Invalid email format.";
         $hasError = true;
@@ -114,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Insert into database if no errors
     if (!$hasError) {
-        $sql = "INSERT INTO tbl_customer (c_fname, c_lname, c_area, c_contact, c_email, c_date, c_onu, c_caller, c_address, c_rem)
+        $sql = "INSERT INTO tbl_customer (c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
@@ -122,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             die("Prepare failed: " . $conn->error);
         }
 
-        $stmt->bind_param("ssssssssss", $firstname, $lastname, $area, $contact, $email, $dob, $ONU, $caller, $address, $remarks);
+        $stmt->bind_param("ssssssssss", $firstname, $lastname, $address, $contact, $email, $dob, $napname, $napport, $macaddress, $status);
 
         if ($stmt->execute()) {
             // Get the inserted customer ID
@@ -196,7 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Customer</title>
-    <link rel="stylesheet" href="addCu.css"> 
+    <link rel="stylesheet" href="addC.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -213,7 +210,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -254,81 +251,87 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h2>Customer Profile</h2>
             <hr class="title-line">
 
-            <form action="" method="POST">
-                <div class="row">
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="firstname">First Name:</label>
-                        <input type="text" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
-                        <span class="error"><?php echo $firstnameErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="lastname">Last Name:</label>
-                        <input type="text" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
-                        <span class="error"><?php echo $lastnameErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="area">Area:</label>
-                        <input type="text" name="area" placeholder="Enter Area" value="<?php echo htmlspecialchars($area); ?>">
-                        <span class="error"><?php echo $areaErr; ?></span>
-                    </div>
-                </div>
+        <form action="" method="POST">
+        <div class="row">
+            <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="firstname">First Name:</label>
+            <input type="text" id="firstname" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
+            <span class="error"><?php echo $firstnameErr; ?></span>
+             </div>
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="lastname">Last Name:</label>
+            <input type="text" id="lastname" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
+            <span class="error"><?php echo $lastnameErr; ?></span>
+        </div>
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="address">Address:</label>
+            <input type="text" id="address" name="address" placeholder="Enter Address" value="<?php echo htmlspecialchars($address); ?>">
+            <span class="error"><?php echo $addressErr; ?></span>
+        </div>
+        </div>
 
-                <div class="row">
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="contact">Contact:</label>
-                        <input type="text" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
-                        <span class="error"><?php echo $contactErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="email">Email:</label>
-                        <input type="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
-                        <span class="error"><?php echo $emailErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="date">Date:</label>
-                        <input type="date" name="date" placeholder="Enter Subscription Date" value="<?php echo htmlspecialchars($dob); ?>">
-                        <span class="error"><?php echo $dobErr; ?></span>
-                    </div>
-                </div>
+        <div class="row">
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="contact">Contact:</label>
+            <input type="text" id="contact" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
+            <span class="error"><?php echo $contactErr; ?></span>
+        </div>
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
+            <span class="error"><?php echo $emailErr; ?></span>
+        </div>
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="date">Date Applied:</label>
+            <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($dob); ?>">
+            <span class="error"><?php echo $dobErr; ?></span>
+        </div>
+        </div>
 
-                <h2>Advance Profile</h2>
-                <hr class="title-line">
-                <div class="secondrow">
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="ONU">ONU Name:</label>
-                        <input type="text" name="ONU" placeholder="ONU Name" value="<?php echo htmlspecialchars($ONU); ?>">
-                        <span class="error"><?php echo $ONUErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="caller">Caller ID:</label>
-                        <input type="text" name="caller" placeholder="Caller ID" value="<?php echo htmlspecialchars($caller); ?>">
-                        <span class="error"><?php echo $callerErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="address">Mac Address:</label>
-                        <input type="text" name="address" placeholder="Mac Address" value="<?php echo htmlspecialchars($address); ?>">
-                        <span class="error"><?php echo $addressErr; ?></span>
-                    </div>
-                    <div class="input-box">
-                        <i class="bx bxs-user"></i>
-                        <label for="remarks">Remarks:</label>
-                        <input type="text" name="remarks" placeholder="Remarks" value="<?php echo htmlspecialchars($remarks); ?>">
-                        <span class="error"><?php echo $remarksErr; ?></span>
-                    </div>
-                </div>
-                <div class="button-container">
-                    <button type="submit">Submit</button>
-                </div>
-            </form>
+       <h2>Advance Profile</h2>
+       <hr class="title-line">
+       <div class="secondrow">
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="napname">Nap Name:</label>
+            <input type="text" id="napname" name="napname" placeholder="Nap Name" value="<?php echo htmlspecialchars($napname); ?>">
+            <span class="error"><?php echo $napnameErr; ?></span>
+        </div>
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="napport">Nap Port:</label>
+            <input type="text" id="napport" name="napport" placeholder="Nap Port" value="<?php echo htmlspecialchars($napport); ?>">
+            <span class="error"><?php echo $napportErr; ?></span>
+        </div>
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+            <label for="macaddress">Mac Address:</label>
+            <input type="text" id="macaddress" name="macaddress" placeholder="Mac Address" value="<?php echo htmlspecialchars($macaddress); ?>">
+            <span class="error"><?php echo $macaddressErr; ?></span>
+        </div>
+
+        <div class="input-box">
+            <i class="bx bxs-user"></i>
+        <label for="status">Customer Status:</label>
+        <select id="status" name="status">
+            <option value="Active" <?php echo ($status === 'Active') ? 'selected' : ''; ?>>Active</option>
+            <option value="Inactive" <?php echo ($status === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
+        </select>
+            <span class="error"><?php echo $statusErr; ?></span>
+        </div>
+        </div>
+
+        <div class="button-container">
+          <button type="submit">Submit</button>
+        </div>
+       </form>
+
         </div>
     </div>
 </div>

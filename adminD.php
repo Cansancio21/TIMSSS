@@ -83,7 +83,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | User Management</title>
-    <link rel="stylesheet" href="adminD.css"> 
+    <link rel="stylesheet" href="adminDash.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css">
@@ -103,7 +103,7 @@ if ($conn) {
             <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
+        <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -134,12 +134,12 @@ if ($conn) {
           
         <div class="table-box">
             <div class="welcome-card">
-                <h2>Welcome Back, <?php echo htmlspecialchars($firstName); ?>! 
+                <h2>Welcome to TIMSS, <?php echo htmlspecialchars($firstName); ?>! 
                     <?php if ($userType === 'admin'): ?>
                         <span class="admin-badge"><i class="fas fa-user-shield"></i> Administrator</span>
                     <?php endif; ?>
                 </h2>
-                <p>Here's what's happening with your system today.</p>
+                <p>Here is the total breakdown of the TIMS system.</p>
             </div>
 
             <div class="stat-grid">
@@ -162,10 +162,10 @@ if ($conn) {
             </div>
 
             <div class="chart-container">
-                <h2>System Analytics</h2>
+                <h2>TIMSS</h2>
                 <div class="chart-grid">
                     <div class="chart-wrapper">
-                        <div class="chart-title">User Distribution</div>
+                        <div class="chart-title">Registered Users</div>
                         <canvas id="registeredUsersChart"></canvas>
                     </div>
                     <div class="chart-wrapper">
@@ -177,7 +177,7 @@ if ($conn) {
                         <canvas id="pendingUsersChart"></canvas>
                     </div>
                     <div class="chart-wrapper">
-                        <div class="chart-title">Customer Base</div>
+                        <div class="chart-title">Registered Customers</div>
                         <canvas id="customersChart"></canvas>
                     </div>
                 </div>

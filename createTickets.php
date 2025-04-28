@@ -136,7 +136,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <select id="ticket_status" name="ticket_status">
                         <option value="">Select Ticket</option>
                         <option value="Open">Open</option>
-                       
                     </select>
                     <span class="error"><?php echo $ticketstatusErr; ?></span>
                 </div>

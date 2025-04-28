@@ -1,6 +1,8 @@
+
+
 :root {
-    --primary: #3d28e2;
-    --secondary: #372fa7;
+    --primary: #6c5ce7;
+    --secondary: #a29bfe;
     --dark: #2d3436;
     --light: #f5f6fa;
     --success: #00b894;
@@ -19,7 +21,6 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
-    min-height: 100vh;
 }
 
 .glass-container {
@@ -34,7 +35,6 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
-    width: 100%;
 }
 
 /* Sidebar */
@@ -49,7 +49,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -63,7 +62,6 @@ body {
     transition: all 0.3s;
     width: 100%;
     margin-left: -10px;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .sidebar ul {
@@ -91,7 +89,6 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
-    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -144,7 +141,7 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    padding-top: 100px;
+    padding-top: 85px;
 }
 
 /* Header */
@@ -159,10 +156,10 @@ footer {
     position: fixed;
     margin-top: 15px;
     top: 0;
-    left: 230px;
-    right: 30px;
+    left: 230px; /* Match sidebar width */
+    right: 30px; /* Match container padding */
     z-index: 100;
-    height: 70px;
+    height: 70px; /* Fixed height */
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
@@ -175,7 +172,6 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
-    margin-left: 20px;
 }
 
 .search-bar {
@@ -241,10 +237,23 @@ footer {
     margin-left: -300px;
 }
 
+/* Table Box */
+.table-box {
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
 .username {
     position: absolute;
     left: 25px;
-    top: 25px;
+    top: 5px;
     font-weight: 500;
     color: var(--primary);
 }
@@ -254,100 +263,74 @@ footer {
     margin-left: 5px;
 }
 
-.add-user-btn {
-    position: absolute;
-    top: 60px;
-    right: 20px;
-    display: inline-flex;
+/* Tab Buttons */
+.header-controls {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 30px;
-    text-decoration: none;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-    border: none;
-    outline: none;
+    margin-bottom: 15px;
 }
 
-.add-user-btn:hover {
-    background-color: #7494ec;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-}
-
-.add-user-btn i {
-    margin-right: 15px;
-}
-
-/* Tabs */
 .tab-buttons {
     display: flex;
     gap: 10px;
-    margin: 50px 0 15px;
+    margin-left: 10px; /* As provided, keeps buttons indented */
 }
 
 .tab-btn {
     padding: 8px 16px;
-    background-color: #f1f1f1;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     transition: background-color 0.3s;
-    position: relative;
+    position: relative; /* For absolute positioning of tab-badge */
+    background-color: #f5f5f5; /* Default background for non-active buttons */
+    color: #333; /* Default text color for non-active buttons */
 }
 
 .tab-btn.active {
     background-color: #4CAF50;
-    color: #fff;
+    color: white;
 }
 
-.tab-btn:hover {
-    background-color: #e0e0e0;
-}
-
-.tab-btn.active:hover {
-    background-color: #45a049;
-}
-
+/* Tab Badge */
 .tab-badge {
-    background-color: #ff5722;
-    color: #fff;
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 12px;
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: -8px;
+    right: -8px;
+    background: #ff5722; /* Bright orange-red */
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px; /* For double-digit numbers */
+    transition: background-color 0.3s ease;
 }
 
-.active-tickets, .archived-tickets {
-    display: none;
+
+.tab-content {
+    margin-top: 15px;
 }
 
-.active-tickets.active, .archived-tickets.active {
-    display: block;
+
+.deploy .borrow-btn, .deploy .return-btn, .deploy .deploy-btn {
+    margin-top: -115px; /* Adjust to account for tab buttons */
 }
 
 /* Table */
-.table-box {
-    width: 100%;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    min-height: 60vh;
-    overflow: visible;
-    margin-top: -15px;
-}
-
 table {
     width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+   
+    margin-top: 25px;
+    table-layout: auto;
 }
 
 thead {
@@ -359,37 +342,28 @@ thead {
 }
 
 th {
-    padding: 10px;
+    padding: 15px;
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
 }
 
-th:nth-child(1) { width: 80px; } /* Ticket ID */
-th:nth-child(2) { width: 150px; } /* Account Name */
-th:nth-child(3) { width: 100px; } /* Type */
-th:nth-child(4) { width: 100px; } /* Status */
-th:nth-child(5) { width: 250px; } /* Ticket Details */
-th:nth-child(6) { width: 120px; } /* Date */
-th:nth-child(7) { width: 150px; } /* Action */
+th:first-child {
+    border-top-left-radius: 10px;
+}
+
+th:last-child {
+    border-top-right-radius: 10px;
+}
 
 td {
     padding: 10px;
     border-bottom: 1px solid #eee;
-    text-align: center;
-    font-size: 0.9rem;
     vertical-align: middle;
-    line-height: 1.4;
-    min-height: 50px;
+    text-align: center;
+    word-wrap: break-word;
+    white-space: normal;
 }
-
-td:nth-child(2), td:nth-child(5) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 0; /* Let table-layout: fixed handle width */
-}
-
 tr:last-child td {
     border-bottom: none;
 }
@@ -397,6 +371,31 @@ tr:last-child td {
 tr:hover td {
     background: rgba(108, 92, 231, 0.05);
 }
+
+/* Status Badges */
+.status-active {
+    color: var(--success) !important;
+}
+
+.status-inactive {
+    color: var(--danger) !important;
+}
+
+.status-pending {
+    color: #ff9800;
+    font-weight: 500;
+}
+
+.borrow h2{
+    margin-bottom: 20px;
+}
+
+.deploy h2{
+    margin-bottom: 20px;
+}
+
+/* Action Buttons */
+/* Style for the delete button */
 .delete-btn {
     display: inline-flex;
     align-items: center;
@@ -407,7 +406,6 @@ tr:hover td {
     color: #fff; /* White icon color */
     border-radius: 5px; /* Rounded corners */
     text-decoration: none; /* Remove underline */
-   
     transition: background-color 0.3s ease; /* Smooth hover transition */
 }
 
@@ -422,17 +420,14 @@ tr:hover td {
     font-size: 16px; /* Adjust icon size */
 }
 
-/* Action Buttons */
+/* Ensure consistency with other action buttons */
 .action-buttons {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-    min-height: 50px;
+    gap: 5px; /* Space between action buttons */
 }
 
-.view-btn, .edit-btn, .archive-btn, .restore-btn {
+/* Optional: Adjust other buttons for consistency */
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -440,61 +435,40 @@ tr:hover td {
     height: 30px;
     border-radius: 5px;
     text-decoration: none;
-    color: #fff;
     transition: background-color 0.3s ease;
 }
 
+/* Example colors for other buttons (optional) */
 .view-btn {
-    background-color: #3498db;
+    background-color: #3498db; /* Blue */
+    color: #fff;
 }
-
 .view-btn:hover {
     background-color: #2980b9;
 }
 
 .edit-btn {
-    background-color: #2ecc71;
+    background-color: #2ecc71; /* Green */
+    color: #fff;
 }
-
 .edit-btn:hover {
     background-color: #27ae60;
 }
 
 .archive-btn {
-    background-color: #f1c40f;
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
 }
-
 .archive-btn:hover {
     background-color: #d4ac0d;
 }
 
-.restore-btn {
-    background-color: #9b59b6;
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
 }
-
-.restore-btn:hover {
+.unarchive-btn:hover {
     background-color: #8e44ad;
-}
-
-/* Status Badges */
-.status-open {
-    color: var(--success);
-}
-
-.status-closed {
-    color: var(--danger);
-}
-
-.status-archived {
-    color: #6c757d;
-}
-
-.status-clickable {
-    cursor: pointer;
-}
-
-.status-clickable:hover {
-    text-decoration: underline;
 }
 
 /* Pagination */
@@ -502,21 +476,21 @@ tr:hover td {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
-    margin-top: 20px;
+    margin-top: auto;
+    padding-top: 20px;
 }
 
 .pagination-link {
-    text-decoration: none;
-    color: var(--primary);
-    font-size: 18px;
-    width: 40px;
-    height: 40px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: white;
+    color: var(--primary);
+    text-decoration: none;
+    margin: 0 5px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     transition: all 0.3s;
 }
@@ -524,6 +498,8 @@ tr:hover td {
 .pagination-link:hover {
     background: var(--primary);
     color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(108, 92, 231, 0.3);
 }
 
 .pagination-link.disabled {
@@ -533,8 +509,9 @@ tr:hover td {
 }
 
 .current-page {
-    font-size: 14px;
-    color: #555;
+    margin: 0 15px;
+    font-weight: 500;
+    color: var(--dark);
 }
 
 /* Modal */
@@ -547,8 +524,6 @@ tr:hover td {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    align-items: center;
-    justify-content: center;
 }
 
 .modal-content {
@@ -605,39 +580,27 @@ tr:hover td {
     border-radius: 5px;
 }
 
-/* Close Ticket Modal Input */
-.close-ticket-input {
+/* Archive Header */
+.archive-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
     margin-bottom: 15px;
 }
 
-.ticket-id-input input {
-    width: 100px;
-    padding: 6px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 14px;
+.restore-all-btn {
+    padding: 8px 16px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: -65px;
+    margin-left: 17.5%;
 }
 
-.ticket-id-input input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 5px rgba(108, 92, 231, 0.3);
-}
-
-/* Responsive design for Close Ticket Modal */
-@media (max-width: 480px) {
-    .close-ticket-input {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .ticket-id-input input {
-        width: 100%;
-    }
+.restore-all-btn:hover {
+    background: #45a049;
 }
 
 /* Alerts */
@@ -650,7 +613,7 @@ tr:hover td {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 15px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -670,7 +633,7 @@ tr:hover td {
 
 .settings-link {
     position: absolute;
-    right: 45px;
+    right: 40px;
     margin-top: -15px;
     display: flex;
     align-items: center;
@@ -680,6 +643,104 @@ tr:hover td {
     font-weight: 600;
     transition: 0.3s ease-in-out;
 }
+
+.add-btn {
+    display: inline-block;
+    background-color: #cf752b;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 90px;
+    margin-top: -50px;
+    
+}
+
+.add-btn:hover {
+    background-color: #7494ec;
+}
+
+.export-btn {
+    display: inline-block;
+    background-color: #63c216;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 225px;
+    margin-top: -50px;
+}
+
+
+.export-btn:hover {
+    background-color: #7494ec;
+}
+
+.borrow-btn {
+    background-color: #c23e16;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 90px;
+    margin-top: -80px;
+    margin-bottom: 50px;
+}
+
+
+.deploy-btn {
+    background-color: #d12e11;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 5px;
+    margin-top: -100px;
+    margin-bottom: 50px;
+}
+
+
+.deploy-btn:hover {
+    background-color: #7494ec;
+}
+
+.borrow-btn:hover {
+    background-color: #7494ec;
+}
+
+.return-btn {
+    background-color: #c2b116;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 5px;
+    margin-top: -100px;
+    margin-bottom: 50px;
+}
+
+
+.return-btn:hover {
+    background-color: #7494ec;
+}
+
 
 .settings-link i {
     font-size: 24px;
@@ -692,7 +753,7 @@ tr:hover td {
     transform: translateX(0);
 }
 
-/* Empty state */
+/* Empty state styling */
 .empty-state {
     height: 300px;
     display: flex;
@@ -704,3 +765,12 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
+
+.alert {
+    transition: opacity 0.5s ease-out;
+}
+.alert-hidden {
+    opacity: 0;
+    display: none;
+}
+

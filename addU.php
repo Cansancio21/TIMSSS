@@ -4,7 +4,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 // Load Composer's autoloader for PHPMailer
-require 'vendor/autoload.php'; // Adjust path if vendor is elsewhere
+require '../vendor/autoload.php'; // If vendor is one directory up
 
 include 'db.php'; // Ensure db.php contains a valid connection to $conn
 
