@@ -31,21 +31,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_customer'])) {
         $fname = $_POST['c_fname'];
         $lname = $_POST['c_lname'];
-        $area = $_POST['c_area'];
+        $address = $_POST['c_address'];
         $contact = $_POST['c_contact'];
         $email = $_POST['c_email'];
-        $onu = $_POST['c_onu'];
-        $caller = $_POST['c_caller'];
-        $address = $_POST['c_address'];
-        $rem = $_POST['c_rem'];
+        $napname = $_POST['c_napname'];
+        $napport = $_POST['c_napport'];
+        $macaddress = $_POST['c_macaddress'];
+        $status = $_POST['c_status'];
 
-        $sql = "INSERT INTO tbl_customer (c_fname, c_lname, c_area, c_contact, c_email, c_date, c_onu, c_caller, c_address, c_rem) 
+        $sql = "INSERT INTO tbl_customer (c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status) 
                 VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("sssssssss", $fname, $lname, $area, $contact, $email, $onu, $caller, $address, $rem);
+        $stmt->bind_param("sssssssss", $fname, $lname, $address, $contact, $email, $napname, $napport, $macaddress, $status);
         if ($stmt->execute()) {
             $_SESSION['message'] = "Customer added successfully!";
         } else {
@@ -57,20 +57,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $_POST['c_id'];
         $fname = $_POST['c_fname'];
         $lname = $_POST['c_lname'];
-        $area = $_POST['c_area'];
+        $address = $_POST['c_address'];
         $contact = $_POST['c_contact'];
         $email = $_POST['c_email'];
-        $onu = $_POST['c_onu'];
-        $caller = $_POST['c_caller'];
-        $address = $_POST['c_address'];
-        $rem = $_POST['c_rem'];
+        $napname = $_POST['c_napname'];
+        $napport = $_POST['c_napport'];
+        $macaddress = $_POST['c_macaddress'];
+        $status = $_POST['c_status'];
 
-        $sql = "UPDATE tbl_customer SET c_fname=?, c_lname=?, c_area=?, c_contact=?, c_email=?, c_onu=?, c_caller=?, c_address=?, c_rem=? WHERE c_id=?";
+        $sql = "UPDATE tbl_customer SET c_fname=?, c_lname=?, c_address=?, c_contact=?, c_email=?, c_napname=?, c_napport=?, c_macaddress=?, c_status=? WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("sssssssssi", $fname, $lname, $area, $contact, $email, $onu, $caller, $address, $rem, $id);
+        $stmt->bind_param("sssssssssi", $fname, $lname, $address, $contact, $email, $napname, $napport, $macaddress, $status, $id);
         if ($stmt->execute()) {
             $_SESSION['message'] = "Customer updated successfully!";
         } else {
@@ -81,18 +81,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['archive_customer'])) {
         $id = $_POST['c_id'];
         // Get current c_rem to preserve it
-        $sql = "SELECT c_rem FROM tbl_customer WHERE c_id=?";
+        $sql = "SELECT c_status FROM tbl_customer WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
-        $current_rem = $row['c_rem'] ?? '';
+        $current_rem = $row['c_status'] ?? '';
         $stmt->close();
 
         // Prepend ARCHIVED:
         $new_rem = 'ARCHIVED:' . $current_rem;
-        $sql = "UPDATE tbl_customer SET c_rem=? WHERE c_id=?";
+        $sql = "UPDATE tbl_customer SET c_status=? WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
@@ -108,18 +108,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['unarchive_customer'])) {
         $id = $_POST['c_id'];
         // Get current c_rem to remove ARCHIVED:
-        $sql = "SELECT c_rem FROM tbl_customer WHERE c_id=?";
+        $sql = "SELECT c_status FROM tbl_customer WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
-        $current_rem = $row['c_rem'] ?? '';
+        $current_rem = $row['c_status'] ?? '';
         $stmt->close();
 
         // Remove ARCHIVED: prefix
         $new_rem = preg_replace('/^ARCHIVED:/', '', $current_rem);
-        $sql = "UPDATE tbl_customer SET c_rem=? WHERE c_id=?";
+        $sql = "UPDATE tbl_customer SET c_status=? WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tab = 'customers_active';
     } elseif (isset($_POST['delete_customer'])) {
         $id = $_POST['c_id'];
-        $sql = "DELETE FROM tbl_customer WHERE c_id=? AND c_rem LIKE 'ARCHIVED:%'";
+        $sql = "DELETE FROM tbl_customer WHERE c_id=? AND c_status LIKE 'ARCHIVED:%'";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
@@ -173,7 +173,7 @@ if ($conn) {
     // Active customers
     $pageActive = isset($_GET['page_active']) ? (int)$_GET['page_active'] : 1;
     $offsetActive = ($pageActive - 1) * $limit;
-    $totalActiveQuery = "SELECT COUNT(*) AS total FROM tbl_customer WHERE c_rem NOT LIKE 'ARCHIVED:%' OR c_rem IS NULL";
+    $totalActiveQuery = "SELECT COUNT(*) AS total FROM tbl_customer WHERE c_status NOT LIKE 'ARCHIVED:%' OR c_status IS NULL";
     $totalActiveResult = $conn->query($totalActiveQuery);
     $totalActiveRow = $totalActiveResult->fetch_assoc();
     $totalActive = $totalActiveRow['total'];
@@ -182,15 +182,15 @@ if ($conn) {
     // Archived customers
     $pageArchived = isset($_GET['page_archived']) ? (int)$_GET['page_archived'] : 1;
     $offsetArchived = ($pageArchived - 1) * $limit;
-    $totalArchivedQuery = "SELECT COUNT(*) AS total FROM tbl_customer WHERE c_rem LIKE 'ARCHIVED:%'";
+    $totalArchivedQuery = "SELECT COUNT(*) AS total FROM tbl_customer WHERE c_status LIKE 'ARCHIVED:%'";
     $totalArchivedResult = $conn->query($totalArchivedQuery);
     $totalArchivedRow = $totalArchivedResult->fetch_assoc();
     $totalArchived = $totalArchivedRow['total'];
     $totalArchivedPages = ceil($totalArchived / $limit);
 
     // Fetch active customers
-    $sqlActive = "SELECT c_id, c_fname, c_lname, c_area, c_contact, c_email, c_date, c_onu, c_caller, c_address, c_rem 
-                  FROM tbl_customer WHERE c_rem NOT LIKE 'ARCHIVED:%' OR c_rem IS NULL LIMIT ?, ?";
+    $sqlActive = "SELECT c_id, c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status 
+                  FROM tbl_customer WHERE c_status NOT LIKE 'ARCHIVED:%' OR c_status IS NULL LIMIT ?, ?";
     $stmtActive = $conn->prepare($sqlActive);
     $stmtActive->bind_param("ii", $offsetActive, $limit);
     $stmtActive->execute();
@@ -198,8 +198,8 @@ if ($conn) {
     $stmtActive->close();
 
     // Fetch archived customers
-    $sqlArchived = "SELECT c_id, c_fname, c_lname, c_area, c_contact, c_email, c_date, c_onu, c_caller, c_address, c_rem 
-                    FROM tbl_customer WHERE c_rem LIKE 'ARCHIVED:%' LIMIT ?, ?";
+    $sqlArchived = "SELECT c_id, c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status
+                    FROM tbl_customer WHERE c_status LIKE 'ARCHIVED:%' LIMIT ?, ?";
     $stmtArchived = $conn->prepare($sqlArchived);
     $stmtArchived->bind_param("ii", $offsetArchived, $limit);
     $stmtArchived->execute();
@@ -216,7 +216,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registered Customers</title>
-    <link rel="stylesheet" href="customersT.css">
+    <link rel="stylesheet" href="customerT.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -233,7 +233,7 @@ if ($conn) {
             <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
+               <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -300,14 +300,14 @@ if ($conn) {
                             <th>Customer ID</th>
                             <th>First Name</th>
                             <th>Last Name</th>
-                            <th>Area</th>
+                            <th>Address</th>
                             <th>Contact</th>
                             <th>Email</th>
                             <th>Date</th>
-                            <th>ONU Name</th>
-                            <th>Call Id</th>
+                            <th>Nap Name</th>
+                            <th>Nap Port</th>
                             <th>Mac Address</th>
-                            <th>Remarks</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -319,16 +319,16 @@ if ($conn) {
                                         <td>{$row['c_id']}</td> 
                                         <td>{$row['c_fname']}</td> 
                                         <td>{$row['c_lname']}</td> 
-                                        <td>{$row['c_area']}</td> 
+                                        <td>{$row['c_address']}</td> 
                                         <td>{$row['c_contact']}</td> 
                                         <td>{$row['c_email']}</td> 
                                         <td>{$row['c_date']}</td> 
-                                        <td>{$row['c_onu']}</td> 
-                                        <td>{$row['c_caller']}</td> 
-                                        <td>{$row['c_address']}</td> 
-                                        <td>" . htmlspecialchars($row['c_rem'] ?? '', ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>{$row['c_napname']}</td> 
+                                        <td>{$row['c_napport']}</td> 
+                                        <td>{$row['c_macaddress']}</td> 
+                                        <td>" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '" . htmlspecialchars($row['c_rem'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
                                         </td>
@@ -374,14 +374,14 @@ if ($conn) {
                             <th>Customer ID</th>
                             <th>First Name</th>
                             <th>Last Name</th>
-                            <th>Area</th>
+                            <th>Address</th>
                             <th>Contact</th>
                             <th>Email</th>
                             <th>Date</th>
-                            <th>ONU Name</th>
-                            <th>Call Id</th>
+                            <th>Nap Name</th>
+                            <th>NapPort</th>
                             <th>Mac Address</th>
-                            <th>Remarks</th>
+                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -390,21 +390,21 @@ if ($conn) {
                         if ($resultArchived->num_rows > 0) {
                             while ($row = $resultArchived->fetch_assoc()) {
                                 // Strip ARCHIVED: for display
-                                $display_rem = preg_replace('/^ARCHIVED:/', '', $row['c_rem']);
+                                $display_rem = preg_replace('/^ARCHIVED:/', '', $row['c_status']);
                                 echo "<tr> 
                                         <td>{$row['c_id']}</td> 
                                         <td>{$row['c_fname']}</td> 
                                         <td>{$row['c_lname']}</td> 
-                                        <td>{$row['c_area']}</td> 
+                                        <td>{$row['c_address']}</td> 
                                         <td>{$row['c_contact']}</td> 
                                         <td>{$row['c_email']}</td> 
                                         <td>{$row['c_date']}</td> 
-                                        <td>{$row['c_onu']}</td> 
-                                        <td>{$row['c_caller']}</td> 
-                                        <td>{$row['c_address']}</td> 
+                                        <td>{$row['c_napname']}</td> 
+                                        <td>{$row['c_napport']}</td> 
+                                        <td>{$row['c_macaddress']}</td> 
                                         <td>" . htmlspecialchars($display_rem, ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_area']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_onu']}', '{$row['c_caller']}', '{$row['c_address']}', '" . htmlspecialchars($display_rem, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($display_rem, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='unarchive-btn' onclick=\"showUnarchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
                                             <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
@@ -589,14 +589,14 @@ function showViewModal(id, fname, lname, area, contact, email, date, onu, caller
         <div class="customer-details">
             <p><strong>ID:</strong> ${id}</p>
             <p><strong>Name:</strong> ${fname} ${lname}</p>
-            <p><strong>Area:</strong> ${area}</p>
+            <p><strong>Address:</strong> ${area}</p>
             <p><strong>Contact:</strong> ${contact}</p>
             <p><strong>Email:</strong> ${email || 'N/A'}</p>
-            <p><strong>Date Added:</strong> ${date}</p>
-            <p><strong>ONU Name:</strong> ${onu || 'N/A'}</p>
-            <p><strong>Caller ID:</strong> ${caller || 'N/A'}</p>
+            <p><strong>Date Applied:</strong> ${date}</p>
+            <p><strong>Nap Name:</strong> ${onu || 'N/A'}</p>
+            <p><strong>Nap Port:</strong> ${caller || 'N/A'}</p>
             <p><strong>MAC Address:</strong> ${address || 'N/A'}</p>
-            <p><strong>Remarks:</strong> ${rem || 'N/A'}</p>
+            <p><strong>Status:</strong> ${rem || 'N/A'}</p>
         </div>
     `;
     document.getElementById('viewModal').style.display = 'block';

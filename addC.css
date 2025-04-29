@@ -36,7 +36,6 @@ body {
 }
 
 /* Sidebar */
-/* Sidebar */
 .sidebar {
     width: 200px;
     background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -107,6 +106,17 @@ body {
 .sidebar ul li a span {
     font-size: 14px;
     display: inline;
+}
+
+.sidebar ul li a img {
+    width: 35px;
+    height: 30px;
+    margin-right: 10px;
+}
+
+footer .back-home img {
+    width: 35px;
+    height: 35px;
 }
 
 footer {

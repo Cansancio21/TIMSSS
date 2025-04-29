@@ -13,7 +13,7 @@ if (isset($_GET['id'])) {
     $customerId = $_GET['id'];
 
     // Fetch customer details based on the customer ID
-    $sql = "SELECT c_id, c_fname, c_lname, c_area, c_contact, c_email, c_onu, c_caller, c_address, c_rem, c_date FROM tbl_customer WHERE c_id = ?";
+    $sql = "SELECT c_id, c_fname, c_lname, c_address, c_contact, c_email, c_napname, c_napport, c_macaddress, c_status, c_date FROM tbl_customer WHERE c_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $customerId);
     $stmt->execute();
@@ -71,19 +71,19 @@ if ($conn) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $firstName = $_POST['firstname'];
     $lastName = $_POST['lastname'];
-    $area = $_POST['area'];
+    $address = $_POST['address'];
     $contact = $_POST['contact'];
     $email = $_POST['email'];
     $date = $_POST['date'];
-    $onu = $_POST['ONU'];
-    $caller = $_POST['caller'];
-    $macAddress = $_POST['address'];
-    $remarks = $_POST['remarks'];
+    $napname = $_POST['napname'];
+    $napport = $_POST['napport'];
+    $macAddress = $_POST['macaddress'];
+    $status = $_POST['status'];
 
     // Update the customer in the database
-    $sqlUpdate = "UPDATE tbl_customer SET c_fname = ?, c_lname = ?, c_area = ?, c_contact = ?, c_email = ?, c_date = ?, c_onu = ?, c_caller = ?, c_address = ?, c_rem = ? WHERE c_id = ?";
+    $sqlUpdate = "UPDATE tbl_customer SET c_fname = ?, c_lname = ?, c_address = ?, c_contact = ?, c_email = ?, c_date = ?, c_napname = ?, c_napport = ?, c_macaddress = ?, c_status = ? WHERE c_id = ?";
     $stmtUpdate = $conn->prepare($sqlUpdate);
-    $stmtUpdate->bind_param("ssssssssssi", $firstName, $lastName, $area, $contact, $email, $date, $onu, $caller, $macAddress, $remarks, $customerId);
+    $stmtUpdate->bind_param("ssssssssssi", $firstName, $lastName, $address, $contact, $email, $date, $napname, $napport, $macAddress, $status, $customerId);
     
     if ($stmtUpdate->execute()) {
         echo "<script>alert('Customer updated successfully!'); window.location.href='customersT.php';</script>";
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Customer</title>
-    <link rel="stylesheet" href="editCu.css">
+    <link rel="stylesheet" href="editC.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
    
@@ -109,15 +109,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php" class="active"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
-            <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
-            <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+            <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
+            <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
+            <li><a href="customersT.php"><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
+            <li><a href="createTickets.php"><img src="https://img.icons8.com/fluency/48/create-new.png" alt="create-new"/><span>Ticket Registration</span></a></li>
+            <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
+            <li><a href="addC.php"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+        <a href="index.php" class="back-home"><img src="https://img.icons8.com/stickers/35/exit.png" alt="exit"/></i> Logout</a>
         </footer>
     </div>
 
@@ -174,8 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                </div>
                <div class="input-box">
                    <i class="bx bxs-user"></i>
-                   <label for="area">Area:</label>
-                   <input type="text" id="area" name="area" value="<?php echo htmlspecialchars($customer['c_area']); ?>" required>
+                   <label for="address">Address:</label>
+                   <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($customer['c_address']); ?>" required>
                </div>
            </div>
 
@@ -192,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                </div>
                <div class="input-box">
                    <i class="bx bxs-user"></i>
-                   <label for="date">Date of Birth:</label>
+                   <label for="date">Date Applied:</label>
                    <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($customer['c_date']); ?>" required>
                </div>
            </div>
@@ -202,23 +202,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
            <div class="secondrow">
                <div class="input-box">
                    <i class="bx bxs-user"></i>
-                   <label for="ONU">ONU Name:</label>
-                   <input type="text" id="ONU" name="ONU" value="<?php echo htmlspecialchars($customer['c_onu']); ?>" required>
+                   <label for="napname">Nap Name:</label>
+                   <input type="text" id="napname" name="napname" value="<?php echo htmlspecialchars($customer['c_napname']); ?>" required>
                </div>
                <div class="input-box">
                    <i class="bx bxs-user"></i>
-                   <label for="caller">Caller ID:</label>
-                   <input type="text" id="caller" name="caller" value="<?php echo htmlspecialchars($customer['c_caller']); ?>" required>
+                   <label for="napport">Nap Port:</label>
+                   <input type="text" id="napport" name="napport" value="<?php echo htmlspecialchars($customer['c_napport']); ?>" required>
                </div>
                <div class="input-box">
                    <i class="bx bxs-user"></i>
-                   <label for="address">Mac Address:</label>
-        <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($customer['c_address']); ?>" required>
+                   <label for="macaddress">Mac Address:</label>
+        <input type="text" id="macaddress" name="macaddress" value="<?php echo htmlspecialchars($customer['c_macaddress']); ?>" required>
                </div>
                <div class="input-box">
                    <i class="bx bxs-user"></i>
-                   <label for="remarks">Remarks:</label>
-                   <input type="text" id="remarks" name="remarks" value="<?php echo htmlspecialchars($customer['c_rem']); ?>" required>
+                   <label for="status">Customer Status:</label>
+                   <input type="text" id="status" name="status" value="<?php echo htmlspecialchars($customer['c_status']); ?>" required>
                </div>
            </div>
            <div class="button-container">
