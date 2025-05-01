@@ -10,9 +10,6 @@ if (!$username || !$userId) {
     exit();
 }
 
-// Get username from session
-$username = $_SESSION['username'] ?? 'tech_user';
-
 // Initialize variables
 $firstName = '';
 $userType = '';
@@ -173,11 +170,10 @@ if ($conn) {
             $stmt->close();
         }
 
-        // Fixed typo in redirect URL parameters
         $redirect_url = "technicianD.php?tab=" . urlencode($targetTab) .
-                        "&regularActivePage=" . urlencode($regularActivePage) .
+                        "®ularActivePage=" . urlencode($regularActivePage) .
                         "&supportActivePage=" . urlencode($supportActivePage) .
-                        "&regularArchivedPage=" . urlencode($regularArchivedPage) .
+                        "®ularArchivedPage=" . urlencode($regularArchivedPage) .
                         "&supportArchivedPage=" . urlencode($supportArchivedPage);
         header("Location: $redirect_url");
         exit;
@@ -278,6 +274,49 @@ if ($conn) {
     <link rel="stylesheet" href="techniciansD.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .support-tickets-link {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            color: #fff;
+            text-decoration: none;
+        }
+        .support-tickets-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .support-tickets-input {
+            display: none;
+            margin: 10px 0 10px 20px;
+            align-items: center;
+        }
+        .support-tickets-input.active {
+            display: flex;
+        }
+        .support-tickets-input input {
+            width: 120px;
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            color: #333;
+            font-size: 14px;
+        }
+        .support-tickets-input button {
+            padding: 8px 12px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .support-tickets-input button:hover {
+            background: #0056b3;
+        }
+    </style>
 </head>
 <body>
 <div class="wrapper">
@@ -286,9 +325,18 @@ if ($conn) {
         <ul>
             <li><a href="technicianD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="staffD.php"><i class="fas fa-users"></i> Regular Tickets</a></li>
-            <li><a href="suppT.php"><i class="fas fa-file-archive"></i> Support Tickets</a></li>
-            <li><a href="assetsT.php"><i class="fas fa-box"></i>View Assets</a></li>
-            <li><a href="techBorrowed.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
+            <li>
+                <a href="javascript:void(0)" class="support-tickets-link" onclick="toggleSupportInput()">
+                    <i class="fas fa-file-archive"></i>
+                    <span>Support Tickets</span>
+                </a>
+                <div class="support-tickets-input" id="supportTicketInput">
+                    <input type="text" id="supportCustomerId" placeholder="Enter Customer ID" required>
+                    <button onclick="goToSupportTicket()" title="View Support Tickets"><i class="fas fa-arrow-right"></i></button>
+                </div>
+            </li>
+            <li><a href="assetsT.php"><i class="fas fa-box"></i> View Assets</a></li>
+            <li><a href="techBorrowed.php"><i class="fas fa-box-open"></i> Borrowed Records</a></li>
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
@@ -434,13 +482,13 @@ if ($conn) {
                         </table>
                         <div class="pagination">
                             <?php if ($regularActivePage > 1): ?>
-                                <a href="?tab=regular&regularActivePage=<?php echo $regularActivePage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                                <a href="?tab=regular®ularActivePage=<?php echo $regularActivePage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                             <?php else: ?>
                                 <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
                             <?php endif; ?>
                             <span class="current-page">Page <?php echo $regularActivePage; ?> of <?php echo $totalRegularActivePages; ?></span>
                             <?php if ($regularActivePage < $totalRegularActivePages): ?>
-                                <a href="?tab=regular&regularActivePage=<?php echo $regularActivePage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                                <a href="?tab=regular®ularActivePage=<?php echo $regularActivePage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
                             <?php else: ?>
                                 <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
                             <?php endif; ?>
@@ -497,13 +545,13 @@ if ($conn) {
                         </table>
                         <div class="pagination">
                             <?php if ($regularArchivedPage > 1): ?>
-                                <a href="?tab=regularArchived&regularArchivedPage=<?php echo $regularArchivedPage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                                <a href="?tab=regularArchived®ularArchivedPage=<?php echo $regularArchivedPage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                             <?php else: ?>
                                 <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
                             <?php endif; ?>
                             <span class="current-page">Page <?php echo $regularArchivedPage; ?> of <?php echo $totalRegularArchivedPages; ?></span>
                             <?php if ($regularArchivedPage < $totalRegularArchivedPages): ?>
-                                <a href="?tab=regularArchived&regularArchivedPage=<?php echo $regularArchivedPage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                                <a href="?tab=regularArchived®ularArchivedPage=<?php echo $regularArchivedPage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
                             <?php else: ?>
                                 <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
                             <?php endif; ?>
@@ -651,9 +699,31 @@ if ($conn) {
 </div>
 
 <script>
+function toggleSupportInput() {
+    const inputContainer = document.getElementById('supportTicketInput');
+    inputContainer.classList.toggle('active');
+    const input = document.getElementById('supportCustomerId');
+    if (inputContainer.classList.contains('active')) {
+        input.focus();
+    } else {
+        input.value = '';
+    }
+}
+
+function goToSupportTicket() {
+    const customerId = document.getElementById('supportCustomerId').value.trim();
+    if (!customerId || isNaN(customerId) || customerId <= 0) {
+        alert('Please enter a valid Customer ID (positive number).');
+        document.getElementById('supportCustomerId').focus();
+        return;
+    }
+    window.location.href = `suppT.php?c_id=${encodeURIComponent(customerId)}`;
+}
+
 function openMainTab(tabName, subTab) {
     const mainTabContents = document.getElementsByClassName('main-tab-content');
-    for (let i = 0; i < mainTabContents.length; i++) {
+    for (let i
+ = 0; i < mainTabContents.length; i++) {
         mainTabContents[i].classList.remove('active');
     }
     const mainTabButtons = document.getElementsByClassName('main-tab-buttons')[0].getElementsByClassName('tab-button');

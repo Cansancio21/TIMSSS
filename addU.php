@@ -1,7 +1,4 @@
 <?php
-session_start(); // Start session for login management
-include 'db.php';
-
 // Include PHPMailer classes
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -9,122 +6,76 @@ use PHPMailer\PHPMailer\Exception;
 // Load Composer's autoloader for PHPMailer
 require '../vendor/autoload.php'; // Adjusted path as per your update
 
-// Check if the user is logged in
-if (!isset($_SESSION['username'])) {
-    header("Location: index.php"); 
-    exit();
-}
+include 'db.php'; // Ensure db.php contains a valid connection to $conn
 
-// Initialize variables for user data
-$username = $_SESSION['username'];
-$lastName = '';
-$firstName = '';
-$userType = '';
-$avatarPath = 'default-avatar.png';
-$avatarFolder = 'Uploads/avatars/';
-$userAvatar = $avatarFolder . $username . '.png';
-
-if (file_exists($userAvatar)) {
-    $_SESSION['avatarPath'] = $userAvatar . '?' . time(); // Prevent caching issues
-} else {
-    $_SESSION['avatarPath'] = 'default-avatar.png';
-}
-$avatarPath = $_SESSION['avatarPath'];
-
-// Fetch user data from the database
-if ($conn) {
-    $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
-    $stmt = $conn->prepare($sqlUser);
-    $stmt->bind_param("s", $_SESSION['username']);
-    $stmt->execute();
-    $resultUser = $stmt->get_result();
-
-    if ($resultUser->num_rows > 0) {
-        $row = $resultUser->fetch_assoc();
-        $firstName = $row['u_fname'];
-        $lastName = $row['u_lname'];
-        $userType = $row['u_type'];
-    }
-    $stmt->close();
-} else {
-    echo "Database connection failed.";
-    exit();
-}
-
-// Initialize customer form variables
-$firstname = $lastname = $address = $contact = $email = $dob = "";
-$napname = $napport = $macaddress = $status = "";
-$firstnameErr = $lastnameErr = $addressErr = $contactErr = $emailErr = $dobErr = $napnameErr = $napportErr = $macaddressErr = $statusErr = "";
+$firstnameErr = $lastnameErr = $emailErr = $usernameErr = $passwordErr = "";
+$firstname = $lastname = $email = $username = $password = $type = $status = "";
 $hasError = false;
+$successMessage = "";
 
-// Handle customer registration form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get form data and sanitize
     $firstname = trim($_POST['firstname']);
     $lastname = trim($_POST['lastname']);
-    $address = trim($_POST['address']);
-    $contact = trim($_POST['contact']);
     $email = trim($_POST['email']);
-    $dob = trim($_POST['date']);
-    $napname = trim($_POST['napname']);
-    $napport = trim($_POST['napport']);
-    $macaddress = trim($_POST['macaddress']);
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
+    $type = trim($_POST['type']);
     $status = trim($_POST['status']);
 
-    // Validate inputs
+    // Validation
     if (!preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
-        $firstnameErr = "First Name should not contain numbers.";
+        $firstnameErr = "Firstname should not contain numbers.";
         $hasError = true;
     }
-    if (!preg_match("/^[0-9]+$/", $contact)) {
-        $contactErr = "Contact must contain numbers only.";
-        $hasError = true;
-    }
+
     if (!preg_match("/^[a-zA-Z\s-]+$/", $lastname)) {
-        $lastnameErr = "Last Name should not contain numbers.";
+        $lastnameErr = "Lastname should not contain numbers.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z\s-]+$/", $address)) { // Fixed regex
-        $addressErr = "Address should not contain numbers.";
-        $hasError = true;
-    }
-    if (!preg_match("/^[0-9]+$/", $napport)) {
-        $napportErr = "Nap Port must contain numbers only.";
-        $hasError = true;
-    }
-    if (!preg_match("/^[a-zA-Z]+$/", $napname)) {
-        $napnameErr = "Nap Name must contain letters only.";
-        $hasError = true;
-    }
-    if (!preg_match("/^[a-zA-Z0-9\s-]+$/", $macaddress)) {
-        $macaddressErr = "Mac Address should not contain special characters.";
-        $hasError = true;
-    }
-   
+
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $emailErr = "Invalid email format.";
         $hasError = true;
     }
-    if (empty($dob)) {
-        $dobErr = "Date is required.";
+
+    if (empty($username)) {
+        $usernameErr = "Username is required.";
         $hasError = true;
     }
 
-    // Insert into database if no errors
+    if (!preg_match("/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/", $password)) {
+        $passwordErr = "Password must be at least 8 characters with letters, numbers, and special characters.";
+        $hasError = true;
+    }
+
+    if (empty($type)) {
+        $hasError = true;
+    }
+
+    if (empty($status)) {
+        $hasError = true;
+    }
+
     if (!$hasError) {
-        $sql = "INSERT INTO tbl_customer (c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // Log submission for debugging
+        $log = date('Y-m-d H:i:s') . " - Attempted to add user: $firstname $lastname, $email, $username\n";
+        file_put_contents('user_submission_log.txt', $log, FILE_APPEND);
+
+        // Hash the password
+        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+        
+        $sql = "INSERT INTO tbl_user (u_fname, u_lname, u_email, u_username, u_password, u_type, u_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
         }
 
-        $stmt->bind_param("ssssssssss", $firstname, $lastname, $address, $contact, $email, $dob, $napname, $napport, $macaddress, $status);
+        $stmt->bind_param("sssssss", $firstname, $lastname, $email, $username, $passwordHash, $type, $status);
 
         if ($stmt->execute()) {
-            // Get the inserted customer ID
-            $customerId = $conn->insert_id;
-
             // Send the confirmation email using PHPMailer
             $mail = new PHPMailer(true); // Enable exceptions
 
@@ -144,45 +95,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // Content
                 $mail->isHTML(true);
-                $mail->Subject = 'Welcome to Our Platform!';
+                $mail->Subject = 'Your Account Has Been Created';
                 $mail->Body = "
                     <html>
                     <head>
-                        <title>Welcome to Our Platform</title>
+                        <title>Your Account Details</title>
                     </head>
                     <body>
                         <p>Dear $firstname $lastname,</p>
-                        <p>Thank you for registering with us. Your account details are:</p>
-                        <p><strong>Customer ID:</strong> $customerId</p>
-                        <p><strong>Last Name:</strong> $lastname</p>
-                        <p>Please use these credentials to log in to our customer portal by clicking the link below:</p>
-                        <p><a href='http://localhost/TIMSSS/customerP.php'>Customer Portal</a></p>
-                        <p>Enter your Customer ID and Last Name to access your account.</p>
-                        <p>Best regards,<br>Your Platform Team</p>
+                        <p>Your account has been successfully created. Here are your login credentials:</p>
+                        <p><strong>Username:</strong> $username</p>
+                        <p><strong>Password:</strong> $password</p>
+                        <p>Please use these credentials to log in to our system by clicking the link below:</p>
+                        <p><a href='http://localhost/TIMSSS/index.php'>Login Page</a></p>
+                        <p>For security reasons, we recommend changing your password after first login.</p>
+                        <p>Best regards,<br>Your System Administrator</p>
                     </body>
                     </html>
                 ";
-                $mail->AltBody = "Dear $firstname $lastname,\n\nThank you for registering with us. Your account details are:\nCustomer ID: $customerId\nLast Name: $lastname\n\nPlease use these credentials to log in to our customer portal at http://localhost/customerP.php\n\nBest regards,\nYour Platform Team";
+                $mail->AltBody = "Dear $firstname $lastname,\n\nYour account has been successfully created. Here are your login credentials:\nUsername: $username\nPassword: $password\n\nPlease use these credentials to log in to our system at http://localhost/TIMSSS/index.php\n\nFor security reasons, we recommend changing your password after first login.\n\nBest regards,\nYour System Administrator";
 
                 // Send the email
                 $mail->send();
                 
                 // Set success message and redirect
                 echo "<script type='text/javascript'>
-                        alert('Customer has been registered successfully. A confirmation email has been sent.');
-                        window.location.href = 'customersT.php';
+                        alert('User added successfully. Login credentials have been sent to $email.');
+                        window.location.href = 'viewU.php';
                       </script>";
             } catch (Exception $e) {
                 echo "<script type='text/javascript'>
-                        alert('Customer registered, but error sending confirmation email: " . addslashes($mail->ErrorInfo) . "');
-                        window.location.href = 'customersT.php';
+                        alert('User registered, but error sending email with credentials: " . addslashes($mail->ErrorInfo) . "');
+                        window.location.href = 'viewU.php';
                       </script>";
             }
-            
-            $stmt->close();
         } else {
             die("Execution failed: " . $stmt->error);
         }
+        
+        $stmt->close();
     }
 }
 ?>
@@ -192,152 +143,101 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Customer</title>
-    <link rel="stylesheet" href="addC.css"> 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Add User</title>
+    <link rel="stylesheet" href="addU.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
-<div class="wrapper">
-    <div class="sidebar glass-container">
-        <h2>Task Management</h2>
-        <ul>
-            <li><a href="staffD.php" class="active"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
-            <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
-            <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
-        </ul>
-        <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </footer>
-    </div>
-
-    <div class="container">
-        <div class="upper"> 
-            <h1>Add Customer</h1>
-            <div class="user-profile">
-                <div class="user-icon">
-                    <?php 
-                    if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
-                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
-                    } else {
-                        echo "<i class='fas fa-user-circle'></i>";
-                    }
-                    ?>
+    <div class="wrapper">
+        <div class="container">
+            <a href="viewU.php" class="back-icon">
+                <i class='bx bx-arrow-back'></i>
+            </a>
+            <h1>Add New User</h1>
+            <form method="POST" action="" class="form" id="addUserForm">
+                <div class="form-row">
+                    <label for="firstname">First Name:</label>
+                    <div class="input-box">
+                        <input type="text" id="firstname" name="firstname" placeholder="First Name" value="<?php echo htmlspecialchars($firstname); ?>">
+                        <i class='bx bxs-user firstname-icon'></i>
+                    </div>
+                    <span class="error"><?php echo $firstnameErr; ?></span>
                 </div>
-                <div class="user-details">
-                    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
+                <div class="form-row">
+                    <label for="lastname">Last Name:</label>
+                    <div class="input-box">
+                        <input type="text" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo htmlspecialchars($lastname); ?>">
+                        <i class='bx bxs-user lastname-icon'></i>
+                    </div>
+                    <span class="error"><?php echo $lastnameErr; ?></span>
                 </div>
-                <a href="settings.php" class="settings-link">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-            </div>
-        </div>
-          
-        <div class="alert-container">
-            <?php if (isset($_SESSION['message'])): ?>
-                <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-            <?php endif; ?>
-        </div>
-
-        <div class="table-box">
-            <h2>Customer Profile</h2>
-            <hr class="title-line">
-
-        <form action="" method="POST">
-        <div class="row">
-            <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="firstname">First Name:</label>
-            <input type="text" id="firstname" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
-            <span class="error"><?php echo $firstnameErr; ?></span>
-             </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="lastname">Last Name:</label>
-            <input type="text" id="lastname" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
-            <span class="error"><?php echo $lastnameErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="address">Address:</label>
-            <input type="text" id="address" name="address" placeholder="Enter Address" value="<?php echo htmlspecialchars($address); ?>">
-            <span class="error"><?php echo $addressErr; ?></span>
-        </div>
-        </div>
-
-        <div class="row">
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="contact">Contact:</label>
-            <input type="text" id="contact" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
-            <span class="error"><?php echo $contactErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
-            <span class="error"><?php echo $emailErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="date">Date Applied:</label>
-            <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($dob); ?>">
-            <span class="error"><?php echo $dobErr; ?></span>
-        </div>
-        </div>
-
-       <h2>Advance Profile</h2>
-       <hr class="title-line">
-       <div class="secondrow">
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="napname">Nap Name:</label>
-            <input type="text" id="napname" name="napname" placeholder="Nap Name" value="<?php echo htmlspecialchars($napname); ?>">
-            <span class="error"><?php echo $napnameErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="napport">Nap Port:</label>
-            <input type="text" id="napport" name="napport" placeholder="Nap Port" value="<?php echo htmlspecialchars($napport); ?>">
-            <span class="error"><?php echo $napportErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="macaddress">Mac Address:</label>
-            <input type="text" id="macaddress" name="macaddress" placeholder="Mac Address" value="<?php echo htmlspecialchars($macaddress); ?>">
-            <span class="error"><?php echo $macaddressErr; ?></span>
-        </div>
-
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-        <label for="status">Customer Status:</label>
-        <select id="status" name="status">
-            <option value="Active" <?php echo ($status === 'Active') ? 'selected' : ''; ?>>Active</option>
-            <option value="Inactive" <?php echo ($status === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
-        </select>
-            <span class="error"><?php echo $statusErr; ?></span>
-        </div>
-        </div>
-
-        <div class="button-container">
-          <button type="submit">Submit</button>
-        </div>
-       </form>
-
+                <div class="form-row">
+                    <label for="email">Email:</label>
+                    <div class="input-box">
+                        <input type="email" id="email" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email); ?>">
+                        <i class='bx bxs-envelope email-icon'></i>
+                    </div>
+                    <span class="error"><?php echo $emailErr; ?></span>
+                </div>
+                <div class="form-row">
+                    <label for="username">Username:</label>
+                    <div class="input-box">
+                        <input type="text" id="username" name="username" placeholder="Username" value="<?php echo htmlspecialchars($username); ?>">
+                        <i class='bx bxs-user username-icon'></i>
+                    </div>
+                    <span class="error"><?php echo $usernameErr; ?></span>
+                </div>
+                <div class="form-row">
+                    <label for="password">Password:</label>
+                    <div class="input-box">
+                        <input type="password" id="password" name="password" placeholder="Password">
+                        <i class='bx bxs-lock-alt password-icon' id="togglePassword" style="cursor: pointer;"></i>
+                    </div>
+                    <span class="error"><?php echo $passwordErr; ?></span>
+                </div>
+                <div class="form-row">
+                    <label for="type">User Type:</label>
+                    <div class="input-box">
+                        <select id="type" name="type" required>
+                            <option value="">Select Type</option>
+                            <option value="admin" <?php if($type == 'admin') echo 'selected'; ?>>Admin</option>
+                            <option value="staff" <?php if($type == 'staff') echo 'selected'; ?>>Staff</option>
+                            <option value="technician" <?php if($type == 'technician') echo 'selected'; ?>>Technician</option>
+                        </select>
+                        <i class='bx bxs-user type-icon'></i>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label for="status">Account Status:</label>
+                    <div class="input-box">
+                        <select id="status" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="active" <?php if($status == 'active') echo 'selected'; ?>>Active</option>
+                            <option value="pending" <?php if($status == 'pending') echo 'selected'; ?>>Pending</option>
+                        </select>
+                        <i class='bx bxs-check-circle status-icon'></i>
+                    </div>
+                </div>
+                <div class="button-container">
+                    <button type="submit" id="submitBtn">Add User</button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('bxs-lock-alt');
+            this.classList.toggle('bxs-lock-open-alt');
+        });
+
+        // Log form submission for debugging
+        document.getElementById('addUserForm').addEventListener('submit', function (e) {
+            console.log('Form submitted');
+        });
+    </script>
 </body>
 </html>
-
-<?php
-$conn->close();
-?>	
