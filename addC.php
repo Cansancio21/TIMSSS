@@ -205,12 +205,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
             <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
             <li><a href="customersT.php"><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
-            <li><a href="createTickets.php"><img src="https://img.icons8.com/fluency/48/create-new.png" alt="create-new"/><span>Ticket Registration</span></a></li>
             <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
             <li><a href="addC.php" class="active"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
         </ul>
         <footer>
-        <a href="index.php" class="back-home"><img src="https://img.icons8.com/stickers/35/exit.png" alt="exit"/></i> Logout</a>
+        <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 

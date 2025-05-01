@@ -122,7 +122,7 @@ footer .back-home img {
 }
 
 footer {
-    margin-top: 245px;
+    margin-top: 346px;
     width: 100%;
     padding: 0 15px;
     text-align: center;
@@ -443,7 +443,7 @@ tr:hover td {
     min-height: 50px;
 }
 
-.view-btn, .edit-btn, .archive-btn, .restore-btn {
+.view-btn, .edit-btn, .archive-btn, .restore-btn, .ticket-btn{
     display: inline-flex;
     align-items: center;
     justify-content: center;

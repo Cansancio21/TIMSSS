@@ -186,7 +186,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset Registration</title>
-    <link rel="stylesheet" href="assetT.css"> 
+    <link rel="stylesheet" href="assetsT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -195,12 +195,13 @@ if ($conn) {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
-            <li><a href="assetsT.php" class="active"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
-            <li><a href="customersT.php"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>    
+            <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
+            <li><a href="assetsT.php" class="active" ><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
+            <?php if ($userType !== 'technician'): ?>
+            <li><a href="customersT.php"><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
+            <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
+            <li><a href="addC.php"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
+            <?php endif; ?>    
         </ul>
         <footer>
         <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>

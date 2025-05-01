@@ -105,6 +105,17 @@ body {
     display: inline;
 }
 
+.sidebar ul li a img {
+    width: 35px;
+    height: 30px;
+    margin-right: 10px;
+}
+
+footer .back-home img {
+    width: 35px;
+    height: 35px;
+}
+
 footer {
     margin-top: auto;
     width: 100%;

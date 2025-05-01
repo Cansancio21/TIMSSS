@@ -219,13 +219,12 @@ if ($conn) {
             <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
             <li><a href="customersT.php"><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
             <?php if ($userType !== 'technician'): ?>
-            <li><a href="createTickets.php"><img src="https://img.icons8.com/fluency/48/create-new.png" alt="create-new"/><span>Ticket Registration</span></a></li>
             <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
             <li><a href="addC.php"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
             <?php endif; ?>
         </ul>
         <footer>
-        <a href="index.php" class="back-home"><img src="https://img.icons8.com/stickers/35/exit.png" alt="exit"/></i> Logout</a>
+        <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -324,7 +323,7 @@ if ($conn) {
                                 } else {
                                     echo "<a class='view-btn disabled' onclick='showRestrictedMessage()' title='View'><i class='fas fa-eye'></i></a>
                                           <a class='edit-btn disabled' onclick='showRestrictedMessage()' title='Edit'><i class='fas fa-edit'></i></a>
-                                          <a class='archive-btn disabled' onclick='showRestrictedMessage()' title='Archive'><i class='fas fa-archive'></i></a>";
+                                          <a class='archive-btn disabled' onclick='showRestrictedMessage()' title='Archive'><i class='fas fa-archive'></i></a";
                                 }
                                 echo "</td>
                                       </tr>";

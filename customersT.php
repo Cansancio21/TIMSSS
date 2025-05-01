@@ -225,12 +225,11 @@ if ($conn) {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> <span>View Tickets</span></a></li>
-            <li><a href="assetsT.php"><i class="fas fa-box"></i> <span>View Assets</span></a></li>
-            <li><a href="customersT.php" class="active"><i class="fas fa-users"></i> <span>View Customers</span></a></li>
-            <li><a href="createTickets.php"><i class="fas fa-file-invoice"></i> <span>Ticket Registration</span></a></li>
-            <li><a href="registerAssets.php"><i class="fas fa-plus-circle"></i> <span>Register Assets</span></a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> <span>Add Customer</span></a></li>
+            <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
+            <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
+            <li><a href="customersT.php" class="active" ><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
+            <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
+            <li><a href="addC.php"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
         </ul>
         <footer>
                <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -275,6 +274,7 @@ if ($conn) {
         </div>
 
         <div class="table-box glass-container">
+        <h2>TIMS Customers</h2>
             <div class="active-customers">
                 
                 <div class="tab-buttons">
@@ -331,6 +331,7 @@ if ($conn) {
                                             <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                                            <a class='ticket-btn' href='createTickets.php?aname=" . (htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8')) . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
                                         </td>
                                       </tr>";
                             }
@@ -442,10 +443,12 @@ if ($conn) {
         </div>
         <div id="viewContent"></div>
         <div class="modal-footer">
-            <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
+        <a class='modal-btn ticket' href='createTickets.php?aname=<?= htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') ?>&id=<?= htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') ?>' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
+        <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
         </div>
     </div>
 </div>
+
 
 <!-- Archive Customer Modal -->
 <div id="archiveModal" class="modal">
