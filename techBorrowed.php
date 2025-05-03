@@ -7,7 +7,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Handle AJAX request for asset name
-if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated'])) {
+if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated']) && !isset($_GET['search'])) {
     error_log('AJAX handler triggered for id: ' . $_GET['id']);
     header('Content-Type: application/json');
     $id = (int)$_GET['id'];
@@ -41,6 +41,7 @@ $userType = '';
 $avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
 $defaultAvatar = 'default-avatar.png';
+$searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if (!$username) {
     echo "Session username not set.";
@@ -59,23 +60,43 @@ if ($conn) {
 
     // Pagination setup
     $limit = 10;
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
     $offset = ($page - 1) * $limit;
 
     // Fetch total number of borrowed assets
     $countQuery = "SELECT COUNT(*) as total FROM tbl_borrowed";
-    $countResult = $conn->query($countQuery);
+    if ($searchTerm) {
+        $countQuery .= " WHERE b_assets_name LIKE ? OR b_technician_name LIKE ? OR b_technician_id LIKE ?";
+    }
+    $stmtCount = $conn->prepare($countQuery);
+    if ($searchTerm) {
+        $searchLike = "%$searchTerm%";
+        $stmtCount->bind_param("sss", $searchLike, $searchLike, $searchLike);
+    }
+    $stmtCount->execute();
+    $countResult = $stmtCount->get_result();
     $totalRecords = $countResult->fetch_assoc()['total'];
-    $totalPages = ceil($totalRecords / $limit);
+    $totalPages = ceil($totalRecords / $limit) ?: 1;
+    $page = min($page, $totalPages);
+    $offset = ($page - 1) * $limit;
+    $stmtCount->close();
 
     // Fetch borrowed assets with pagination
     $sqlBorrowed = "SELECT b_id, b_assets_name, b_quantity, b_technician_name, b_technician_id, b_date 
-                    FROM tbl_borrowed 
-                    LIMIT ?, ?";
+                    FROM tbl_borrowed";
+    if ($searchTerm) {
+        $sqlBorrowed .= " WHERE b_assets_name LIKE ? OR b_technician_name LIKE ? OR b_technician_id LIKE ?";
+    }
+    $sqlBorrowed .= " LIMIT ? OFFSET ?";
     $stmt = $conn->prepare($sqlBorrowed);
-    $stmt->bind_param("ii", $offset, $limit);
+    if ($searchTerm) {
+        $stmt->bind_param("sssii", $searchLike, $searchLike, $searchLike, $limit, $offset);
+    } else {
+        $stmt->bind_param("ii", $limit, $offset);
+    }
     $stmt->execute();
     $resultBorrowed = $stmt->get_result();
+    $stmt->close();
 } else {
     echo "Database connection failed.";
     exit();
@@ -93,7 +114,6 @@ $avatarPath = $_SESSION['avatarPath'];
 if (isset($_GET['deleted']) && $_GET['deleted'] == 'true') {
     $_SESSION['message'] = "Record deleted successfully!";
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -125,7 +145,7 @@ if (isset($_GET['deleted']) && $_GET['deleted'] == 'true') {
         <div class="upper"> 
             <h1>Borrowed Assets</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search borrowed assets..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search borrowed assets..." value="<?php echo htmlspecialchars($searchTerm); ?>" onkeyup="debouncedSearchAssets()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -209,17 +229,15 @@ if (isset($_GET['deleted']) && $_GET['deleted'] == 'true') {
                     </tbody>
                 </table>
 
-                <div class="pagination">
+                <div class="pagination" id="borrowed-pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?page=<?php echo $page - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                        <a href="?page=<?php echo $page - 1; ?><?php echo $searchTerm ? '&search=' . urlencode($searchTerm) : ''; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
                         <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
                     <?php endif; ?>
-
                     <span class="current-page">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
-
                     <?php if ($page < $totalPages): ?>
-                        <a href="?page=<?php echo $page + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                        <a href="?page=<?php echo $page + 1; ?><?php echo $searchTerm ? '&search=' . urlencode($searchTerm) : ''; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
                     <?php else: ?>
                         <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
                     <?php endif; ?>
@@ -256,28 +274,31 @@ if (isset($_GET['deleted']) && $_GET['deleted'] == 'true') {
 <script>
 let currentDeleteId = null;
 
-function searchUsers() {
-    const input = document.getElementById('searchInput');
-    const filter = input.value.toUpperCase();
-    const table = document.getElementById('borrowedTable');
-    const tr = table.getElementsByTagName('tr');
-
-    for (let i = 1; i < tr.length; i++) {
-        let found = false;
-        const td = tr[i].getElementsByTagName('td');
-        
-        for (let j = 0; j < td.length; j++) {
-            if (td[j]) {
-                const txtValue = td[j].textContent || td[j].innerText;
-                if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        tr[i].style.display = found ? '' : 'none';
-    }
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
+
+function searchAssets(page = 1) {
+    const searchTerm = document.getElementById('searchInput').value;
+    const url = new URL(window.location);
+    url.searchParams.set('page', page);
+    if (searchTerm) {
+        url.searchParams.set('search', searchTerm);
+    } else {
+        url.searchParams.delete('search');
+    }
+    window.location.href = url.toString();
+}
+
+const debouncedSearchAssets = debounce(searchAssets, 300);
 
 function showViewModal(id, assetName, quantity, technicianName, technicianId, date) {
     const modalContent = `
@@ -292,46 +313,35 @@ function showViewModal(id, assetName, quantity, technicianName, technicianId, da
 }
 
 function showDeleteModal(id) {
-    console.log('showDeleteModal called with id:', id);
     currentDeleteId = id;
-    const modal = document.getElementById('deleteModal');
-    console.log('Modal element:', modal);
-    fetch(`borrowedT.php?id=${id}`)
+    fetch(`techBorrowed.php?id=${id}`)
         .then(response => {
-            console.log('Fetch response status:', response.status);
-            console.log('Fetch response headers:', response.headers.get('content-type'));
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('Fetch response data:', data);
             if (data.assetName) {
                 document.getElementById('deleteAssetName').textContent = data.assetName;
             } else {
-                console.error('Asset name not found');
                 document.getElementById('deleteAssetName').textContent = 'Unknown Asset';
             }
-            modal.style.display = 'flex';
-            console.log('Modal display set to flex');
+            document.getElementById('deleteModal').style.display = 'flex';
         })
         .catch(error => {
             console.error('Error fetching asset name:', error);
             document.getElementById('deleteAssetName').textContent = 'Unknown Asset';
-            modal.style.display = 'flex';
-            console.log('Modal display set to flex (error case)');
+            document.getElementById('deleteModal').style.display = 'flex';
         });
 }
 
 function confirmDelete() {
     if (currentDeleteId) {
-        console.log('confirmDelete called with id:', currentDeleteId);
         fetch(`deleteR.php?id=${currentDeleteId}`, {
             method: 'GET'
         })
         .then(response => {
-            console.log('Delete response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -340,14 +350,14 @@ function confirmDelete() {
         .then(data => {
             updateTable();
             closeModal('deleteModal');
-            window.location.href = 'borrowedT.php?deleted=true';
+            window.location.href = 'techBorrowed.php?deleted=true';
         })
         .catch(error => console.error('Error deleting record:', error));
     }
 }
 
 function updateTable() {
-    fetch('borrowedT.php')
+    fetch('techBorrowed.php')
     .then(response => response.text())
     .then(data => {
         const parser = new DOMParser();
@@ -360,13 +370,11 @@ function updateTable() {
 }
 
 function closeModal(modalId) {
-    console.log('closeModal called for:', modalId);
     document.getElementById(modalId).style.display = 'none';
 }
 
 window.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal')) {
-        console.log('Clicked outside modal, closing');
         event.target.style.display = 'none';
     }
 });

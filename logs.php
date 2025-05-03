@@ -14,7 +14,7 @@ $lastName = '';
 $firstName = '';
 $userType = '';
 $avatarPath = 'default-avatar.png';
-$avatarFolder = 'uploads/avatars/';
+$avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
 
 if (file_exists($userAvatar)) {
@@ -24,6 +24,67 @@ if (file_exists($userAvatar)) {
 }
 
 $avatarPath = $_SESSION['avatarPath'];
+
+// Handle AJAX search request
+if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search'])) {
+    $searchTerm = trim($_GET['search']);
+    $page = isset($_GET['search_page']) ? (int)$_GET['search_page'] : 1;
+    $logs_per_page = 10;
+    $offset = ($page - 1) * $logs_per_page;
+    $output = '';
+
+    if ($searchTerm === '') {
+        // Fetch default logs for the current page
+        $countSql = "SELECT COUNT(*) as total FROM tbl_logs";
+        $countResult = $conn->query($countSql);
+        $total_logs = $countResult->fetch_assoc()['total'];
+        $total_pages = ceil($total_logs / $logs_per_page);
+
+        $sql = "SELECT l_stamp, l_description FROM tbl_logs ORDER BY l_stamp ASC LIMIT ?, ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $offset, $logs_per_page);
+    } else {
+        // Count total matching logs for pagination
+        $countSql = "SELECT COUNT(*) as total FROM tbl_logs WHERE l_description LIKE ? OR l_stamp LIKE ?";
+        $countStmt = $conn->prepare($countSql);
+        $searchWildcard = "%$searchTerm%";
+        $countStmt->bind_param("ss", $searchWildcard, $searchWildcard);
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $total_logs = $countResult->fetch_assoc()['total'];
+        $countStmt->close();
+
+        $total_pages = ceil($total_logs / $logs_per_page);
+
+        // Fetch paginated search results
+        $sql = "SELECT l_stamp, l_description FROM tbl_logs WHERE l_description LIKE ? OR l_stamp LIKE ? ORDER BY l_stamp ASC LIMIT ?, ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssii", $searchWildcard, $searchWildcard, $offset, $logs_per_page);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $output .= "<tr>
+                          <td>" . htmlspecialchars($row['l_stamp']) . "</td>
+                          <td>" . htmlspecialchars($row['l_description']) . "</td>
+                        </tr>";
+        }
+    } else {
+        $output = "<tr><td colspan='2' style='text-align: center;'>No logs found</td></tr>";
+    }
+    $stmt->close();
+
+    // Add pagination data
+    $output .= "<script>
+        updatePagination($page, $total_pages, '$searchTerm');
+    </script>";
+
+    echo $output;
+    exit();
+}
 
 // Fetch user details from tbl_user
 if ($conn) {
@@ -95,7 +156,7 @@ if (!$logResult) {
         <div class="upper">
             <h1>System Logs</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search logs..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search logs..." onkeyup="debouncedSearchLogs()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -127,7 +188,7 @@ if (!$logResult) {
                         <th>Activity Description</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="logs-tbody">
                     <?php if ($logResult->num_rows > 0): ?>
                         <?php while ($logRow = $logResult->fetch_assoc()): ?>
                             <tr>
@@ -143,26 +204,92 @@ if (!$logResult) {
                 </tbody>
             </table>
 
-            <?php if ($total_pages > 1): ?>
-                <div class="pagination">
-                    <?php if ($current_page > 1): ?>
-                        <a href="?page=<?= $current_page - 1 ?><?= isset($_GET['search']) ? '&search='.urlencode($_GET['search']) : '' ?>">«</a>
-                    <?php endif; ?>
+            <div class="pagination" id="logs-pagination">
+                <?php if ($current_page > 1): ?>
+                    <a href="?page=<?= $current_page - 1 ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
+                <?php endif; ?>
 
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?page=<?= $i ?><?= isset($_GET['search']) ? '&search='.urlencode($_GET['search']) : '' ?>" <?= $i == $current_page ? 'class="active"' : '' ?>>
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
+                <span class="current-page">Page <?= $current_page ?> of <?= $total_pages ?></span>
 
-                    <?php if ($current_page < $total_pages): ?>
-                        <a href="?page=<?= $current_page + 1 ?><?= isset($_GET['search']) ? '&search='.urlencode($_GET['search']) : '' ?>">»</a>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+                <?php if ($current_page < $total_pages): ?>
+                    <a href="?page=<?= $current_page + 1 ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                <?php else: ?>
+                    <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    let currentSearchPage = 1;
+    let defaultPage = <?php echo json_encode($current_page); ?>;
+
+    // Debounce function to limit search calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function searchLogs(page = 1) {
+        const searchTerm = document.getElementById('searchInput').value;
+        const tbody = document.getElementById('logs-tbody');
+        const paginationContainer = document.getElementById('logs-pagination');
+
+        currentSearchPage = page;
+
+        // Create XMLHttpRequest for AJAX
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                tbody.innerHTML = xhr.responseText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+            }
+        };
+        xhr.open('GET', `logs.php?action=search&search=${encodeURIComponent(searchTerm)}&search_page=${searchTerm ? page : defaultPage}`, true);
+        xhr.send();
+    }
+
+    function updatePagination(currentPage, totalPages, searchTerm) {
+        const paginationContainer = document.getElementById('logs-pagination');
+        let paginationHtml = '';
+
+        if (currentPage > 1) {
+            paginationHtml += `<a href="javascript:searchLogs(${currentPage - 1})" class="pagination-link"><i class="fas fa-chevron-left"></i></a>`;
+        } else {
+            paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>`;
+        }
+
+        paginationHtml += `<span class="current-page">Page ${currentPage} of ${totalPages}</span>`;
+
+        if (currentPage < totalPages) {
+            paginationHtml += `<a href="javascript:searchLogs(${currentPage + 1})" class="pagination-link"><i class="fas fa-chevron-right"></i></a>`;
+        } else {
+            paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>`;
+        }
+
+        paginationContainer.innerHTML = paginationHtml;
+    }
+
+    // Debounced search function
+    const debouncedSearchLogs = debounce(searchLogs, 300);
+
+    // Initialize search on page load if there's a search term
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput.value) {
+            searchLogs();
+        }
+    });
+</script>
 
 <?php
 $conn->close();

@@ -7,11 +7,11 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Handle AJAX request for asset name
-if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated'])) {
+if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated']) && !isset($_GET['action'])) {
     error_log('AJAX handler triggered for id: ' . $_GET['id']);
     header('Content-Type: application/json');
     $id = (int)$_GET['id'];
-    $sql = "SELECT b_assets_name FROM tbl_borrowed WHERE b_id = ?";
+    $sql = "SELECT d_assets_name FROM tbl_deployed WHERE d_id = ?";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         error_log('Prepare failed: ' . $conn->error);
@@ -24,13 +24,89 @@ if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !
     $result = $stmt->get_result();
     
     if ($row = $result->fetch_assoc()) {
-        echo json_encode(['assetName' => $row['b_assets_name']]);
+        echo json_encode(['assetName' => $row['d_assets_name']]);
     } else {
         echo json_encode(['assetName' => null]);
     }
     
     $stmt->close();
     $conn->close();
+    exit();
+}
+
+// Handle AJAX search request
+if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search'])) {
+    $searchTerm = trim($_GET['search']);
+    $page = isset($_GET['search_page']) ? (int)$_GET['search_page'] : 1;
+    $limit = 10;
+    $offset = ($page - 1) * $limit;
+    $output = '';
+
+    if ($searchTerm === '') {
+        // Fetch default deployed assets for the current page
+        $countSql = "SELECT COUNT(*) as total FROM tbl_deployed";
+        $countResult = $conn->query($countSql);
+        $totalRecords = $countResult->fetch_assoc()['total'];
+        $totalPages = ceil($totalRecords / $limit);
+
+        $sql = "SELECT d_id, d_assets_name, d_quantity, d_technician_name, d_technician_id, d_date 
+                FROM tbl_deployed 
+                LIMIT ?, ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $offset, $limit);
+    } else {
+        // Count total matching records for pagination
+        $countSql = "SELECT COUNT(*) as total FROM tbl_deployed 
+                     WHERE d_assets_name LIKE ? OR d_technician_name LIKE ? OR d_technician_id LIKE ? OR d_date LIKE ?";
+        $countStmt = $conn->prepare($countSql);
+        $searchWildcard = "%$searchTerm%";
+        $countStmt->bind_param("ssss", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard);
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $totalRecords = $countResult->fetch_assoc()['total'];
+        $countStmt->close();
+
+        $totalPages = ceil($totalRecords / $limit);
+
+        // Fetch paginated search results
+        $sql = "SELECT d_id, d_assets_name, d_quantity, d_technician_name, d_technician_id, d_date 
+                FROM tbl_deployed 
+                WHERE d_assets_name LIKE ? OR d_technician_name LIKE ? OR d_technician_id LIKE ? OR d_date LIKE ?
+                LIMIT ?, ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssii", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard, $offset, $limit);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $output .= "<tr> 
+                          <td>{$row['d_id']}</td> 
+                          <td>" . (isset($row['d_assets_name']) ? htmlspecialchars($row['d_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
+                          <td>{$row['d_quantity']}</td>
+                          <td>{$row['d_technician_name']}</td>
+                          <td>{$row['d_technician_id']}</td>    
+                          <td>{$row['d_date']}</td> 
+                          <td>
+                              <a class='view-btn' onclick=\"showViewModal('{$row['d_id']}', '" . htmlspecialchars($row['d_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['d_quantity']}', '{$row['d_technician_name']}', '{$row['d_technician_id']}', '{$row['d_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                              <a href='editD.php?id={$row['d_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                              <a href='#' class='delete-btn' onclick='showDeleteModal({$row['d_id']})' title='Delete'><i class='fas fa-trash'></i></a>
+                          </td>
+                        </tr>";
+        }
+    } else {
+        $output = "<tr><td colspan='7'>No deployed assets found.</td></tr>";
+    }
+    $stmt->close();
+
+    // Add pagination data
+    $output .= "<script>
+        updatePagination($page, $totalPages, '$searchTerm');
+    </script>";
+
+    echo $output;
     exit();
 }
 
@@ -62,13 +138,13 @@ if ($conn) {
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($page - 1) * $limit;
 
-    
+    // Fetch total number of deployed assets
     $countQuery = "SELECT COUNT(*) as total FROM tbl_deployed";
     $countResult = $conn->query($countQuery);
     $totalRecords = $countResult->fetch_assoc()['total'];
     $totalPages = ceil($totalRecords / $limit);
 
-    // Fetch borrowed assets with pagination
+    // Fetch deployed assets with pagination
     $sqlBorrowed = "SELECT d_id, d_assets_name, d_quantity, d_technician_name, d_technician_id, d_date 
                     FROM tbl_deployed 
                     LIMIT ?, ?";
@@ -102,7 +178,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Borrowed Assets</title>
+    <title>Deployed Assets</title>
     <link rel="stylesheet" href="deployedT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -129,7 +205,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
         <div class="upper"> 
             <h1>Deployed Assets</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search deployed assets..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search deployed assets..." onkeyup="debouncedSearchDeployed()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -170,20 +246,20 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                 </div>
             <?php endif; ?>
 
-            <div class="borrowed">
+            <div class="deployed">
                 <div class="button-container">
                     <a href="deployA.php" class="return-btn"><i class="fas fa-cogs"></i> Deploy</a>
                     <a href="createTickets.php" class="export-btn"><i class="fas fa-download"></i> Export</a>
                 </div>
-                <table id="borrowedTable">
+                <table id="deployedTable">
                     <thead>
                         <tr>
-                            <th>Borrowed ID</th>
+                            <th>Deployed ID</th>
                             <th>Asset Name</th>
                             <th>Quantity</th>
                             <th>Technician Name</th>
                             <th>Technician ID</th>
-                            <th>Borrowed Date</th>
+                            <th>Deployed Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -206,13 +282,13 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                                       </tr>"; 
                             } 
                         } else { 
-                            echo "<tr><td colspan='7'>No borrowed assets found.</td></tr>"; 
+                            echo "<tr><td colspan='7'>No deployed assets found.</td></tr>"; 
                         } 
                         ?>
                     </tbody>
                 </table>
 
-                <div class="pagination">
+                <div class="pagination" id="deployed-pagination">
                     <?php if ($page > 1): ?>
                         <a href="?page=<?php echo $page - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
@@ -248,7 +324,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
         <div class="modal-header">
             <h2>Delete Asset</h2>
         </div>
-        <p>Are you sure you want to delete the returned asset: <span id="deleteAssetName"></span>?</p>
+        <p>Are you sure you want to delete the deployed asset: <span id="deleteAssetName"></span>?</p>
         <div class="modal-footer">
             <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
             <button type="button" class="modal-btn confirm" onclick="confirmDelete()">Delete</button>
@@ -258,29 +334,63 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 
 <script>
 let currentDeleteId = null;
+let currentSearchPage = 1;
+let defaultPage = <?php echo json_encode($page); ?>;
 
-function searchUsers() {
-    const input = document.getElementById('searchInput');
-    const filter = input.value.toUpperCase();
-    const table = document.getElementById('borrowedTable');
-    const tr = table.getElementsByTagName('tr');
-
-    for (let i = 1; i < tr.length; i++) {
-        let found = false;
-        const td = tr[i].getElementsByTagName('td');
-        
-        for (let j = 0; j < td.length; j++) {
-            if (td[j]) {
-                const txtValue = td[j].textContent || td[j].innerText;
-                if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        tr[i].style.display = found ? '' : 'none';
-    }
+// Debounce function to limit search calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
+
+function searchDeployed(page = 1) {
+    const searchTerm = document.getElementById('searchInput').value;
+    const tbody = document.getElementById('tableBody');
+    const paginationContainer = document.getElementById('deployed-pagination');
+
+    currentSearchPage = page;
+
+    // Create XMLHttpRequest for AJAX
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            tbody.innerHTML = xhr.responseText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        }
+    };
+    xhr.open('GET', `deployedT.php?action=search&search=${encodeURIComponent(searchTerm)}&search_page=${searchTerm ? page : defaultPage}`, true);
+    xhr.send();
+}
+
+function updatePagination(currentPage, totalPages, searchTerm) {
+    const paginationContainer = document.getElementById('deployed-pagination');
+    let paginationHtml = '';
+
+    if (currentPage > 1) {
+        paginationHtml += `<a href="javascript:searchDeployed(${currentPage - 1})" class="pagination-link"><i class="fas fa-chevron-left"></i></a>`;
+    } else {
+        paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>`;
+    }
+
+    paginationHtml += `<span class="current-page">Page ${currentPage} of ${totalPages}</span>`;
+
+    if (currentPage < totalPages) {
+        paginationHtml += `<a href="javascript:searchDeployed(${currentPage + 1})" class="pagination-link"><i class="fas fa-chevron-right"></i></a>`;
+    } else {
+        paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>`;
+    }
+
+    paginationContainer.innerHTML = paginationHtml;
+}
+
+// Debounced search function
+const debouncedSearchDeployed = debounce(searchDeployed, 300);
 
 function showViewModal(id, assetName, quantity, technicianName, technicianId, date) {
     const modalContent = `
@@ -288,7 +398,7 @@ function showViewModal(id, assetName, quantity, technicianName, technicianId, da
         <p><strong>Quantity:</strong> ${quantity}</p>
         <p><strong>Technician Name:</strong> ${technicianName}</p>
         <p><strong>Technician ID:</strong> ${technicianId}</p>
-        <p><strong>Borrowed Date:</strong> ${date}</p>
+        <p><strong>Deployed Date:</strong> ${date}</p>
     `;
     document.getElementById('viewModalContent').innerHTML = modalContent;
     document.getElementById('viewModal').style.display = 'flex';
@@ -299,7 +409,7 @@ function showDeleteModal(id) {
     currentDeleteId = id;
     const modal = document.getElementById('deleteModal');
     console.log('Modal element:', modal);
-    fetch(`borrowedT.php?id=${id}`)
+    fetch(`deployedT.php?id=${id}`)
         .then(response => {
             console.log('Fetch response status:', response.status);
             console.log('Fetch response headers:', response.headers.get('content-type'));
@@ -330,7 +440,7 @@ function showDeleteModal(id) {
 function confirmDelete() {
     if (currentDeleteId) {
         console.log('confirmDelete called with id:', currentDeleteId);
-        fetch(`deleteR.php?id=${currentDeleteId}`, {
+        fetch(`deleteD.php?id=${currentDeleteId}`, {
             method: 'GET'
         })
         .then(response => {
@@ -343,14 +453,14 @@ function confirmDelete() {
         .then(data => {
             updateTable();
             closeModal('deleteModal');
-            window.location.href = 'borrowedT.php?deleted=true';
+            window.location.href = 'deployedT.php?deleted=true';
         })
         .catch(error => console.error('Error deleting record:', error));
     }
 }
 
 function updateTable() {
-    fetch('borrowedT.php')
+    fetch('deployedT.php')
     .then(response => response.text())
     .then(data => {
         const parser = new DOMParser();
@@ -364,7 +474,7 @@ function updateTable() {
 
 function closeModal(modalId) {
     console.log('closeModal called for:', modalId);
-    document.getElementById(modalId).style.display = 'none';
+    document.getElementById('modalId').style.display = 'none';
 }
 
 window.addEventListener('click', function(event) {
@@ -378,12 +488,20 @@ window.addEventListener('click', function(event) {
 setInterval(updateTable, 30000);
 
 // Handle alert fade-out
-const alerts = document.querySelectorAll('.alert');
-alerts.forEach(alert => {
-    setTimeout(() => {
-        alert.classList.add('alert-hidden');
-        setTimeout(() => alert.remove(), 500);
-    }, 2000);
+document.addEventListener('DOMContentLoaded', () => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.classList.add('alert-hidden');
+            setTimeout(() => alert.remove(), 500);
+        }, 2000);
+    });
+
+    // Initialize search on page load if there's a search term
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput.value) {
+        searchDeployed();
+    }
 });
 </script>
 

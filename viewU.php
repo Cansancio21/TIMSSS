@@ -12,7 +12,7 @@ $lastName = '';
 $firstName = '';
 $userType = '';
 $avatarPath = 'default-avatar.png';
-$avatarFolder = 'uploads/avatars/';
+$avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
 
 if (file_exists($userAvatar)) {
@@ -22,6 +22,148 @@ if (file_exists($userAvatar)) {
 }
 
 $avatarPath = $_SESSION['avatarPath'];
+
+// Handle AJAX search request
+if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search'])) {
+    $searchTerm = trim($_GET['search']);
+    $tab = isset($_GET['tab']) ? $_GET['tab'] : 'active';
+    $page = isset($_GET['search_page']) ? (int)$_GET['search_page'] : 1;
+    $limit = 10;
+    $offset = ($page - 1) * $limit;
+    $output = '';
+
+    if ($tab === 'active') {
+        if ($searchTerm === '') {
+            // Fetch default active users for the current page
+            $countSql = "SELECT COUNT(*) as total FROM tbl_user WHERE u_status IN ('active', 'pending')";
+            $countResult = $conn->query($countSql);
+            $totalUsers = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalUsers / $limit);
+
+            $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_user 
+                    WHERE u_status IN ('active', 'pending') 
+                    LIMIT ?, ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ii", $offset, $limit);
+        } else {
+            // Count total matching users for pagination
+            $countSql = "SELECT COUNT(*) as total FROM tbl_user 
+                         WHERE u_status IN ('active', 'pending') 
+                         AND (u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?)";
+            $countStmt = $conn->prepare($countSql);
+            $searchWildcard = "%$searchTerm%";
+            $countStmt->bind_param("ssss", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $totalUsers = $countResult->fetch_assoc()['total'];
+            $countStmt->close();
+
+            $totalPages = ceil($totalUsers / $limit);
+
+            // Fetch paginated search results
+            $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_user 
+                    WHERE u_status IN ('active', 'pending') 
+                    AND (u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?)
+                    LIMIT ?, ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssssii", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard, $offset, $limit);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $output .= "<tr> 
+                              <td>{$row['u_id']}</td> 
+                              <td>{$row['u_fname']}</td> 
+                              <td>{$row['u_lname']}</td> 
+                              <td>{$row['u_email']}</td> 
+                              <td>{$row['u_username']}</td> 
+                              <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
+                              <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
+                              <td class='action-buttons'>
+                                  <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                  <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                  <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                              </td>
+                            </tr>";
+            }
+        } else {
+            $output = "<tr><td colspan='8' style='text-align: center;'>No active or pending users found.</td></tr>";
+        }
+        $stmt->close();
+
+        // Add pagination data
+        $output .= "<script>
+            updatePagination($page, $totalPages, '$tab', '$searchTerm');
+        </script>";
+    } else {
+        if ($searchTerm === '') {
+            // Fetch default archived users for the current page
+            $countSql = "SELECT COUNT(*) as total FROM tbl_archive";
+            $countResult = $conn->query($countSql);
+            $totalUsers = $countResult->fetch_assoc()['total'];
+            $totalPages = ceil($totalUsers / $limit);
+
+            $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_archive 
+                    LIMIT ?, ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ii", $offset, $limit);
+        } else {
+            // Count total matching archived users for pagination
+            $countSql = "SELECT COUNT(*) as total FROM tbl_archive 
+                         WHERE u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?";
+            $countStmt = $conn->prepare($countSql);
+            $searchWildcard = "%$searchTerm%";
+            $countStmt->bind_param("ssss", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $totalUsers = $countResult->fetch_assoc()['total'];
+            $countStmt->close();
+
+            $totalPages = ceil($totalUsers / $limit);
+
+            // Fetch paginated search results
+            $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_archive 
+                    WHERE u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?
+                    LIMIT ?, ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssssii", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard, $offset, $limit);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $output .= "<tr> 
+                              <td>{$row['u_id']}</td> 
+                              <td>{$row['u_fname']}</td> 
+                              <td>{$row['u_lname']}</td> 
+                              <td>{$row['u_email']}</td> 
+                              <td>{$row['u_username']}</td> 
+                              <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
+                              <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
+                              <td class='action-buttons'>
+                                  <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                  <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                  <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
+                              </td>
+                            </tr>";
+            }
+        } else {
+            $output = "<tr><td colspan='8' style='text-align: center;'>No archived users found.</td></tr>";
+        }
+        $stmt->close();
+
+        // Add pagination data
+        $output .= "<script>
+            updatePagination($page, $totalPages, '$tab', '$searchTerm');
+        </script>";
+    }
+
+    echo $output;
+    exit();
+}
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -294,7 +436,7 @@ if ($conn) {
         <div class="upper"> 
             <h1>Registered User</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search users..." onkeyup="debouncedSearchUsers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -346,9 +488,9 @@ if ($conn) {
             </div>
             
             <div id="active-users-tab" class="active">
-            <div>
-    <button class="add-user-btn" onclick="window.location.href='addU.php'"><i class="fas fa-user-plus"></i> Add New User</button>
-</div>
+                <div>
+                    <button class="add-user-btn" onclick="window.location.href='addU.php'"><i class="fas fa-user-plus"></i> Add New User</button>
+                </div>
                 <table id="active-users-table">
                     <thead>
                         <tr>
@@ -362,7 +504,7 @@ if ($conn) {
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="active-users-tbody">
                         <?php 
                         if ($activeAndPendingUsers->num_rows > 0) { 
                             while ($row = $activeAndPendingUsers->fetch_assoc()) { 
@@ -376,7 +518,7 @@ if ($conn) {
                                         <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
                                         <td class='action-buttons'>
                                             <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                           <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                            <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
                                         </td>
                                       </tr>"; 
@@ -388,7 +530,7 @@ if ($conn) {
                     </tbody>
                 </table>
 
-                <div class="pagination">
+                <div class="pagination" id="active-users-pagination">
                     <?php if ($page > 1): ?>
                         <a href="?tab=active&page=<?php echo $page - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
@@ -424,7 +566,7 @@ if ($conn) {
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="archived-users-tbody">
                         <?php 
                         if ($archivedResult->num_rows > 0) { 
                             while ($row = $archivedResult->fetch_assoc()) { 
@@ -451,7 +593,7 @@ if ($conn) {
                 </table>
                 
                 <?php if ($totalArchived > 0): ?>
-                <div class="pagination">
+                <div class="pagination" id="archived-users-pagination">
                     <?php if ($archivedPage > 1): ?>
                         <a href="?tab=archived&archived_page=<?php echo $archivedPage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
@@ -472,8 +614,6 @@ if ($conn) {
     </div>
 </div>
 
-
-
 <!-- View User Modal -->
 <div id="viewModal" class="modal">
     <div class="modal-content">
@@ -486,8 +626,6 @@ if ($conn) {
         </div>
     </div>
 </div>
-
-
 
 <!-- Archive User Modal -->
 <div id="archiveModal" class="modal">
@@ -561,7 +699,24 @@ if ($conn) {
 </div>
 
 <script>
-   function showTab(tabName) {
+    let currentSearchPage = 1;
+    let defaultPage = <?php echo json_encode($page); ?>;
+    let defaultArchivedPage = <?php echo json_encode($archivedPage); ?>;
+
+    // Debounce function to limit search calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function showTab(tabName) {
         const activeTab = document.getElementById('active-users-tab');
         const archivedTab = document.getElementById('archived-users-tab');
         const buttons = document.querySelectorAll('.tab-btn');
@@ -573,11 +728,11 @@ if ($conn) {
         if (tabName === 'active') {
             activeTab.classList.add('active');
             buttons[0].classList.add('active');
-            history.pushState(null, '', '?tab=active&page=<?php echo $page; ?>');
+            history.pushState(null, '', '?tab=active&page=' + defaultPage);
         } else if (tabName === 'archived') {
             archivedTab.classList.add('active');
             buttons[1].classList.add('active');
-            history.pushState(null, '', '?tab=archived&archived_page=<?php echo $archivedPage; ?>');
+            history.pushState(null, '', '?tab=archived&archived_page=' + defaultArchivedPage);
         }
         searchUsers();
     }
@@ -587,13 +742,13 @@ if ($conn) {
         const tab = urlParams.get('tab') || 'active';
         showTab(tab);
 
-        // Your alert handling code here
+        // Alert handling
         const alerts = document.querySelectorAll('.alert');
         alerts.forEach(alert => {
             setTimeout(() => {
                 alert.classList.add('alert-hidden');
-                setTimeout(() => alert.remove(), 500); // Remove after fade-out (500ms)
-            }, 2000); // 2 seconds delay before starting fade-out
+                setTimeout(() => alert.remove(), 500);
+            }, 2000);
         });
     });
 
@@ -636,42 +791,50 @@ if ($conn) {
         document.getElementById('restoreAllModal').style.display = 'block';
     }
 
-    function searchUsers() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
+    function searchUsers(page = 1) {
+        const searchTerm = document.getElementById('searchInput').value;
         const activeTab = document.querySelector('.tab-btn.active').textContent.toLowerCase();
-        
-        if (activeTab.includes('user')) {
-            const activeTable = document.getElementById('active-users-table');
-            const activeRows = activeTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-            
-            for (let i = 0; i < activeRows.length; i++) {
-                const cells = activeRows[i].getElementsByTagName('td');
-                let match = false;
-                for (let j = 0; j < cells.length - 1; j++) {
-                    if (cells[j].textContent.toLowerCase().includes(input)) {
-                        match = true;
-                        break;
-                    }
-                }
-                activeRows[i].style.display = match ? '' : 'none';
+        const tab = activeTab.includes('user') ? 'active' : 'archived';
+        const tbody = tab === 'active' ? document.getElementById('active-users-tbody') : document.getElementById('archived-users-tbody');
+        const paginationContainer = tab === 'active' ? document.getElementById('active-users-pagination') : document.getElementById('archived-users-pagination');
+        const defaultPageToUse = tab === 'active' ? defaultPage : defaultArchivedPage;
+
+        currentSearchPage = page;
+
+        // Create XMLHttpRequest for AJAX
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                tbody.innerHTML = xhr.responseText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
             }
-        } else if (activeTab.includes('archived')) {
-            const archivedTable = document.getElementById('archived-users-table');
-            const archivedRows = archivedTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-            
-            for (let i = 0; i < archivedRows.length; i++) {
-                const cells = archivedRows[i].getElementsByTagName('td');
-                let match = false;
-                for (let j = 0; j < cells.length - 1; j++) {
-                    if (cells[j].textContent.toLowerCase().includes(input)) {
-                        match = true;
-                        break;
-                    }
-                }
-                archivedRows[i].style.display = match ? '' : 'none';
-            }
-        }
+        };
+        xhr.open('GET', `viewU.php?action=search&search=${encodeURIComponent(searchTerm)}&tab=${tab}&search_page=${searchTerm ? page : defaultPageToUse}`, true);
+        xhr.send();
     }
+
+    function updatePagination(currentPage, totalPages, tab, searchTerm) {
+        const paginationContainer = tab === 'active' ? document.getElementById('active-users-pagination') : document.getElementById('archived-users-pagination');
+        let paginationHtml = '';
+
+        if (currentPage > 1) {
+            paginationHtml += `<a href="javascript:searchUsers(${currentPage - 1})" class="pagination-link"><i class="fas fa-chevron-left"></i></a>`;
+        } else {
+            paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>`;
+        }
+
+        paginationHtml += `<span class="current-page">Page ${currentPage} of ${totalPages}</span>`;
+
+        if (currentPage < totalPages) {
+            paginationHtml += `<a href="javascript:searchUsers(${currentPage + 1})" class="pagination-link"><i class="fas fa-chevron-right"></i></a>`;
+        } else {
+            paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>`;
+        }
+
+        paginationContainer.innerHTML = paginationHtml;
+    }
+
+    // Debounced search function
+    const debouncedSearchUsers = debounce(searchUsers, 300);
 </script>
 </body>
 </html>

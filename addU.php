@@ -194,6 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <i class='bx bxs-lock-alt password-icon' id="togglePassword" style="cursor: pointer;"></i>
                     </div>
                     <span class="error"><?php echo $passwordErr; ?></span>
+                    <span id="passwordError"></span>
                 </div>
                 <div class="form-row">
                     <label for="type">User Type:</label>
@@ -233,6 +234,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             this.classList.toggle('bxs-lock-alt');
             this.classList.toggle('bxs-lock-open-alt');
         });
+
+        // Function to validate password strength
+        function validatePassword() {
+            const passwordInput = document.getElementById('password');
+            const passwordError = document.getElementById('passwordError');
+            const password = passwordInput.value;
+
+            // Regular expression for strong password
+            const strongPasswordPattern = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+            if (password === '') {
+                passwordError.textContent = '';
+            } else if (strongPasswordPattern.test(password)) {
+                passwordError.textContent = "Password is strong.";
+                passwordError.style.color = "green";
+            } else {
+                passwordError.textContent = "Password is weak.";
+                passwordError.style.color = "red";
+            }
+        }
+
+        // Add event listener for real-time password validation
+        document.getElementById('password').addEventListener('input', validatePassword);
 
         // Log form submission for debugging
         document.getElementById('addUserForm').addEventListener('submit', function (e) {

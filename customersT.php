@@ -22,6 +22,97 @@ if (file_exists($userAvatar)) {
 }
 $avatarPath = $_SESSION['avatarPath'];
 
+// Handle AJAX search request
+if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search'])) {
+    $searchTerm = $_GET['search'];
+    $tab = $_GET['tab'] ?? 'active';
+    $page = isset($_GET['search_page']) ? (int)$_GET['search_page'] : 1;
+    $limit = 10;
+    $offset = ($page - 1) * $limit;
+
+    $searchTerm = $conn->real_escape_string($searchTerm);
+    $likeSearch = '%' . $searchTerm . '%';
+
+    if ($tab === 'active') {
+        $sqlCount = "SELECT COUNT(*) AS total FROM tbl_customer 
+                     WHERE (c_status NOT LIKE 'ARCHIVED:%' OR c_status IS NULL) 
+                     AND (c_fname LIKE ? OR c_lname LIKE ? OR c_address LIKE ? OR c_contact LIKE ? OR c_email LIKE ? OR c_napname LIKE ? OR c_napport LIKE ? OR c_macaddress LIKE ?)";
+        $sql = "SELECT c_id, c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status 
+                FROM tbl_customer 
+                WHERE (c_status NOT LIKE 'ARCHIVED:%' OR c_status IS NULL) 
+                AND (c_fname LIKE ? OR c_lname LIKE ? OR c_address LIKE ? OR c_contact LIKE ? OR c_email LIKE ? OR c_napname LIKE ? OR c_napport LIKE ? OR c_macaddress LIKE ?) 
+                LIMIT ?, ?";
+    } else {
+        $sqlCount = "SELECT COUNT(*) AS total FROM tbl_customer 
+                     WHERE c_status LIKE 'ARCHIVED:%' 
+                     AND (c_fname LIKE ? OR c_lname LIKE ? OR c_address LIKE ? OR c_contact LIKE ? OR c_email LIKE ? OR c_napname LIKE ? OR c_napport LIKE ? OR c_macaddress LIKE ?)";
+        $sql = "SELECT c_id, c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status 
+                FROM tbl_customer 
+                WHERE c_status LIKE 'ARCHIVED:%' 
+                AND (c_fname LIKE ? OR c_lname LIKE ? OR c_address LIKE ? OR c rispettivamente, c_contact LIKE ? OR c_email LIKE ? OR c_napname LIKE ? OR c_napport LIKE ? OR c_macaddress LIKE ?) 
+                LIMIT ?, ?";
+    }
+
+    // Get total count for pagination
+    $stmtCount = $conn->prepare($sqlCount);
+    $stmtCount->bind_param("ssssssss", $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch);
+    $stmtCount->execute();
+    $countResult = $stmtCount->get_result();
+    $totalRow = $countResult->fetch_assoc();
+    $total = $totalRow['total'];
+    $totalPages = ceil($total / $limit);
+    $stmtCount->close();
+
+    // Fetch search results
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssssssii", $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $likeSearch, $offset, $limit);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    ob_start();
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $displayStatus = $tab === 'archived' ? preg_replace('/^ARCHIVED:/', '', $row['c_status']) : ($row['c_status'] ?? '');
+            echo "<tr> 
+                    <td>{$row['c_id']}</td> 
+                    <td>{$row['c_fname']}</td> 
+                    <td>{$row['c_lname']}</td> 
+                    <td>{$row['c_address']}</td> 
+                    <td>{$row['c_contact']}</td> 
+                    <td>{$row['c_email']}</td> 
+                    <td>{$row['c_date']}</td> 
+                    <td>{$row['c_napname']}</td> 
+                    <td>{$row['c_napport']}</td> 
+                    <td>{$row['c_macaddress']}</td> 
+                    <td>" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td class='action-buttons'>";
+            if ($tab === 'active') {
+                echo "
+                    <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                    <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                    <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                    <a class='ticket-btn' href='createTickets.php?aname=" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>";
+            } else {
+                echo "
+                    <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                    <a class='unarchive-btn' onclick=\"showUnarchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                    <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
+            }
+            echo "</td></tr>";
+        }
+    } else {
+        echo "<tr><td colspan='12' style='text-align: center;'>No customers found.</td></tr>";
+    }
+    $tableRows = ob_get_clean();
+
+    // Update pagination
+    echo "<script>updatePagination($page, $totalPages, '$tab', '" . htmlspecialchars($searchTerm, ENT_QUOTES, 'UTF-8') . "');</script>";
+    echo $tableRows;
+    $stmt->close();
+    $conn->close();
+    exit();
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pageActive = isset($_GET['page_active']) ? (int)$_GET['page_active'] : 1;
@@ -80,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tab = 'customers_active';
     } elseif (isset($_POST['archive_customer'])) {
         $id = $_POST['c_id'];
-        // Get current c_rem to preserve it
         $sql = "SELECT c_status FROM tbl_customer WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
@@ -90,7 +180,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $current_rem = $row['c_status'] ?? '';
         $stmt->close();
 
-        // Prepend ARCHIVED:
         $new_rem = 'ARCHIVED:' . $current_rem;
         $sql = "UPDATE tbl_customer SET c_status=? WHERE c_id=?";
         $stmt = $conn->prepare($sql);
@@ -107,7 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tab = 'customers_archived';
     } elseif (isset($_POST['unarchive_customer'])) {
         $id = $_POST['c_id'];
-        // Get current c_rem to remove ARCHIVED:
         $sql = "SELECT c_status FROM tbl_customer WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
@@ -117,14 +205,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $current_rem = $row['c_status'] ?? '';
         $stmt->close();
 
-        // Remove ARCHIVED: prefix
         $new_rem = preg_replace('/^ARCHIVED:/', '', $current_rem);
         $sql = "UPDATE tbl_customer SET c_status=? WHERE c_id=?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("si", $new_rem, $id);
+        $stmt->bind_param("si", $new彼此, $new_rem, $id);
         if ($stmt->execute()) {
             $_SESSION['message'] = "Customer unarchived successfully!";
         } else {
@@ -240,7 +327,7 @@ if ($conn) {
         <div class="upper"> 
             <h1>Customers Info</h1>
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search customers..." onkeyup="searchCustomers()">
+                <input type="text" class="search-bar" id="searchInput" placeholder="Search customers..." onkeyup="debouncedSearchCustomers()">
                 <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
             <div class="user-profile">
@@ -274,9 +361,8 @@ if ($conn) {
         </div>
 
         <div class="table-box glass-container">
-        <h2>TIMS Customers</h2>
+            <h2>TIMS Customers</h2>
             <div class="active-customers">
-                
                 <div class="tab-buttons">
                     <button class="tab-btn <?php echo (isset($_GET['tab']) && $_GET['tab'] === 'customers_active') || !isset($_GET['tab']) ? 'active' : ''; ?>" onclick="showTab('customers_active')">
                         Active (<?php echo $totalActive; ?>)
@@ -311,7 +397,7 @@ if ($conn) {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="active-customers-tbody">
                         <?php
                         if ($resultActive->num_rows > 0) {
                             while ($row = $resultActive->fetch_assoc()) {
@@ -331,7 +417,7 @@ if ($conn) {
                                             <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
-                                            <a class='ticket-btn' href='createTickets.php?aname=" . (htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8')) . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
+                                            <a class='ticket-btn' href='createTickets.php?aname=" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
                                         </td>
                                       </tr>";
                             }
@@ -341,7 +427,7 @@ if ($conn) {
                         ?>
                     </tbody>
                 </table>
-                <div class="pagination">
+                <div class="pagination" id="active-customers-pagination">
                     <?php if ($pageActive > 1): ?>
                         <a href="?tab=customers_active&page_active=<?php echo $pageActive - 1; ?>&page_archived=<?php echo $pageArchived; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
@@ -357,7 +443,6 @@ if ($conn) {
             </div>
 
             <div class="archived-customers">
-               
                 <div class="tab-buttons">
                     <button class="tab-btn <?php echo isset($_GET['tab']) && $_GET['tab'] === 'customers_active' ? 'active' : ''; ?>" onclick="showTab('customers_active')">
                         Active (<?php echo $totalActive; ?>)
@@ -386,11 +471,10 @@ if ($conn) {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="archived-customers-tbody">
                         <?php
                         if ($resultArchived->num_rows > 0) {
                             while ($row = $resultArchived->fetch_assoc()) {
-                                // Strip ARCHIVED: for display
                                 $display_rem = preg_replace('/^ARCHIVED:/', '', $row['c_status']);
                                 echo "<tr> 
                                         <td>{$row['c_id']}</td> 
@@ -417,7 +501,7 @@ if ($conn) {
                         ?>
                     </tbody>
                 </table>
-                <div class="pagination">
+                <div class="pagination" id="archived-customers-pagination">
                     <?php if ($pageArchived > 1): ?>
                         <a href="?tab=customers_archived&page_active=<?php echo $pageActive; ?>&page_archived=<?php echo $pageArchived - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
@@ -443,12 +527,10 @@ if ($conn) {
         </div>
         <div id="viewContent"></div>
         <div class="modal-footer">
-        <a class='modal-btn ticket' href='createTickets.php?aname=<?= htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') ?>&id=<?= htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') ?>' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
-        <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
+            <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
         </div>
     </div>
 </div>
-
 
 <!-- Archive Customer Modal -->
 <div id="archiveModal" class="modal">
@@ -549,43 +631,61 @@ function showTab(tab) {
     history.replaceState(null, '', '?' + urlParams.toString());
 }
 
-function searchCustomers() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
-
-    // Search active customers
-    const activeTable = document.getElementById('active-customers-table');
-    if (activeTable && document.querySelector('.active-customers').style.display !== 'none') {
-        const activeRows = activeTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        for (let i = 0; i < activeRows.length; i++) {
-            const cells = activeRows[i].getElementsByTagName('td');
-            let match = false;
-            for (let j = 0; j < cells.length - 1; j++) {
-                if (cells[j].textContent.toLowerCase().includes(input)) {
-                    match = true;
-                    break;
-                }
-            }
-            activeRows[i].style.display = match ? '' : 'none';
-        }
-    }
-
-    // Search archived customers
-    const archivedTable = document.getElementById('archived-customers-table');
-    if (archivedTable && document.querySelector('.archived-customers').style.display !== 'none') {
-        const archivedRows = archivedTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        for (let i = 0; i < archivedRows.length; i++) {
-            const cells = archivedRows[i].getElementsByTagName('td');
-            let match = false;
-            for (let j = 0; j < cells.length - 1; j++) {
-                if (cells[j].textContent.toLowerCase().includes(input)) {
-                    match = true;
-                    break;
-                }
-            }
-            activeRows[i].style.display = match ? '' : 'none';
-        }
-    }
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
+
+let currentSearchPage = 1;
+
+function searchCustomers(page = 1) {
+    const searchTerm = document.getElementById('searchInput').value;
+    const activeTab = document.querySelector('.tab-btn.active').textContent.toLowerCase();
+    const tab = activeTab.includes('active') ? 'active' : 'archived';
+    const tbody = tab === 'active' ? document.getElementById('active-customers-tbody') : document.getElementById('archived-customers-tbody');
+    const defaultPageToUse = tab === 'active' ? <?php echo $pageActive; ?> : <?php echo $pageArchived; ?>;
+
+    currentSearchPage = page;
+
+    const xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            tbody.innerHTML = xhr.responseText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        }
+    };
+    xhr.open('GET', `customersT.php?action=search&search=${encodeURIComponent(searchTerm)}&tab=${tab}&search_page=${searchTerm ? page : defaultPageToUse}`, true);
+    xhr.send();
+}
+
+function updatePagination(currentPage, totalPages, tab, searchTerm) {
+    const paginationContainer = tab === 'active' ? document.getElementById('active-customers-pagination') : document.getElementById('archived-customers-pagination');
+    let paginationHtml = '';
+
+    if (currentPage > 1) {
+        paginationHtml += `<a href="javascript:searchCustomers(${currentPage - 1})" class="pagination-link"><i class="fas fa-chevron-left"></i></a>`;
+    } else {
+        paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>`;
+    }
+
+    paginationHtml += `<span class="current-page">Page ${currentPage} of ${totalPages}</span>`;
+
+    if (currentPage < totalPages) {
+        paginationHtml += `<a href="javascript:searchCustomers(${currentPage + 1})" class="pagination-link"><i class="fas fa-chevron-right"></i></a>`;
+    } else {
+        paginationHtml += `<span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>`;
+    }
+
+    paginationContainer.innerHTML = paginationHtml;
+}
+
+const debouncedSearchCustomers = debounce(searchCustomers, 300);
 
 function showViewModal(id, fname, lname, area, contact, email, date, onu, caller, address, rem) {
     document.getElementById('viewContent').innerHTML = `
@@ -627,7 +727,6 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// Close modal when clicking outside
 window.onclick = function(event) {
     if (event.target.className === 'modal') {
         event.target.style.display = 'none';
