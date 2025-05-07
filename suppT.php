@@ -127,11 +127,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_ticket']) && $is
     $s_subject = $_POST['s_subject'] ?? '';
     $s_type = $_POST['type'] ?? '';
     $s_message = $_POST['message'] ?? '';
+    $s_status = $_POST['s_status'] ?? '';
 
-    $sql = "UPDATE tbl_supp_tickets SET c_fname = ?, c_lname = ?, s_subject = ?, s_type = ?, s_message = ? 
+    // Fetch current ticket status
+    $sqlFetch = "SELECT s_status FROM tbl_supp_tickets WHERE id = ? AND c_id = ?";
+    $stmtFetch = $conn->prepare($sqlFetch);
+    $stmtFetch->bind_param("ii", $ticketId, $filterCid);
+    $stmtFetch->execute();
+    $resultFetch = $stmtFetch->get_result();
+    if ($resultFetch->num_rows > 0) {
+        $currentTicket = $resultFetch->fetch_assoc();
+        // Prevent status changes for open or closed tickets
+        if ($currentTicket['s_status'] === 'Open') {
+            $_SESSION['error'] = "Open tickets cannot have their status changed.";
+            header("Location: suppT.php?tab=$tab&active_page=$activePage&archived_page=$archivedPage" . ($filterCid ? "&c_id=$filterCid" : ""));
+            exit();
+        }
+        if ($currentTicket['s_status'] === 'Closed') {
+            $_SESSION['error'] = "Closed tickets cannot have their status changed.";
+            header("Location: suppT.php?tab=$tab&active_page=$activePage&archived_page=$archivedPage" . ($filterCid ? "&c_id=$filterCid" : ""));
+            exit();
+        }
+        // Prevent invalid status transitions
+        if ($currentTicket['s_status'] === 'Open' && $s_status === 'Closed') {
+            $_SESSION['error'] = "Customers cannot close tickets. Only technicians can close tickets.";
+            header("Location: suppT.php?tab=$tab&active_page=$activePage&archived_page=$archivedPage" . ($filterCid ? "&c_id=$filterCid" : ""));
+            exit();
+        }
+    } else {
+        $_SESSION['error'] = "Ticket not found or unauthorized.";
+        $stmtFetch->close();
+        header("Location: suppT.php?tab=$tab&active_page=$activePage&archived_page=$archivedPage" . ($filterCid ? "&c_id=$filterCid" : ""));
+        exit();
+    }
+    $stmtFetch->close();
+
+    $sql = "UPDATE tbl_supp_tickets SET c_fname = ?, c_lname = ?, s_subject = ?, s_type = ?, s_message = ?, s_status = ? 
             WHERE id = ? AND c_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssii", $c_fname, $c_lname, $s_subject, $s_type, $s_message, $ticketId, $filterCid);
+    $stmt->bind_param("ssssssii", $c_fname, $c_lname, $s_subject, $s_type, $s_message, $s_status, $ticketId, $filterCid);
     if ($stmt->execute()) {
         $_SESSION['message'] = "Ticket updated successfully!";
     } else {
@@ -243,10 +277,10 @@ if ($filterCid != 0) {
         }
         $stmt->close();
     } else {
-        // Active tickets
+        // Active tickets (Open and Closed)
         $sql = "SELECT id, c_id, c_fname, c_lname, s_subject, s_type, s_message, s_status 
                 FROM tbl_supp_tickets 
-                WHERE s_status != 'Archived' AND c_id = ? 
+                WHERE s_status IN ('Open', 'Closed') AND c_id = ? 
                 LIMIT ? OFFSET ?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -303,25 +337,9 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Support Ticket Details - Customer ID <?php echo htmlspecialchars($filterCid); ?></title>
-    <link rel="stylesheet" href="suppsT.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        #modalBackground {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 998;
-        }
-        .alert-hidden {
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-    </style>
+    <link rel="stylesheet" href="suppT.css"> 
 </head>
 <body>
 <div class="wrapper">
@@ -372,7 +390,9 @@ $conn->close();
                 <div class="alert alert-success"><?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></div>
             <?php endif; ?>
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert alert-error"><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
+                <div class="alert alert-error <?php echo in_array($_SESSION['error'], ["Closed tickets cannot have their status changed.", "Open tickets cannot have their status changed.", "Customers cannot close tickets. Only technicians can close tickets."]) ? 'error-red' : ''; ?>">
+                    <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+                </div>
             <?php endif; ?>
             <?php if ($error): ?>
                 <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
@@ -417,13 +437,16 @@ $conn->close();
                                     <?php echo htmlspecialchars($ticket['s_status']); ?>
                                 </td>
                                 <td class="action-buttons">
-                                    <a class="view-btn" onclick="openViewModal(<?php echo htmlspecialchars(json_encode($ticket), ENT_QUOTES, 'UTF-8'); ?>)" title="View"><i class="fas fa-eye"></i></a>
+                                    <a class="view-btn" onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'openViewModal(' . htmlspecialchars(json_encode($ticket), ENT_QUOTES, 'UTF-8') . ')'; ?>" title="View"><i class="fas fa-eye"></i></a>
                                     <a class="edit-btn" onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'openEditModal(' . htmlspecialchars(json_encode($ticket), ENT_QUOTES, 'UTF-8') . ')'; ?>" title="Edit"><i class="fas fa-edit"></i></a>
                                     <a class="<?php echo $ticket['s_status'] === 'Archived' ? 'unarchive-btn' : 'archive-btn'; ?>" 
                                        onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'open' . ($ticket['s_status'] === 'Archived' ? 'Unarchive' : 'Archive') . 'Modal(\'' . $ticket['id'] . '\', \'' . htmlspecialchars(($ticket['c_fname'] . ' ' . $ticket['c_lname']) ?: 'Unknown', ENT_QUOTES, 'UTF-8') . '\')'; ?>" 
                                        title="<?php echo $ticket['s_status'] === 'Archived' ? 'Unarchive' : 'Archive'; ?>">
                                         <i class="fas fa-<?php echo $ticket['s_status'] === 'Archived' ? 'box-open' : 'archive'; ?>"></i>
                                     </a>
+                                    <?php if ($isCustomer && $ticket['s_status'] === 'Archived'): ?>
+                                        <a class="delete-btn" onclick="openDeleteModal('<?php echo $ticket['id']; ?>', '<?php echo htmlspecialchars(($ticket['c_fname'] . ' ' . $ticket['c_lname']) ?: 'Unknown', ENT_QUOTES, 'UTF-8'); ?>')" title="Delete"><i class="fas fa-trash"></i></a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         </tbody>
@@ -456,7 +479,7 @@ $conn->close();
                                         <?php echo htmlspecialchars($row['s_status']); ?>
                                     </td>
                                     <td class="action-buttons">
-                                        <a class="view-btn" onclick="openViewModal(<?php echo htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>)" title="View"><i class="fas fa-eye"></i></a>
+                                        <a class="view-btn" onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'openViewModal(' . htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') . ')'; ?>" title="View"><i class="fas fa-eye"></i></a>
                                         <a class="edit-btn" onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'openEditModal(' . htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') . ')'; ?>" title="Edit"><i class="fas fa-edit"></i></a>
                                         <a class="<?php echo $row['s_status'] === 'Archived' ? 'unarchive-btn' : 'archive-btn'; ?>" 
                                            onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'open' . ($row['s_status'] === 'Archived' ? 'Unarchive' : 'Archive') . 'Modal(\'' . $row['id'] . '\', \'' . htmlspecialchars(($row['c_fname'] . ' ' . $row['c_lname']) ?: 'Unknown', ENT_QUOTES, 'UTF-8') . '\')'; ?>" 
@@ -516,10 +539,14 @@ $conn->close();
                                         <?php echo htmlspecialchars($row['s_status']); ?>
                                     </td>
                                     <td class="action-buttons">
-                                        <a class="view-btn" onclick="openViewModal(<?php echo htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>)" title="View"><i class="fas fa-eye"></i></a>
-                                        <a class="unarchive-btn" onclick="<?php echo $isTechnician ? 'showRestrictedMessage()' : 'openUnarchiveModal(\'' . $row['id'] . '\', \'' . htmlspecialchars(($row['c_fname'] . ' ' . $row['c_lname']) ?: 'Unknown', ENT_QUOTES, 'UTF-8') . '\')'; ?>" title="Unarchive"><i class="fas fa-box-open"></i></a>
                                         <?php if ($isCustomer): ?>
+                                            <a class="view-btn" onclick="openViewModal(<?php echo htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>)" title="View"><i class="fas fa-eye"></i></a>
+                                            <a class="unarchive-btn" onclick="openUnarchiveModal('<?php echo $row['id']; ?>', '<?php echo htmlspecialchars(($row['c_fname'] . ' ' . $row['c_lname']) ?: 'Unknown', ENT_QUOTES, 'UTF-8'); ?>')" title="Unarchive"><i class="fas fa-box-open"></i></a>
                                             <a class="delete-btn" onclick="openDeleteModal('<?php echo $row['id']; ?>', '<?php echo htmlspecialchars(($row['c_fname'] . ' ' . $row['c_lname']) ?: 'Unknown', ENT_QUOTES, 'UTF-8'); ?>')" title="Delete"><i class="fas fa-trash"></i></a>
+                                        <?php else: ?>
+                                            <a class="view-btn" onclick="showRestrictedMessage()" title="View"><i class="fas fa-eye"></i></a>
+                                            <a class="unarchive-btn" onclick="showRestrictedMessage()" title="Unarchive"><i class="fas fa-box-open"></i></a>
+                                            <a class="delete-btn" onclick="showRestrictedMessage()" title="Delete"><i class="fas fa-trash"></i></a>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -590,6 +617,12 @@ $conn->close();
                         </select>
                         <label for="editMessage">Message:</label>
                         <textarea id="editMessage" name="message" required></textarea>
+                        <label for="editStatus">Status:</label>
+                        <select name="s_status" id="editStatus" required>
+                            <option value="Open">Open</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                        <p id="statusWarning" class="status-warning" style="display: none;">Open or Closed tickets cannot have their status changed.</p>
                         <div class="modal-footer">
                             <button type="button" class="modal-btn cancel" onclick="closeModal('editTicketModal')">Cancel</button>
                             <button type="submit" class="modal-btn confirm">Update Ticket</button>
@@ -664,12 +697,11 @@ $conn->close();
                     <div class="modal-header">
                         <h2>Close Ticket</h2>
                     </div>
-                    <p>Enter customer ID to close ticket <span id="closeTicketIdDisplay"></span> for <span id="closeTicketName"></span>:</p>
+                    <p>Confirm closing ticket ID <span id="closeTicketIdDisplay"></span> for <span id="closeTicketName"></span>?</p>
                     <form class="modal-form" id="closeTicketForm" method="POST">
                         <input type="hidden" name="t_id" id="closeTicketId">
                         <input type="hidden" name="close_ticket" value="1">
-                        <label for="customerId">Customer ID:</label>
-                        <input type="number" id="customerId" name="customer_id" value="<?php echo htmlspecialchars($filterCid); ?>" required readonly>
+                        <input type="hidden" name="customer_id" value="<?php echo htmlspecialchars($filterCid); ?>">
                         <div class="modal-footer">
                             <button type="button" class="modal-btn cancel" onclick="closeModal('closeTicketModal')">Cancel</button>
                             <button type="submit" class="modal-btn confirm">Close Ticket</button>
@@ -755,7 +787,7 @@ function showTab(tab, forceRefresh = true) {
 
     // Update button states
     allTabButtons.forEach(button => {
-        const buttonTab = button.getAttribute('onclick').match(/'([^']+)'/)[1];
+        const buttonTab = button.getAttribute('onclick').match(/'([^']+)'/) ? button.getAttribute('onclick').match(/'([^']+)'/)[1] : '';
         button.classList.toggle('active', buttonTab === tab);
     });
 
@@ -801,6 +833,15 @@ function openEditModal(ticket) {
     document.getElementById('editSubject').value = ticket.s_subject || '';
     document.getElementById('editType').value = ticket.s_type || 'Critical';
     document.getElementById('editMessage').value = ticket.s_message || '';
+    document.getElementById('editStatus').value = ticket.s_status || 'Open';
+    const statusWarning = document.getElementById('statusWarning');
+    if (ticket.s_status === 'Open' || ticket.s_status === 'Closed') {
+        statusWarning.style.display = 'block';
+        document.getElementById('editStatus').disabled = true;
+    } else {
+        statusWarning.style.display = 'none';
+        document.getElementById('editStatus').disabled = false;
+    }
     document.getElementById('editTicketModal').style.display = 'block';
     document.getElementById('modalBackground').style.display = 'block';
 }
@@ -859,3 +900,4 @@ function showStatusRestrictedMessage() {
 </script>
 </body>
 </html>
+
