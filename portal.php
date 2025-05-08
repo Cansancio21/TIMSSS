@@ -6,6 +6,21 @@ if (!isset($_SESSION['user'])) {
 }
 
 $user = $_SESSION['user']; // Get user data from session
+$username = $user['c_id']; // Using customer ID as identifier
+
+// Initialize variables
+$firstName = $user['c_fname'];
+$userType = 'customer';
+$avatarPath = 'default-avatar.png';
+$avatarFolder = 'Uploads/avatars/';
+$userAvatar = $avatarFolder . $username . '.png';
+
+if (file_exists($userAvatar)) {
+    $_SESSION['avatarPath'] = $userAvatar . '?' . time();
+} else {
+    $_SESSION['avatarPath'] = 'default-avatar.png';
+}
+$avatarPath = $_SESSION['avatarPath'];
 ?>
 
 <!DOCTYPE html>
@@ -37,6 +52,29 @@ $user = $_SESSION['user']; // Get user data from session
     <div class="container">
         <div class="upper">
             <h1>Welcome, <?php echo htmlspecialchars($user['c_fname'] . ' ' . $user['c_lname'], ENT_QUOTES, 'UTF-8'); ?></h1>
+
+            <div class="user-profile">
+                <div class="user-icon">
+                    <a href="images.php">
+                        <?php 
+                        $cleanAvatarPath = preg_replace('/\?\d+$/', '', $avatarPath);
+                        if (!empty($avatarPath) && file_exists($cleanAvatarPath)) {
+                            echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
+                        } else {
+                            echo "<i class='fas fa-user-circle'></i>";
+                        }
+                        ?>
+                    </a>
+                </div>
+                <div class="user-details">
+                    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
+                </div>
+                <a href="settings.php" class="settings-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
         </div>
 
         <div class="table-box">

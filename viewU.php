@@ -11,17 +11,23 @@ $username = $_SESSION['username'];
 $lastName = '';
 $firstName = '';
 $userType = '';
-$avatarPath = 'default-avatar.png';
 $avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
 
-if (file_exists($userAvatar)) {
+// Initialize avatarPath from session or default
+$avatarPath = isset($_SESSION['avatarPath']) ? $_SESSION['avatarPath'] : 'default-avatar.png';
+
+// Update session only if the file exists and differs from current session value
+$cleanAvatarPath = preg_replace('/\?\d+$/', '', $avatarPath);
+if (file_exists($userAvatar) && $cleanAvatarPath !== $userAvatar) {
     $_SESSION['avatarPath'] = $userAvatar . '?' . time();
-} else {
+} elseif (!file_exists($cleanAvatarPath) && $avatarPath !== 'default-avatar.png') {
     $_SESSION['avatarPath'] = 'default-avatar.png';
 }
-
 $avatarPath = $_SESSION['avatarPath'];
+
+// Debugging: Log avatar path and file existence
+error_log("viewU.php: avatarPath=$avatarPath, cleanAvatarPath=$cleanAvatarPath, file_exists=" . (file_exists($cleanAvatarPath) ? 'Yes' : 'No'));
 
 // Handle AJAX search request
 if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search'])) {
@@ -48,8 +54,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         } else {
             // Count total matching users for pagination
             $countSql = "SELECT COUNT(*) as total FROM tbl_user 
-                         WHERE u_status IN ('active', 'pending') 
-                         AND (u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?)";
+                        WHERE u_status IN ('active', 'pending') 
+                        AND (u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?)";
             $countStmt = $conn->prepare($countSql);
             $searchWildcard = "%$searchTerm%";
             $countStmt->bind_param("ssss", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard);
@@ -74,18 +80,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $output .= "<tr> 
-                              <td>{$row['u_id']}</td> 
-                              <td>{$row['u_fname']}</td> 
-                              <td>{$row['u_lname']}</td> 
-                              <td>{$row['u_email']}</td> 
-                              <td>{$row['u_username']}</td> 
-                              <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
-                              <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
-                              <td class='action-buttons'>
-                                  <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                  <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                  <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
-                              </td>
+                            <td>{$row['u_id']}</td> 
+                            <td>{$row['u_fname']}</td> 
+                            <td>{$row['u_lname']}</td> 
+                            <td>{$row['u_email']}</td> 
+                            <td>{$row['u_username']}</td> 
+                            <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
+                            <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
+                            <td class='action-buttons'>
+                                <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                            </td>
                             </tr>";
             }
         } else {
@@ -112,7 +118,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         } else {
             // Count total matching archived users for pagination
             $countSql = "SELECT COUNT(*) as total FROM tbl_archive 
-                         WHERE u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?";
+                        WHERE u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?";
             $countStmt = $conn->prepare($countSql);
             $searchWildcard = "%$searchTerm%";
             $countStmt->bind_param("ssss", $searchWildcard, $searchWildcard, $searchWildcard, $searchWildcard);
@@ -136,18 +142,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $output .= "<tr> 
-                              <td>{$row['u_id']}</td> 
-                              <td>{$row['u_fname']}</td> 
-                              <td>{$row['u_lname']}</td> 
-                              <td>{$row['u_email']}</td> 
-                              <td>{$row['u_username']}</td> 
-                              <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
-                              <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
-                              <td class='action-buttons'>
-                                  <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                  <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                  <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
-                              </td>
+                            <td>{$row['u_id']}</td> 
+                            <td>{$row['u_fname']}</td> 
+                            <td>{$row['u_lname']}</td> 
+                            <td>{$row['u_email']}</td> 
+                            <td>{$row['u_username']}</td> 
+                            <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
+                            <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
+                            <td class='action-buttons'>
+                                <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
+                            </td>
                             </tr>";
             }
         } else {
@@ -441,13 +447,16 @@ if ($conn) {
             </div>
             <div class="user-profile">
                 <div class="user-icon">
-                    <?php 
-                    if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
-                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
-                    } else {
-                        echo "<i class='fas fa-user-circle'></i>";
-                    }
-                    ?>
+                    <a href="image.php">
+                        <?php 
+                        $cleanAvatarPath = preg_replace('/\?\d+$/', '', $avatarPath);
+                        if (!empty($avatarPath) && file_exists($cleanAvatarPath)) {
+                            echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
+                        } else {
+                            echo "<i class='fas fa-user-circle'></i>";
+                        }
+                        ?>
+                    </a>
                 </div>
                 <div class="user-details">
                     <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
@@ -459,7 +468,7 @@ if ($conn) {
                 </a>
             </div>
         </div>
-          
+        
         <div class="alert-container">
             <?php if (isset($_SESSION['message'])): ?>
                 <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
@@ -521,7 +530,7 @@ if ($conn) {
                                             <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
                                         </td>
-                                      </tr>"; 
+                                    </tr>"; 
                             } 
                         } else { 
                             echo "<tr><td colspan='8' style='text-align: center;'>No active or pending users found.</td></tr>"; 
@@ -583,7 +592,7 @@ if ($conn) {
                                             <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
                                             <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
-                                      </tr>"; 
+                                    </tr>"; 
                             } 
                         } else { 
                             echo "<tr><td colspan='8' style='text-align: center;'>No archived users found.</td></tr>"; 
@@ -833,7 +842,7 @@ if ($conn) {
         paginationContainer.innerHTML = paginationHtml;
     }
 
-    // Debounced search function
+    // Debounced search function     
     const debouncedSearchUsers = debounce(searchUsers, 300);
 </script>
 </body>

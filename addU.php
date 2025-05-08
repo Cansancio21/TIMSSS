@@ -159,7 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="firstname">First Name:</label>
                     <div class="input-box">
                         <input type="text" id="firstname" name="firstname" placeholder="First Name" value="<?php echo htmlspecialchars($firstname); ?>">
-                        <i class='bx bxs-user firstname-icon'></i>
+                        
                     </div>
                     <span class="error"><?php echo $firstnameErr; ?></span>
                 </div>
@@ -167,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="lastname">Last Name:</label>
                     <div class="input-box">
                         <input type="text" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo htmlspecialchars($lastname); ?>">
-                        <i class='bx bxs-user lastname-icon'></i>
+                   
                     </div>
                     <span class="error"><?php echo $lastnameErr; ?></span>
                 </div>
@@ -175,7 +175,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="email">Email:</label>
                     <div class="input-box">
                         <input type="email" id="email" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email); ?>">
-                        <i class='bx bxs-envelope email-icon'></i>
+                    
                     </div>
                     <span class="error"><?php echo $emailErr; ?></span>
                 </div>
@@ -183,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="username">Username:</label>
                     <div class="input-box">
                         <input type="text" id="username" name="username" placeholder="Username" value="<?php echo htmlspecialchars($username); ?>">
-                        <i class='bx bxs-user username-icon'></i>
+                       
                     </div>
                     <span class="error"><?php echo $usernameErr; ?></span>
                 </div>
@@ -205,7 +205,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <option value="staff" <?php if($type == 'staff') echo 'selected'; ?>>Staff</option>
                             <option value="technician" <?php if($type == 'technician') echo 'selected'; ?>>Technician</option>
                         </select>
-                        <i class='bx bxs-user type-icon'></i>
+                       
                     </div>
                 </div>
                 <div class="form-row">
@@ -216,7 +216,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <option value="active" <?php if($status == 'active') echo 'selected'; ?>>Active</option>
                             <option value="pending" <?php if($status == 'pending') echo 'selected'; ?>>Pending</option>
                         </select>
-                        <i class='bx bxs-check-circle status-icon'></i>
+                    
                     </div>
                 </div>
                 <div class="button-container">

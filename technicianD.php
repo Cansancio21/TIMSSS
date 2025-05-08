@@ -471,13 +471,16 @@ if ($conn) {
             </div>
             <div class="user-profile">
                 <div class="user-icon">
-                    <?php
-                    if (!empty($avatarPath) && file_exists(str_replace('?' . time(), '', $avatarPath))) {
-                        echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
-                    } else {
-                        echo "<i class='fas fa-user-circle'></i>";
-                    }
-                    ?>
+                    <a href="image.php">
+                        <?php 
+                        $cleanAvatarPath = preg_replace('/\?\d+$/', '', $avatarPath);
+                        if (!empty($avatarPath) && file_exists($cleanAvatarPath)) {
+                            echo "<img src='" . htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8') . "' alt='User Avatar'>";
+                        } else {
+                            echo "<i class='fas fa-user-circle'></i>";
+                        }
+                        ?>
+                    </a>
                 </div>
                 <div class="user-details">
                     <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
@@ -997,3 +1000,5 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $conn->close();
 ?>
+
+
