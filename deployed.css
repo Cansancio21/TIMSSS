@@ -2,7 +2,7 @@
     --primary: #3d28e2;
     --secondary: #372fa7;
     --dark: #2d3436;
-    --light: #667ee2;
+    --light: #f5f6fa;
     --success: #00b894;
     --danger: #d63031;
     --warning: #fdcb6e;
@@ -19,7 +19,6 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
-    min-height: 100vh;
 }
 
 .glass-container {
@@ -34,7 +33,6 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
-    width: 100%;
 }
 
 /* Sidebar */
@@ -116,11 +114,6 @@ body {
     margin-right: 10px;
 }
 
-footer .back-home img {
-    width: 35px;
-    height: 35px;
-}
-
 footer {
     margin-top: auto;
     width: 100%;
@@ -155,7 +148,7 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    padding-top: 100px;
+    margin-top: -15px;
 }
 
 /* Header */
@@ -167,15 +160,7 @@ footer {
     background: linear-gradient(135deg, #3d28e2, #594fdd);
     color: white;
     border-radius: 10px;
-    position: fixed;
-    margin-top: 15px;
-    top: 0;
-    left: 230px; /* Match sidebar width */
-    right: 30px; /* Match container padding */
-    z-index: 100;
-    height: 70px; /* Fixed height */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    
+    margin-bottom: 20px;
 }
 
 .upper h1 {
@@ -187,7 +172,6 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
-    margin-left: 20px;
 }
 
 .search-bar {
@@ -253,6 +237,18 @@ footer {
     margin-left: -300px;
 }
 
+/* Table Box */
+.table-box {
+    width: 100%;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
 
 .username {
     position: absolute;
@@ -267,34 +263,9 @@ footer {
     margin-left: 5px;
 }
 
-.export-btn {
-    position: absolute;
-    top: 60px;
-    right: 190px;
-    display: inline-flex;
-    align-items: center;
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 30px;
-    text-decoration: none;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-    border: none; /* Remove border */
-    outline: none; /* Remove outline on focus */
-}
-
-
-.export-btn:hover {
-    background-color: #7494ec;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-}
-
-
 .add-user-btn {
     position: absolute;
-    top: 60px;
+    top: 65px;
     right: 20px;
     display: inline-flex;
     align-items: center;
@@ -305,12 +276,10 @@ footer {
     text-decoration: none;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-    border: none; /* Remove border */
-    outline: none; /* Remove outline on focus */
 }
 
 .add-user-btn:hover {
-    background-color: #7494ec;
+    background: var(--secondary);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
 }
@@ -319,14 +288,11 @@ footer {
     margin-right: 8px;
 }
 
-.export-btn i {
-    margin-right: 8px;
-}
 /* Tabs */
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 20px;
+    margin-top: 50px;
 }
 
 .tab-btn {
@@ -371,25 +337,13 @@ footer {
 #archived-users-tab.active {
     display: flex;
 }
-.table-box {
-    width: 100%;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    min-height: 60vh;
-    overflow: visible;
-    margin-top: -15px;
-}
 
-/* Optimized Table Structure */
 table {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    table-layout: fixed; /* Essential for equal column widths */
-    margin-top: 25px;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 90px;
+    table-layout: auto;
 }
 
 thead {
@@ -401,19 +355,27 @@ thead {
 }
 
 th {
-    padding: clamp(10px, 1.5vw, 15px);
+    padding: 15px;
     text-align: center;
     font-weight: 500;
     vertical-align: middle;
 }
 
+th:first-child {
+    border-top-left-radius: 10px;
+}
+
+th:last-child {
+    border-top-right-radius: 10px;
+}
+
 td {
-    padding: 8px 5px;
+    padding: 10px;
     border-bottom: 1px solid #eee;
+    vertical-align: middle;
     text-align: center;
-    font-size: 0.9rem;
-    word-break: break-word;
-    line-height: 1.3;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 tr:last-child td {
@@ -438,6 +400,64 @@ tr:hover td {
     font-weight: 500;
 }
 
+/* Action Buttons */
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background-color: #ff6200;
+    color: #fff;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+    background-color: #e55a00;
+    color: #fff;
+}
+
+.delete-btn i {
+    font-size: 16px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.view-btn {
+    background-color: #3498db;
+    color: #fff;
+}
+
+.view-btn:hover {
+    background-color: #2980b9;
+}
+
+.edit-btn {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+.edit-btn:hover {
+    background-color: #27ae60;
+}
+
+/* Pagination */
 .pagination {
     display: flex;
     justify-content: center;
@@ -490,6 +510,8 @@ tr:hover td {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
@@ -529,17 +551,7 @@ tr:hover td {
 
 .modal-btn.cancel {
     background: var(--light);
-    color: white;
-}
-
-.modal-btn.ticket {
-    background: var(--light);
-    color: white;
-}
-
-.modal-btn.ticket:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    color: var(--dark);
 }
 
 .modal-btn:hover {
@@ -556,7 +568,6 @@ tr:hover td {
     border-radius: 5px;
 }
 
-/* Archive Header */
 .archive-header {
     display: flex;
     justify-content: space-between;
@@ -645,88 +656,51 @@ tr:hover td {
     margin-top: 10px;
 }
 
-
-.delete-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px; /* Adjust size as needed */
-    height: 30px;
-    background-color: #ff6200; /* Orange background */
-    color: #fff; /* White icon color */
-    border-radius: 5px; /* Rounded corners */
-    text-decoration: none; /* Remove underline */ 
-    transition: background-color 0.3s ease; /* Smooth hover transition */
+.button-container {
+    position: relative;
+    margin-bottom: 20px;
 }
 
-/* Hover effect for delete button */
-.delete-btn:hover {
-    background-color: #e55a00; /* Slightly darker orange on hover */
-    color: #fff; /* Keep icon white */
-}
-
-/* Icon inside delete button */
-.delete-btn i {
-    font-size: 16px; /* Adjust icon size */
-}
-
-/* Ensure consistency with other action buttons */
-.action-buttons {
-    display: flex;
-    gap: 5px; /* Space between action buttons */
-    padding: 23px 5px;
-}
-
-.view-btn, .edit-btn, .archive-btn, .unarchive-btn, .ticket-btn{
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
+.borrow-btn, .return-btn, .export-btn {
+    display: inline-block;
+    color: white;
+    padding: 10px 20px;
     border-radius: 5px;
     text-decoration: none;
-    transition: background-color 0.3s ease;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    top: 35px;
+    margin-bottom: 20px;
 }
 
-/* Example colors for other buttons (optional) */
-.view-btn {
-    background-color: #3498db; /* Blue */
-    color: #fff;
-}
-.view-btn:hover {
-    background-color: #2980b9;
+.borrow-btn {
+    background-color: #FFA500;
+    right: 225px;
 }
 
-.edit-btn {
-    background-color: #2ecc71; /* Green */
-    color: #fff;
-}
-.edit-btn:hover {
-    background-color: #27ae60;
+.return-btn {
+    background-color: #8ea722d3;
+    right: 115px;
 }
 
-.archive-btn {
-    background-color: #f1c40f; /* Yellow */
-    color: #fff;
-}
-.archive-btn:hover {
-    background-color: #d4ac0d;
+.export-btn {
+    background-color: #63c216;
+    right: 10px;
 }
 
-.unarchive-btn {
-    background-color: #9b59b6; /* Purple */
-    color: #fff;
-}
-.unarchive-btn:hover {
-    background-color: #8e44ad;
+.borrow-btn:hover {
+    background-color: #7494ec;
 }
 
-.ticket-btn {
-    background-color: #9b59b6;
-    color: #fff;
+.return-btn:hover {
+    background-color: #7494ec;
 }
 
-.ticket-btn:hover {
-    background-color: #8e44ad;
+.export-btn:hover {
+    background-color: #7494ec;
 }
+
+
 

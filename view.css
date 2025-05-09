@@ -1,6 +1,6 @@
 :root {
-    --primary: #6c5ce7;
-    --secondary: #a29bfe;
+    --primary: #3d28e2;
+    --secondary: #372fa7;
     --dark: #2d3436;
     --light: #f5f6fa;
     --success: #00b894;
@@ -105,6 +105,17 @@ body {
     display: inline;
 }
 
+.sidebar ul li a span {
+    font-size: 14px;
+    display: inline;
+}
+
+.sidebar ul li a img {
+    width: 35px;
+    height: 30px;
+    margin-right: 10px;
+}
+
 footer {
     margin-top: auto;
     width: 100%;
@@ -140,18 +151,19 @@ footer {
     margin-left: 200px;
     padding: 30px;
     margin-top: -15px;
+    padding-top: 100px;
 }
-
 /* Header */
 .upper {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    background: linear-gradient(135deg, #3d28e2, #594fdd);
     color: white;
     border-radius: 10px;
     margin-bottom: 20px;
+    margin-top: -70px;
 }
 
 .upper h1 {
@@ -163,7 +175,7 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
-    
+    margin-left: 20px;
 }
 
 .search-bar {
@@ -224,7 +236,7 @@ footer {
 }
 
 .user-details small {
-    color: #666;
+    color: #ffffff;
     font-size: 12px;
     margin-left: -300px;
 }
@@ -240,14 +252,17 @@ footer {
     min-height: 600px;
     display: flex;
     flex-direction: column;
+    margin-top: 20px;
 }
 
 .username {
     position: absolute;
     left: 25px;
     top: 25px;
-    font-weight: 500;
+    padding-bottom: 25px;
+    margin-bottom: 25px;
     color: var(--primary);
+    
 }
 
 .admin-icon {
@@ -257,7 +272,7 @@ footer {
 
 .add-user-btn {
     position: absolute;
-    top: 65px;
+    top: 45px;
     right: 20px;
     display: inline-flex;
     align-items: center;
@@ -284,7 +299,7 @@ footer {
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 50px;
+    margin-top: 40px;
 }
 
 .tab-btn {
@@ -335,7 +350,6 @@ table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-   
     margin-top: 10px;
     table-layout: auto;
 }
@@ -365,12 +379,13 @@ th:last-child {
 
 td {
     padding: 10px;
- 
+    border-bottom: 1px solid #eee;
     vertical-align: middle;
     text-align: center;
     word-wrap: break-word;
     white-space: normal;
 }
+
 tr:last-child td {
     border-bottom: none;
 }
@@ -394,48 +409,79 @@ tr:hover td {
 }
 
 /* Action Buttons */
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background-color: #ff6200;
+    color: #fff;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+    background-color: #e55a00;
+    color: #fff;
+}
+
+.delete-btn i {
+    font-size: 16px;
+}
+
 .action-buttons {
     display: flex;
     gap: 5px;
     justify-content: center;
 }
 
-.action-buttons a {
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
     text-decoration: none;
-    transition: all 0.3s;
-    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.action-buttons a.view-btn {
-    background: var(--success);
+.view-btn {
+    background-color: #3498db;
+    color: #fff;
 }
 
-.action-buttons a.edit-btn {
-    background: var(--info);
+.view-btn:hover {
+    background-color: #2980b9;
 }
 
-.action-buttons a.archive-btn {
-    background: var(--warning);
+.edit-btn {
+    background-color: #2ecc71;
+    color: #fff;
 }
 
-.action-buttons a.unarchive-btn {
-    background-color: #2196F3;
+.edit-btn:hover {
+    background-color: #27ae60;
 }
 
-.action-buttons a:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+.archive-btn {
+    background-color: #f1c40f;
+    color: #fff;
+}
+
+.archive-btn:hover {
+    background-color: #d4ac0d;
+}
+
+.unarchive-btn {
+    background-color: #9b59b6;
+    color: #fff;
 }
 
 .unarchive-btn:hover {
-    background-color: #1976D2;
+    background-color: #8e44ad;
 }
 
 /* Pagination */
@@ -491,6 +537,8 @@ tr:hover td {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
@@ -580,7 +628,7 @@ tr:hover td {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 15px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -605,7 +653,7 @@ tr:hover td {
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: #333;
+    color: #e7e6e6;
     font-size: 16px;
     font-weight: 600;
     transition: 0.3s ease-in-out;
@@ -615,6 +663,7 @@ tr:hover td {
     font-size: 24px;
     margin-right: 5px;
     transition: 0.3s ease-in-out;
+    color: #dad9d9;
 }
 
 .settings-link:hover span {
@@ -634,5 +683,15 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
+
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.alert-hidden {
+    opacity: 0;
+}
+
 
 

@@ -142,7 +142,6 @@ footer {
     margin-top: -15px;
     padding-top: 100px;
 }
-
 /* Header */
 .upper {
     display: flex;
@@ -152,14 +151,8 @@ footer {
     background: linear-gradient(135deg, #6c5ce7, #a29bfe);
     color: white;
     border-radius: 10px;
-    position: fixed;
-    margin-top: 15px;
-    top: 0;
-    left: 230px; /* Match sidebar width */
-    right: 30px; /* Match container padding */
-    z-index: 100;
-    height: 70px; /* Fixed height */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    margin-top: -70px;
 }
 
 .upper h1 {
@@ -237,6 +230,7 @@ footer {
     margin-left: -300px;
 }
 
+
 /* Table Box */
 .table-box {
     width: 100%;
@@ -310,6 +304,19 @@ thead {
 }
 
 
+.settings-link {
+    position: absolute;
+    right: 40px;
+    margin-top: -15px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+    transition: 0.3s ease-in-out;
+}
+
 .settings-link i {
     font-size: 24px;
     margin-right: 5px;
@@ -333,3 +340,4 @@ thead {
     border-radius: 8px;
     margin-top: 10px;
 }
+

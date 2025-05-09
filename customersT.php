@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 include 'db.php';
@@ -49,7 +50,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         $sql = "SELECT c_id, c_fname, c_lname, c_address, c_contact, c_email, c_date, c_napname, c_napport, c_macaddress, c_status 
                 FROM tbl_customer 
                 WHERE c_status LIKE 'ARCHIVED:%' 
-                AND (c_fname LIKE ? OR c_lname LIKE ? OR c_address LIKE ? OR c rispettivamente, c_contact LIKE ? OR c_email LIKE ? OR c_napname LIKE ? OR c_napport LIKE ? OR c_macaddress LIKE ?) 
+                AND (c_fname LIKE ? OR c_lname LIKE ? OR c_address LIKE ? OR c_contact LIKE ? OR c_email LIKE ? OR c_napname LIKE ? OR c_napport LIKE ? OR c_macaddress LIKE ?) 
                 LIMIT ?, ?";
     }
 
@@ -75,28 +76,28 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
             $displayStatus = $tab === 'archived' ? preg_replace('/^ARCHIVED:/', '', $row['c_status']) : ($row['c_status'] ?? '');
             echo "<tr> 
                     <td>{$row['c_id']}</td> 
-                    <td>{$row['c_fname']}</td> 
-                    <td>{$row['c_lname']}</td> 
-                    <td>{$row['c_address']}</td> 
-                    <td>{$row['c_contact']}</td> 
-                    <td>{$row['c_email']}</td> 
-                    <td>{$row['c_date']}</td> 
-                    <td>{$row['c_napname']}</td> 
-                    <td>{$row['c_napport']}</td> 
-                    <td>{$row['c_macaddress']}</td> 
+                    <td>" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "</td> 
+                    <td>" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "</td> 
                     <td>" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "</td> 
                     <td class='action-buttons'>";
             if ($tab === 'active') {
                 echo "
-                    <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                    <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                     <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
-                    <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                    <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
                     <a class='ticket-btn' href='createTickets.php?aname=" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>";
             } else {
                 echo "
-                    <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
-                    <a class='unarchive-btn' onclick=\"showUnarchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                    <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>";
+                    <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                    <a class='unarchive-btn' onclick=\"showUnarchiveModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                    <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>";
             }
             echo "</td></tr>";
         }
@@ -211,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$stmt) {
             die("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("si", $new彼此, $new_rem, $id);
+        $stmt->bind_param("si", $new_rem, $id);
         if ($stmt->execute()) {
             $_SESSION['message'] = "Customer unarchived successfully!";
         } else {
@@ -303,7 +304,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registered Customers</title>
-    <link rel="stylesheet" href="customerT.css">
+    <link rel="stylesheet" href="customersT.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -314,12 +315,12 @@ if ($conn) {
         <ul>
             <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
             <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
-            <li><a href="customersT.php" class="active" ><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
+            <li><a href="customersT.php" class="active"><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
             <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
             <li><a href="addC.php"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
         </ul>
         <footer>
-               <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -406,20 +407,20 @@ if ($conn) {
                             while ($row = $resultActive->fetch_assoc()) {
                                 echo "<tr> 
                                         <td>{$row['c_id']}</td> 
-                                        <td>{$row['c_fname']}</td> 
-                                        <td>{$row['c_lname']}</td> 
-                                        <td>{$row['c_address']}</td> 
-                                        <td>{$row['c_contact']}</td> 
-                                        <td>{$row['c_email']}</td> 
-                                        <td>{$row['c_date']}</td> 
-                                        <td>{$row['c_napname']}</td> 
-                                        <td>{$row['c_napport']}</td> 
-                                        <td>{$row['c_macaddress']}</td> 
+                                        <td>" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td>" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                                            <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
                                             <a class='ticket-btn' href='createTickets.php?aname=" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
                                         </td>
                                       </tr>";
@@ -481,20 +482,20 @@ if ($conn) {
                                 $display_rem = preg_replace('/^ARCHIVED:/', '', $row['c_status']);
                                 echo "<tr> 
                                         <td>{$row['c_id']}</td> 
-                                        <td>{$row['c_fname']}</td> 
-                                        <td>{$row['c_lname']}</td> 
-                                        <td>{$row['c_address']}</td> 
-                                        <td>{$row['c_contact']}</td> 
-                                        <td>{$row['c_email']}</td> 
-                                        <td>{$row['c_date']}</td> 
-                                        <td>{$row['c_napname']}</td> 
-                                        <td>{$row['c_napport']}</td> 
-                                        <td>{$row['c_macaddress']}</td> 
+                                        <td>" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td>" . htmlspecialchars($display_rem, ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '{$row['c_fname']}', '{$row['c_lname']}', '{$row['c_address']}', '{$row['c_contact']}', '{$row['c_email']}', '{$row['c_date']}', '{$row['c_napname']}', '{$row['c_napport']}', '{$row['c_macaddress']}', '" . htmlspecialchars($display_rem, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='unarchive-btn' onclick=\"showUnarchiveModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '{$row['c_fname']} {$row['c_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($display_rem, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a class='unarchive-btn' onclick=\"showUnarchiveModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>";
                             }
@@ -583,13 +584,16 @@ if ($conn) {
             <input type="hidden" name="delete_customer" value="1">
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
-                <button type="submit" class="modal-btn delete">Delete</button>
+                <button type="submit" class="modal-btn confirm">Delete</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+let currentSearchPage = 1;
+let updateInterval = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab') || 'customers_active';
@@ -603,6 +607,22 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => alert.remove(), 500);
         }, 2000);
     });
+
+    // Initialize search on page load if there's a search term
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput.value) {
+        searchCustomers();
+    }
+
+    // Start auto-update table
+    updateInterval = setInterval(updateTable, 30000);
+});
+
+// Clear interval when leaving the page
+window.addEventListener('beforeunload', () => {
+    if (updateInterval) {
+        clearInterval(updateInterval);
+    }
 });
 
 function showTab(tab) {
@@ -645,8 +665,6 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
-
-let currentSearchPage = 1;
 
 function searchCustomers(page = 1) {
     const searchTerm = document.getElementById('searchInput').value;
@@ -691,6 +709,7 @@ function updatePagination(currentPage, totalPages, tab, searchTerm) {
 const debouncedSearchCustomers = debounce(searchCustomers, 300);
 
 function showViewModal(id, fname, lname, area, contact, email, date, onu, caller, address, rem) {
+    console.log('showViewModal called with id:', id);
     document.getElementById('viewContent').innerHTML = `
         <div class="customer-details">
             <p><strong>ID:</strong> ${id}</p>
@@ -709,29 +728,57 @@ function showViewModal(id, fname, lname, area, contact, email, date, onu, caller
 }
 
 function showArchiveModal(id, name) {
+    console.log('showArchiveModal called with id:', id, 'name:', name);
     document.getElementById('archiveCustomerId').value = id;
     document.getElementById('archiveCustomerName').innerText = name;
     document.getElementById('archiveModal').style.display = 'block';
 }
 
 function showUnarchiveModal(id, name) {
+    console.log('showUnarchiveModal called with id:', id, 'name:', name);
     document.getElementById('unarchiveCustomerId').value = id;
     document.getElementById('unarchiveCustomerName').innerText = name;
     document.getElementById('unarchiveModal').style.display = 'block';
 }
 
 function showDeleteModal(id, name) {
+    console.log('showDeleteModal called with id:', id, 'name:', name);
     document.getElementById('deleteCustomerId').value = id;
     document.getElementById('deleteCustomerName').innerText = name;
     document.getElementById('deleteModal').style.display = 'block';
 }
 
+function updateTable() {
+    const searchTerm = document.getElementById('searchInput').value;
+    const activeTab = document.querySelector('.tab-btn.active').textContent.toLowerCase();
+    const tab = activeTab.includes('active') ? 'active' : 'archived';
+    const tbody = tab === 'active' ? document.getElementById('active-customers-tbody') : document.getElementById('archived-customers-tbody');
+    const defaultPageToUse = tab === 'active' ? <?php echo $pageActive; ?> : <?php echo $pageArchived; ?>;
+
+    if (searchTerm) {
+        searchCustomers(currentSearchPage);
+    } else {
+        fetch(`customersT.php?tab=${tab === 'active' ? 'customers_active' : 'customers_archived'}&page_active=${<?php echo $pageActive; ?>}&page_archived=${<?php echo $pageArchived; ?>}`)
+            .then(response => response.text())
+            .then(data => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const newTableBody = tab === 'active' ? doc.querySelector('#active-customers-tbody') : doc.querySelector('#archived-customers-tbody');
+                const currentTableBody = tab === 'active' ? document.querySelector('#active-customers-tbody') : document.querySelector('#archived-customers-tbody');
+                currentTableBody.innerHTML = newTableBody.innerHTML;
+            })
+            .catch(error => console.error('Error updating table:', error));
+    }
+}
+
 function closeModal(modalId) {
+    console.log('closeModal called for:', modalId);
     document.getElementById(modalId).style.display = 'none';
 }
 
 window.onclick = function(event) {
     if (event.target.className === 'modal') {
+        console.log('Clicked outside modal, closing');
         event.target.style.display = 'none';
     }
 }

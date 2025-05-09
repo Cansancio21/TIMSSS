@@ -283,11 +283,11 @@ if ($conn) {
         <ul>
             <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
             <li><a href="assetsT.php" class="active"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
-            <?php if ($userType !== 'technician'): ?>
+            
                 <li><a href="customersT.php"><img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/> <span>View Customers</span></a></li>
                 <li><a href="registerAssets.php"><img src="https://img.icons8.com/fluency/30/insert.png" alt="insert"/><span>Register Assets</span></a></li>
                 <li><a href="addC.php"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
-            <?php endif; ?>    
+               
         </ul>
         <footer>
             <a href="index.php" class="back-home"><img src="https://img.icons8.com/ios-filled/50/logout-rounded.png" alt="logout"/> Logout</a>

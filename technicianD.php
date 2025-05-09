@@ -391,7 +391,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISP Technician Dashboard</title>
-    <link rel="stylesheet" href="techniciansD.css">
+    <link rel="stylesheet" href="technicianD.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -443,23 +443,19 @@ if ($conn) {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="technicianD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="staffD.php"><i class="fas fa-users"></i> Regular Tickets</a></li>
-            <li>
-                <a href="javascript:void(0)" class="support-tickets-link" onclick="toggleSupportInput()">
-                    <i class="fas fa-file-archive"></i>
-                    <span>Support Tickets</span>
-                </a>
+            <li><a href="technicianD.php" class="active"><img src="https://img.icons8.com/parakeet/35/dashboard.png" alt="dashboard"/><span>Dashboard</span></a></li>
+            <li><a href="staffD.php"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>Regular Tickets</span></a></li>
+            <li><a href="javascript:void(0)" class="support-tickets-link" onclick="toggleSupportInput()"> <img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/></i><span>Support Tickets</span></a>
                 <div class="support-tickets-input" id="supportTicketInput">
                     <input type="text" id="supportCustomerId" placeholder="Enter Customer ID" required>
                     <button onclick="goToSupportTicket()" title="View Support Tickets"><i class="fas fa-arrow-right"></i></button>
                 </div>
             </li>
-            <li><a href="assetsT.php"><i class="fas fa-box"></i> View Assets</a></li>
-            <li><a href="techBorrowed.php"><i class="fas fa-box-open"></i> Borrowed Records</a></li>
+            <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
+            <li><a href="techBorrowed.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Borrowed Records</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> <span>Back to Home</span></a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
     <div class="container">
@@ -620,7 +616,6 @@ if ($conn) {
 
                     <!-- Regular Archived Tickets -->
                     <div id="regularArchivedTicketsContent" class="sub-tab-content <?php echo $tab === 'regularArchived' ? 'active' : ''; ?>">
-                        <h3>Regular Archived Tickets (<?php echo $totalRegularArchived; ?>)</h3>
                         <table class="tickets-table" id="regular-archived-tickets">
                             <thead>
                                 <tr>
@@ -757,7 +752,7 @@ if ($conn) {
 
                     <!-- Support Archived Tickets -->
                     <div id="supportArchivedTicketsContent" class="sub-tab-content <?php echo $tab === 'supportArchived' ? 'active' : ''; ?>">
-                        <h3>Support Archived Tickets (<?php echo $totalSupportArchived; ?>)</h3>
+
                         <table class="tickets-table" id="support-archived-tickets">
                             <thead>
                                 <tr>
@@ -1000,5 +995,3 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $conn->close();
 ?>
-
-

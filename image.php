@@ -18,7 +18,7 @@ $userType = 'staff'; // Default
 $avatarFolder = 'Uploads/avatars/';
 $generatedFolder = 'Uploads/generated/';
 
-// Create directories if they don’t exist
+// Create directories if they don't exist
 foreach ([$avatarFolder, $generatedFolder] as $folder) {
     if (!is_dir($folder)) {
         mkdir($folder, 0777, true);
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
             background-color: #f8f9fa;
         }
         .outer-table-box {
-            width: 90%;
+            width: 50%;
             padding: 20px;
             margin: 20px;
             position: relative;
@@ -122,12 +122,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
             align-items: center;
         }
         .inner-table-box {
-            width: 100%;
-            height: 500px;
+            width: 80%;
+            height: 50px;
             padding: 10px;
-            margin-top: -20px;
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 20px;
         }
         .inner-table-box img {
             width: 100%;
@@ -139,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         .button-container button {
             padding: 10px 20px;
@@ -171,6 +169,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
 <body>
     <div class="outer-table-box table-box glass-container">
         <h2>Manage Avatar</h2>
+        <div class="inner-table-box table-box glass-container">
+            <img id="previewImage" src="<?php echo htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8'); ?>" alt="Current Avatar">
+        </div>
         <div class="button-container">
             <form id="uploadForm" enctype="multipart/form-data" method="POST">
                 <input type="file" id="avatarInput" name="avatar" accept="image/*">
@@ -180,9 +181,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
                 <input type="file" id="generateInput" name="generated_image" accept="image/*">
                 <button type="button" id="generateBtn">Generate Image</button>
             </form>
-        </div>
-        <div class="inner-table-box table-box glass-container">
-            <img id="previewImage" src="<?php echo htmlspecialchars($avatarPath, ENT_QUOTES, 'UTF-8'); ?>" alt="Current Avatar">
         </div>
     </div>
 

@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 include 'db.php';
@@ -5,6 +6,25 @@ include 'db.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+// Handle delete request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_asset']) && isset($_POST['b_id'])) {
+    $id = (int)$_POST['b_id'];
+    
+    $sql = "DELETE FROM tbl_borrowed WHERE b_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id);
+    
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Record deleted successfully!";
+    } else {
+        $_SESSION['error'] = "Error deleting record: " . $conn->error;
+    }
+    
+    $stmt->close();
+    header("Location: borrowedT.php");
+    exit();
+}
 
 // Handle AJAX request for asset name
 if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated']) && !isset($_GET['action'])) {
@@ -92,7 +112,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
                           <td class='action-buttons'>
                               <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
                               <a href='editB.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
-                              <a class='delete-btn' onclick='showDeleteModal({$row['b_id']})' title='Delete'><i class='fas fa-trash'></i></a>
+                              <a class='delete-btn' onclick=\"showDeleteModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                           </td>
                         </tr>";
         }
@@ -179,27 +199,30 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="borrowedT.css"> 
+    <link rel="stylesheet" href="borrowedTB.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
 <div class="wrapper">
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
-            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
-            <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
-            <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
-            <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
+        <ul>
+            <li><a href="adminD.php"><img src="https://img.icons8.com/parakeet/35/dashboard.png" alt="dashboard"/><span>Dashboard</span></a></li>
+            <li><a href="viewU.php"> <img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/><span>View Users</span></a></li>
+            <li><a href="view_service_record.php"> <img src="https://img.icons8.com/fluency/35/maintenance--v1.png" alt="maintenance--v1"/><span>View Service Record</span></a></li>
+            <li><a href="logs.php"> <img src="https://img.icons8.com/color/35/edit-property.png" alt="edit-property"/> <span>View Logs</span></a></li>
+            <li><a href="borrowedT.php" class="active"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Borrowed Records</span></a></li>
+            <li><a href="returnT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Returned Records</span></a></li>
+            <li><a href="deployedT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Deployed Records</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+        <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
+
 
     <div class="container">
         <div class="upper"> 
@@ -279,7 +302,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                                         <td class='action-buttons'>
                                             <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a href='editB.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='delete-btn' onclick='showDeleteModal({$row['b_id']})' title='Delete'><i class='fas fa-trash'></i></a>
+                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                       </tr>"; 
                             } 
@@ -326,16 +349,19 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
         <div class="modal-header">
             <h2>Delete Asset</h2>
         </div>
-        <p>Are you sure you want to delete the borrowed asset: <span id="deleteAssetName"></span>?</p>
-        <div class="modal-footer">
-            <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
-            <button type="button" class="modal-btn confirm" onclick="confirmDelete()">Delete</button>
-        </div>
+        <p>Are you sure you want to delete <span id="deleteAssetName"></span> from the borrowed records? This action cannot be undone.</p>
+        <form method="POST" id="deleteForm">
+            <input type="hidden" name="b_id" id="deleteAssetId">
+            <input type="hidden" name="delete_asset" value="1">
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Delete</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-let currentDeleteId = null;
 let currentSearchPage = 1;
 let defaultPage = <?php echo json_encode($page); ?>;
 let updateInterval = null;
@@ -407,59 +433,11 @@ function showViewModal(id, assetName, quantity, technicianName, technicianId, da
     document.getElementById('viewModal').style.display = 'flex';
 }
 
-function showDeleteModal(id) {
-    console.log('showDeleteModal called with id:', id);
-    currentDeleteId = id;
-    const modal = document.getElementById('deleteModal');
-    console.log('Modal element:', modal);
-    fetch(`borrowedT.php?id=${id}`)
-        .then(response => {
-            console.log('Fetch response status:', response.status);
-            console.log('Fetch response headers:', response.headers.get('content-type'));
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Fetch response data:', data);
-            if (data.assetName) {
-                document.getElementById('deleteAssetName').textContent = data.assetName;
-            } else {
-                console.error('Asset name not found');
-                document.getElementById('deleteAssetName').textContent = 'Unknown Asset';
-            }
-            modal.style.display = 'flex';
-            console.log('Modal display set to flex');
-        })
-        .catch(error => {
-            console.error('Error fetching asset name:', error);
-            document.getElementById('deleteAssetName').textContent = 'Unknown Asset';
-            modal.style.display = 'flex';
-            console.log('Modal display set to flex (error case)');
-        });
-}
-
-function confirmDelete() {
-    if (currentDeleteId) {
-        console.log('confirmDelete called with id:', currentDeleteId);
-        fetch(`deleteB.php?id=${currentDeleteId}`, {
-            method: 'GET'
-        })
-        .then(response => {
-            console.log('Delete response status:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.text();
-        })
-        .then(data => {
-            updateTable();
-            closeModal('deleteModal');
-            window.location.href = 'borrowedT.php?deleted=true';
-        })
-        .catch(error => console.error('Error deleting record:', error));
-    }
+function showDeleteModal(id, assetName) {
+    console.log('showDeleteModal called with id:', id, 'assetName:', assetName);
+    document.getElementById('deleteAssetName').textContent = assetName || 'Unknown Asset';
+    document.getElementById('deleteAssetId').value = id;
+    document.getElementById('deleteModal').style.display = 'flex';
 }
 
 function updateTable() {

@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 include 'db.php';
@@ -6,6 +7,25 @@ include 'db.php';
 if (!isset($_SESSION['username'])) { 
     header("Location: index.php");
     exit(); 
+}
+
+// Handle delete request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_asset']) && isset($_POST['r_id'])) {
+    $id = (int)$_POST['r_id'];
+    
+    $sql = "DELETE FROM tbl_returned WHERE r_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id);
+    
+    if ($stmt->execute()) {
+        $_SESSION['message'] = "Record deleted successfully!";
+    } else {
+        $_SESSION['error'] = "Error deleting record: " . $conn->error;
+    }
+    
+    $stmt->close();
+    header("Location: returnT.php");
+    exit();
 }
 
 // Get user details for the header
@@ -159,27 +179,28 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Returned Assets</title>
-    <link rel="stylesheet" href="returnT.css"> 
+    <link rel="stylesheet" href="returnsT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
-    <div class="sidebar glass-container">
+<div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="viewU.php"><i class="fas fa-users"></i> View Users</a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-file-alt"></i> View Service Record</a></li>
-            <li><a href="logs.php"><i class="fas fa-file-archive"></i> View Logs</a></li>
-            <li><a href="borrowedT.php"><i class="fas fa-box-open"></i>Borrowed Records</a></li>
-            <li><a href="returnT.php"><i class="fas fa-undo-alt"></i> Return Records</a></li>
-            <li><a href="deployedT.php"><i class="fas fa-clipboard-check"></i>Deployed Records</a></li>
+            <li><a href="adminD.php"><img src="https://img.icons8.com/parakeet/35/dashboard.png" alt="dashboard"/><span>Dashboard</span></a></li>
+            <li><a href="viewU.php"> <img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/><span>View Users</span></a></li>
+            <li><a href="view_service_record.php"> <img src="https://img.icons8.com/fluency/35/maintenance--v1.png" alt="maintenance--v1"/><span>View Service Record</span></a></li>
+            <li><a href="logs.php"> <img src="https://img.icons8.com/color/35/edit-property.png" alt="edit-property"/> <span>View Logs</span></a></li>
+            <li><a href="borrowedT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Borrowed Records</span></a></li>
+            <li><a href="returnT.php" class="active"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Returned Records</span></a></li>
+            <li><a href="deployedT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Deployed Records</span></a></li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+           <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
+
 
     <div class="container">
         <div class="upper">
@@ -309,17 +330,21 @@ if ($conn) {
             <h2>Delete Asset</h2>
         </div>
         <p>Are you sure you want to delete the returned asset: <span id="deleteAssetName"></span>?</p>
-        <div class="modal-footer">
-            <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
-            <button type="button" class="modal-btn confirm" onclick="confirmDelete()">Delete</button>
-        </div>
+        <form method="POST" id="deleteForm">
+            <input type="hidden" name="r_id" id="deleteAssetId">
+            <input type="hidden" name="delete_asset" value="1">
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Delete</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-let currentDeleteId = null;
 let currentSearchPage = 1;
 let defaultPage = <?php echo json_encode($page); ?>;
+let updateInterval = null;
 
 // Debounce function to limit search calls
 function debounce(func, wait) {
@@ -391,54 +416,46 @@ function showViewModal(id, name, quantity, techName, techId, date) {
 }
 
 function showDeleteModal(id, name) {
-    currentDeleteId = id;
-    document.getElementById('deleteAssetName').textContent = name;
+    console.log('showDeleteModal called with id:', id, 'name:', name);
+    document.getElementById('deleteAssetName').textContent = name || 'Unknown Asset';
+    document.getElementById('deleteAssetId').value = id;
     document.getElementById('deleteModal').style.display = 'block';
 }
 
-function confirmDelete() {
-    if (currentDeleteId) {
-        fetch(`deleteB.php?id=${currentDeleteId}`, {
-            method: 'GET'
-        })
-        .then(response => response.text())
-        .then(data => {
-            updateTable();
-            closeModal('deleteModal');
-            window.location.href = 'returnT.php?deleted=true';
-        })
-        .catch(error => console.error('Error:', error));
+function updateTable() {
+    const searchTerm = document.getElementById('searchInput').value;
+    if (searchTerm) {
+        searchReturned(currentSearchPage);
+    } else {
+        fetch(`returnT.php?page=${defaultPage}`)
+            .then(response => response.text())
+            .then(data => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const newTableBody = doc.querySelector('#tableBody');
+                const currentTableBody = document.querySelector('#tableBody');
+                currentTableBody.innerHTML = newTableBody.innerHTML;
+            })
+            .catch(error => console.error('Error updating table:', error));
     }
 }
 
-function updateTable() {
-    fetch('returnT.php')
-    .then(response => response.text())
-    .then(data => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data, 'text/html');
-        const newTableBody = doc.querySelector('#tableBody');
-        const currentTableBody = document.querySelector('#tableBody');
-        currentTableBody.innerHTML = newTableBody.innerHTML;
-    })
-    .catch(error => console.error('Error updating table:', error));
-}
-
 function closeModal(modalId) {
+    console.log('closeModal called for:', modalId);
     document.getElementById(modalId).style.display = 'none';
 }
 
-window.onclick = function(event) {
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    });
-}
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+        console.log('Clicked outside modal, closing');
+        event.target.style.display = 'none';
+    }
+});
 
-// Handle alert fade-out and initialize search
+// Initialize auto-update table every 30 seconds
 document.addEventListener('DOMContentLoaded', () => {
+    updateInterval = setInterval(updateTable, 30000);
+
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
         setTimeout(() => {
@@ -451,6 +468,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchInput');
     if (searchInput.value) {
         searchReturned();
+    }
+});
+
+// Clear interval when leaving the page
+window.addEventListener('beforeunload', () => {
+    if (updateInterval) {
+        clearInterval(updateInterval);
     }
 });
 </script>

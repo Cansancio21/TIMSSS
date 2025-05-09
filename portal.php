@@ -38,11 +38,9 @@ $avatarPath = $_SESSION['avatarPath'];
 <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="staffD.php"><i class="fas fa-ticket-alt"></i> View Tickets</a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-box"></i> View Assets</a></li>
-            <li><a href="customersT.php"><i class="fas fa-box"></i> View Customers</a></li>
+        <li><a href="portal.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="suppT.php"><i class="fas fa-file-invoice"></i> Support tickets</a></li>
-            <li><a href="addC.php"><i class="fas fa-user-plus"></i> Add Customer</a></li>
+          
         </ul>
         <footer>
             <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
