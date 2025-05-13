@@ -115,7 +115,7 @@ body {
 }
 
 footer {
-    margin-top: 160px;
+    margin-top: 220px;
     width: 100%;
     padding: 0 15px;
     text-align: center;
@@ -500,7 +500,6 @@ tr:hover td {
     color: var(--dark);
 }
 
-/* Modal */
 .modal {
     display: none;
     position: fixed;

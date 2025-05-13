@@ -94,13 +94,13 @@ if ($conn) {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-            <li><a href="adminD.php" class="active"><img src="https://img.icons8.com/parakeet/35/dashboard.png" alt="dashboard"/><span>Dashboard</span></a></li>
-            <li><a href="viewU.php"> <img src="https://img.icons8.com/color/48/conference-skin-type-7.png" alt="conference-skin-type-7"/><span>View Users</span></a></li>
-            <li><a href="view_service_record.php"> <img src="https://img.icons8.com/fluency/35/maintenance--v1.png" alt="maintenance--v1"/><span>View Service Record</span></a></li>
-            <li><a href="logs.php"> <img src="https://img.icons8.com/color/35/edit-property.png" alt="edit-property"/> <span>View Logs</span></a></li>
-            <li><a href="borrowedT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Borrowed Records</span></a></li>
-            <li><a href="returnT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Returned Records</span></a></li>
-            <li><a href="deployedT.php"> <img src="https://img.icons8.com/cotton/35/documents--v1.png" alt="documents--v1"/> <span>Deployed Records</span></a></li>
+            <li><a href="adminD.php" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>View Service Record</span></a></li>
+            <li><a href="logs.php"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
+            <li><a href="borrowedT.php"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
+            <li><a href="returnT.php"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
+            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deployed Records</span></a></li>
         </ul>
         <footer>
         <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>

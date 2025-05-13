@@ -252,13 +252,7 @@ footer {
     margin-left: -300px;
 }
 
-.username {
-    position: absolute;
-    left: 25px;
-    top: 25px;
-    font-weight: 500;
-    color: var(--primary);
-}
+
 
 .admin-icon {
     color: var(--warning);
@@ -296,7 +290,7 @@ footer {
 .tab-buttons {
     display: flex;
     gap: 10px;
-    margin: 50px 0 15px;
+    margin: 20px 0 15px;
 }
 
 .tab-btn {

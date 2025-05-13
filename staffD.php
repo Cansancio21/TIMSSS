@@ -35,6 +35,17 @@ if ($resultUser->num_rows > 0) {
     $lastName = $row['u_lname'] ?: '';
     $userType = strtolower($row['u_type']) ?: 'staff';
     error_log("User fetched: username={$_SESSION['username']}, userType=$userType");
+    
+    // Log staff login if userType is staff and not already logged for this session
+    if ($userType === 'staff' && !isset($_SESSION['login_logged'])) {
+        $logDescription = "Staff $firstName has successfully logged in";
+        $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+        $stmtLog = $conn->prepare($sqlLog);
+        $stmtLog->bind_param("s", $logDescription);
+        $stmtLog->execute();
+        $stmtLog->close();
+        $_SESSION['login_logged'] = true; // Prevent multiple login logs
+    }
 } else {
     error_log("User not found for username: {$_SESSION['username']}");
     $_SESSION['error'] = "User not found.";
@@ -193,6 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtCheck->bind_param("i", $t_id);
         $stmtCheck->execute();
         $resultCheck = $stmtCheck->get_result();
+        // rikes are not logged separately but are handled in editT.php
         $currentTicket = $resultCheck->fetch_assoc();
         $stmtCheck->close();
 
@@ -225,6 +237,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $t_id);
         if ($stmt->execute()) {
             $_SESSION['message'] = "Ticket archived successfully!";
+            // Log archive action for staff
+            if ($userType === 'staff') {
+                $logDescription = "Staff $firstName archived ticket ID $t_id";
+                $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+                $stmtLog = $conn->prepare($sqlLog);
+                $stmtLog->bind_param("s", $logDescription);
+                $stmtLog->execute();
+                $stmtLog->close();
+            }
         } else {
             $_SESSION['error'] = "Error archiving ticket: " . $stmt->error;
             error_log("Error archiving ticket: " . $stmt->error);
@@ -237,6 +258,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $t_id);
         if ($stmt->execute()) {
             $_SESSION['message'] = "Ticket restored successfully!";
+            // Log restore action for staff
+            if ($userType === 'staff') {
+                $logDescription = "Staff $firstName unarchived ticket ID $t_id";
+                $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+                $stmtLog = $conn->prepare($sqlLog);
+                $stmtLog->bind_param("s", $logDescription);
+                $stmtLog->execute();
+                $stmtLog->close();
+            }
         } else {
             $_SESSION['error'] = "Error restoring ticket: " . $stmt->error;
             error_log("Error restoring ticket: " . $stmt->error);
@@ -268,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $userLastName = $user['u_lname'];
             } else {
                 // If not found in tbl_user, try tbl_customer
-                $sqlCustomer = "SELECT c_fname, c_lname FROM tbl_customerfollowing WHERE CONCAT(c_fname, ' ', c_lname) = ?";
+                $sqlCustomer = "SELECT c_fname, c_lname FROM tbl_customer WHERE CONCAT(c_fname, ' ', c_lname) = ?";
                 $stmtCustomer = $conn->prepare($sqlCustomer);
                 $stmtCustomer->bind_param("s", $t_aname);
                 $stmtCustomer->execute();
@@ -316,6 +346,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             if ($stmt->affected_rows > 0) {
                 $_SESSION['message'] = "Ticket deleted successfully!";
+                // Log delete action for staff
+                if ($userType === 'staff') {
+                    $logDescription = "Staff $firstName deleted ticket ID $t_id";
+                    $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+                    $stmtLog = $conn->prepare($sqlLog);
+                    $stmtLog->bind_param("s", $logDescription);
+                    $stmtLog->execute();
+                    $stmtLog->close();
+                }
             } else {
                 $_SESSION['error'] = "Ticket not found or not archived.";
                 error_log("Ticket not found or not archived for t_id: $t_id");
@@ -382,7 +421,6 @@ $conn->close();
     <link rel="stylesheet" href="staffsD.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-   
 </head>
 <body>
 <div class="wrapper">
@@ -414,7 +452,7 @@ $conn->close();
             </li>
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><img src="https://img.icons8.com/ios-filled/50/logout-rounded.png" alt="logout"/> Logout</a>
+             <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -901,5 +939,3 @@ window.addEventListener('click', function(event) {
 </script>
 </body>
 </html>
-
-

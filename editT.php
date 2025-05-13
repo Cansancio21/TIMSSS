@@ -8,6 +8,24 @@ if (!isset($_SESSION['username'])) {
     exit();
 }
 
+// Fetch staff's first name for logging
+$sqlUser = "SELECT u_fname, u_type FROM tbl_user WHERE u_username = ?";
+$stmtUser = $conn->prepare($sqlUser);
+$stmtUser->bind_param("s", $_SESSION['username']);
+$stmtUser->execute();
+$resultUser = $stmtUser->get_result();
+if ($resultUser->num_rows > 0) {
+    $user = $resultUser->fetch_assoc();
+    $firstName = $user['u_fname'] ?: 'Unknown';
+    $userType = strtolower($user['u_type']) ?: 'staff';
+} else {
+    error_log("User not found for username: {$_SESSION['username']}");
+    $_SESSION['error'] = "User not found.";
+    header("Location: index.php");
+    exit();
+}
+$stmtUser->close();
+
 // Check if the ticket ID is provided
 if (isset($_GET['id'])) {
     $ticketId = (int)$_GET['id'];
@@ -66,12 +84,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (empty($errors)) {
+        // Check for changes in account_name and ticket_details
+        $logParts = [];
+        if ($accountName !== $ticket['t_aname']) {
+            $logParts[] = "account name";
+        }
+        if ($ticketDetails !== $ticket['t_details']) {
+            $logParts[] = "ticket details";
+        }
+
         // Update the ticket in the database
         $sqlUpdate = "UPDATE tbl_ticket SET t_aname = ?, t_type = ?, t_status = ?, t_details = ?, t_date = ? WHERE t_id = ?";
         $stmtUpdate = $conn->prepare($sqlUpdate);
         $stmtUpdate->bind_param("sssssi", $accountName, $issueType, $ticketStatus, $ticketDetails, $dateIssued, $ticketId);
 
         if ($stmtUpdate->execute()) {
+            // Log changes if any, only for staff
+            if ($userType === 'staff' && !empty($logParts)) {
+                $logDescription = "Staff $firstName edited ticket ID $ticketId " . implode(" and ", $logParts);
+                $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+                $stmtLog = $conn->prepare($sqlLog);
+                $stmtLog->bind_param("s", $logDescription);
+                $stmtLog->execute();
+                $stmtLog->close();
+            }
+
             echo "<script>alert('Ticket updated successfully!'); window.location.href='staffD.php?tab=active';</script>";
         } else {
             echo "<script>alert('Error updating ticket: " . addslashes($stmtUpdate->error) . "');</script>";
@@ -105,7 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             transform: translateY(-50%);
             font-size: 20px;
         }
-       
         .input-box input, .input-box select, .input-box textarea {
             width: 100%;
             padding-right: 50px; /* Space for icon */
@@ -135,7 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="account_name">Account Name:</label>
                     <div class="input-box">
                         <input type="text" id="account_name" name="account_name" value="<?php echo htmlspecialchars($ticket['t_aname']); ?>" required>
-                        <i class='bx bxs-user account-icon'></i>
                     </div>
                     <?php if (isset($errors['account_name'])): ?>
                         <span class="error"><?php echo htmlspecialchars($errors['account_name']); ?></span>
@@ -148,7 +183,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <option value="Critical" <?php echo ($ticket['t_type'] == 'Critical') ? 'selected' : ''; ?>>Critical</option>
                             <option value="Minor" <?php echo ($ticket['t_type'] == 'Minor') ? 'selected' : ''; ?>>Minor</option>
                         </select>
-                        <i class='bx bxs-error issue-icon'></i>
                     </div>
                     <?php if (isset($errors['issue_type'])): ?>
                         <span class="error"><?php echo htmlspecialchars($errors['issue_type']); ?></span>
@@ -167,7 +201,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <option value="Closed" <?php echo ($ticket['t_status'] == 'Closed') ? 'selected' : ''; ?>>Closed</option>
                             <?php endif; ?>
                         </select>
-                        <i class='bx bxs-check-circle status-icon'></i>
                     </div>
                     <?php if ($ticket['t_status'] === 'Closed'): ?>
                         <input type="hidden" name="ticket_status" value="Closed">
@@ -184,7 +217,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="ticket_details">Ticket Details:</label>
                     <div class="input-box">
                         <textarea name="ticket_details" id="ticket_details" required><?php echo htmlspecialchars($ticket['t_details']); ?></textarea>
-                        <i class='bx bxs-detail details-icon'></i>
                     </div>
                     <?php if (isset($errors['ticket_details'])): ?>
                         <span class="error"><?php echo htmlspecialchars($errors['ticket_details']); ?></span>
@@ -194,7 +226,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="date">Date Issued:</label>
                     <div class="input-box">
                         <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($ticket['t_date']); ?>" required>
-                        <i class='bx bxs-calendar date-icon'></i>
                     </div>
                     <?php if (isset($errors['date'])): ?>
                         <span class="error"><?php echo htmlspecialchars($errors['date']); ?></span>

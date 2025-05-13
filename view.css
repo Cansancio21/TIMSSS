@@ -258,7 +258,7 @@ footer {
 .username {
     position: absolute;
     left: 25px;
-    top: 25px;
+    top: 45px;
     padding-bottom: 25px;
     margin-bottom: 25px;
     color: var(--primary);
@@ -283,6 +283,8 @@ footer {
     text-decoration: none;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    border: none; /* Remove border */
+    outline: none; /* Remove outline on focus */
 }
 
 .add-user-btn:hover {
@@ -299,7 +301,7 @@ footer {
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 40px;
+    margin-top: 65px;
 }
 
 .tab-btn {
@@ -621,7 +623,7 @@ tr:hover td {
 /* Alerts */
 .alert-container {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .alert {

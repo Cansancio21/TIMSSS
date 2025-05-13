@@ -1,17 +1,25 @@
 <?php
+session_start(); // Start session
+include 'db.php'; // Your database connection
+
 // Include PHPMailer classes
+require 'PHPmailer-master/PHPmailer-master/src/Exception.php';
+require 'PHPmailer-master/PHPmailer-master/src/PHPMailer.php';
+require 'PHPmailer-master/PHPmailer-master/src/SMTP.php';
+
+// Use PHPMailer classes
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-
-// Load Composer's autoloader for PHPMailer
-require '../vendor/autoload.php'; // Adjusted path as per your update
-
-include 'db.php'; // Ensure db.php contains a valid connection to $conn
 
 $firstnameErr = $lastnameErr = $emailErr = $usernameErr = $passwordErr = "";
 $firstname = $lastname = $email = $username = $password = $type = $status = "";
 $hasError = false;
-$successMessage = "";
+
+// Check if tbl_user exists
+$result = $conn->query("SHOW TABLES LIKE 'tbl_user'");
+if ($result->num_rows == 0) {
+    die("Error: Table 'tbl_user' does not exist in the 'task_management' database.");
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get form data and sanitize
@@ -23,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $type = trim($_POST['type']);
     $status = trim($_POST['status']);
 
-    // Validation
+    // Validation (email format validation removed)
     if (!preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
         $firstnameErr = "Firstname should not contain numbers.";
         $hasError = true;
@@ -34,8 +42,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $hasError = true;
     }
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $emailErr = "Invalid email format.";
+    if (empty($email)) {
+        $emailErr = "Email is required.";
         $hasError = true;
     }
 
@@ -118,16 +126,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Send the email
                 $mail->send();
                 
-                // Set success message and redirect
-                echo "<script type='text/javascript'>
-                        alert('User added successfully. Login credentials have been sent to $email.');
-                        window.location.href = 'viewU.php';
-                      </script>";
+                // Store success message in session and redirect (PRG pattern)
+                $_SESSION['message'] = "User has been registered successfully. A confirmation email has been sent.";
+                header("Location: viewU.php");
+                exit();
             } catch (Exception $e) {
-                echo "<script type='text/javascript'>
-                        alert('User registered, but error sending email with credentials: " . addslashes($mail->ErrorInfo) . "');
-                        window.location.href = 'viewU.php';
-                      </script>";
+                // Store error message in session and redirect
+                $_SESSION['message'] = "User registered, but error sending confirmation email: " . $mail->ErrorInfo;
+                header("Location: viewU.php");
+                exit();
             }
         } else {
             die("Execution failed: " . $stmt->error);
@@ -144,7 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add User</title>
-    <link rel="stylesheet" href="addU.css">
+    <link rel="stylesheet" href="addUs.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -154,12 +161,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <i class='bx bx-arrow-back'></i>
             </a>
             <h1>Add New User</h1>
+            <div class="alert-container">
+                <?php if (isset($_SESSION['message'])): ?>
+                    <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+                <?php endif; ?>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+                <?php endif; ?>
+            </div>
             <form method="POST" action="" class="form" id="addUserForm">
                 <div class="form-row">
                     <label for="firstname">First Name:</label>
                     <div class="input-box">
                         <input type="text" id="firstname" name="firstname" placeholder="First Name" value="<?php echo htmlspecialchars($firstname); ?>">
-                        
                     </div>
                     <span class="error"><?php echo $firstnameErr; ?></span>
                 </div>
@@ -167,15 +181,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="lastname">Last Name:</label>
                     <div class="input-box">
                         <input type="text" id="lastname" name="lastname" placeholder="Last Name" value="<?php echo htmlspecialchars($lastname); ?>">
-                   
                     </div>
                     <span class="error"><?php echo $lastnameErr; ?></span>
                 </div>
                 <div class="form-row">
                     <label for="email">Email:</label>
                     <div class="input-box">
-                        <input type="email" id="email" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email); ?>">
-                    
+                        <input type="text" id="email" name="email" placeholder="Email" value="<?php echo htmlspecialchars($email); ?>">
                     </div>
                     <span class="error"><?php echo $emailErr; ?></span>
                 </div>
@@ -183,7 +195,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="username">Username:</label>
                     <div class="input-box">
                         <input type="text" id="username" name="username" placeholder="Username" value="<?php echo htmlspecialchars($username); ?>">
-                       
                     </div>
                     <span class="error"><?php echo $usernameErr; ?></span>
                 </div>
@@ -205,7 +216,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <option value="staff" <?php if($type == 'staff') echo 'selected'; ?>>Staff</option>
                             <option value="technician" <?php if($type == 'technician') echo 'selected'; ?>>Technician</option>
                         </select>
-                       
                     </div>
                 </div>
                 <div class="form-row">
@@ -216,7 +226,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <option value="active" <?php if($status == 'active') echo 'selected'; ?>>Active</option>
                             <option value="pending" <?php if($status == 'pending') echo 'selected'; ?>>Pending</option>
                         </select>
-                    
                     </div>
                 </div>
                 <div class="button-container">
@@ -258,9 +267,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Add event listener for real-time password validation
         document.getElementById('password').addEventListener('input', validatePassword);
 
-        // Log form submission for debugging
-        document.getElementById('addUserForm').addEventListener('submit', function (e) {
-            console.log('Form submitted');
+        // Prevent multiple form submissions
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true; // Disable button to prevent multiple clicks
+            submitBtn.textContent = 'Submitting...'; // Update button text
         });
     </script>
 </body>

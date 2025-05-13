@@ -367,6 +367,7 @@ tr:last-child td {
 tr:hover td {
     background: rgba(108, 92, 231, 0.05);
 }
+
 .pagination {
     display: flex;
     justify-content: center;
@@ -795,4 +796,74 @@ tr:hover td {
     font-size: 12px;
     margin-top: -10px;
     margin-bottom: 10px;
+}
+
+/* Filter Icons */
+.filter-icons {
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-icon {
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.3s, transform 0.2s;
+}
+
+.filter-open {
+    color: #00b894;
+}
+
+.filter-open:hover {
+    color: #009670;
+    transform: scale(1.2);
+}
+
+.filter-closed {
+    color: #d63031;
+}
+
+.filter-closed:hover {
+    color: #b12728;
+    transform: scale(1.2);
+}
+
+/* Remove underline from status on hover */
+.status-clickable:hover {
+    text-decoration: none;
+}
+
+/* Status header clickable */
+.status-header {
+    cursor: pointer;
+}
+
+/* Status Filter Dropdown */
+.status-filter {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 6px;
+    font-size: 14px;
+    color: var(--dark);
+    cursor: pointer;
+    margin-left: 10px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.status-filter:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.3);
+}
+
+.status-filter:hover {
+    border-color: var(--secondary);
+}
+
+.status-filter option {
+    background: white;
+    color: var(--dark);
 }

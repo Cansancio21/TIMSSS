@@ -200,7 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration & Login</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="indexs.css">
+    <link rel="stylesheet" href="index.css">
     <script>
         // Define the registration code client-side (for simplicity; ideally, validate server-side only)
         const REGISTRATION_CODE = 'ADMIN123';
@@ -350,22 +350,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                 <?php } ?>
                 <div class="input-box">
                     <input type="text" name="username" placeholder="Username" required>
-                    <i class='bx bxs-user'></i>
+                    <i class="bx bxs-user user-icon"></i>
                     <?php if (!empty($loginError)) echo "<p class='error-message'>$loginError</p>"; ?>
                 </div>
                 <div class="input-box">
                     <input type="password" id="loginPassword" name="password" placeholder="Password" required>
-                    <i class='bx bxs-lock-alt' id="toggleLoginPassword" style="cursor: pointer;"></i>
+                    <i class="bx bxs-lock-alt password-icon" id="toggleLoginPassword" style="cursor: pointer;"></i>
                     <?php if (!empty($passwordError)) echo "<p class='error-message'>$passwordError</p>"; ?>
                 </div> 
                 <button type="submit" name="login" class="btn">Login</button>
-                <p>or login with social platform</p>
-                <div class="social-icons">
-                    <a href="#"><i class='bx bxl-google'></i></a>
-                    <a href="#"><i class='bx bxl-facebook'></i></a>
-                    <a href="#"><i class='bx bxl-github'></i></a>
-                    <a href="#"><i class='bx bxl-linkedin'></i></a>
-                </div>
+                
             </form>
         </div>
 

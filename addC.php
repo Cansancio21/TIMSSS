@@ -3,15 +3,17 @@ session_start(); // Start session for login management
 include 'db.php';
 
 // Include PHPMailer classes
+require 'PHPmailer-master/PHPmailer-master/src/Exception.php';
+require 'PHPmailer-master/PHPmailer-master/src/PHPMailer.php';
+require 'PHPmailer-master/PHPmailer-master/src/SMTP.php';
+
+// Use PHPMailer classes
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// Load Composer's autoloader for PHPMailer
-require 'vendor/autoload.php'; // Adjust path if vendor is elsewhere
-
 // Check if the user is logged in
 if (!isset($_SESSION['username'])) {
-    header("Location: index.php"); 
+    header("Location: index.php");
     exit();
 }
 
@@ -70,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $macaddress = trim($_POST['macaddress']);
     $status = trim($_POST['status']);
 
-    // Validate inputs
+    // Validate inputs (email format validation removed)
     if (!preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
         $firstnameErr = "First Name should not contain numbers.";
         $hasError = true;
@@ -83,8 +85,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $lastnameErr = "Last Name should not contain numbers.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z\s-]+$/", $address)) { // Fixed regex
-        $addressErr = "Address should not contain numbers.";
+    if (!preg_match("/^[a-zA-Z0-9\s,.-]+$/", $address)) { // Allow numbers and common address characters
+        $addressErr = "Address contains invalid characters.";
         $hasError = true;
     }
     if (!preg_match("/^[0-9]+$/", $napport)) {
@@ -95,17 +97,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $napnameErr = "Nap Name must contain letters only.";
         $hasError = true;
     }
-    if (!preg_match("/^[a-zA-Z0-9\s-]+$/", $macaddress)) {
+    if (!preg_match("/^[a-zA-Z0-9:-]+$/", $macaddress)) { // Allow MAC address format (alphanumeric, colons, hyphens)
         $macaddressErr = "Mac Address should not contain special characters.";
-        $hasError = true;
-    }
-   
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $emailErr = "Invalid email format.";
         $hasError = true;
     }
     if (empty($dob)) {
         $dobErr = "Date is required.";
+        $hasError = true;
+    }
+    if (empty($status)) {
+        $statusErr = "Status is required.";
+        $hasError = true;
+    }
+    if (empty($email)) {
+        $emailErr = "Email is required.";
         $hasError = true;
     }
 
@@ -162,21 +167,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </body>
                     </html>
                 ";
-                $mail->AltBody = "Dear $firstname $lastname,\n\nThank you for registering with us. Your account details are:\nCustomer ID: $customerId\nLast Name: $lastname\n\nPlease use these credentials to log in to our customer portal at http://localhost/customerP.php\n\nBest regards,\nYour Platform Team";
+                $mail->AltBody = "Dear $firstname $lastname,\n\nThank you for registering with us. Your account details are:\nCustomer ID: $customerId\nLast Name: $lastname\n\nPlease use these credentials to log in to our customer portal at http://localhost/TIMSSS/customerP.php\n\nBest regards,\nYour Platform Team";
 
                 // Send the email
                 $mail->send();
                 
-                // Set success message and redirect
-                echo "<script type='text/javascript'>
-                        alert('Customer has been registered successfully. A confirmation email has been sent.');
-                        window.location.href = 'customersT.php';
-                      </script>";
+                // Store success message in session and redirect (PRG pattern)
+                $_SESSION['message'] = "Customer has been registered successfully. A confirmation email has been sent.";
+                header("Location: customersT.php");
+                exit();
             } catch (Exception $e) {
-                echo "<script type='text/javascript'>
-                        alert('Customer registered, but error sending confirmation email: " . addslashes($mail->ErrorInfo) . "');
-                        window.location.href = 'customersT.php';
-                      </script>";
+                // Store error message in session and redirect
+                $_SESSION['message'] = "Customer registered, but error sending confirmation email: " . $mail->ErrorInfo;
+                header("Location: customersT.php");
+                exit();
             }
             
             $stmt->close();
@@ -209,7 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <li><a href="addC.php" class="active"><img src="https://img.icons8.com/officel/40/add-user-male.png" alt="add-user-male"/><span>Add Customer</span></a></li>
         </ul>
         <footer>
-        <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -253,90 +257,99 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h2>Customer Profile</h2>
             <hr class="title-line">
 
-        <form action="" method="POST">
-        <div class="row">
-            <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="firstname">First Name:</label>
-            <input type="text" id="firstname" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
-            <span class="error"><?php echo $firstnameErr; ?></span>
-             </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="lastname">Last Name:</label>
-            <input type="text" id="lastname" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
-            <span class="error"><?php echo $lastnameErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="address">Address:</label>
-            <input type="text" id="address" name="address" placeholder="Enter Address" value="<?php echo htmlspecialchars($address); ?>">
-            <span class="error"><?php echo $addressErr; ?></span>
-        </div>
-        </div>
+            <form action="" method="POST" id="customerForm">
+                <div class="row">
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="firstname">First Name:</label>
+                        <input type="text" id="firstname" name="firstname" placeholder="Enter Firstname" value="<?php echo htmlspecialchars($firstname); ?>">
+                        <span class="error"><?php echo $firstnameErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="lastname">Last Name:</label>
+                        <input type="text" id="lastname" name="lastname" placeholder="Enter Lastname" value="<?php echo htmlspecialchars($lastname); ?>">
+                        <span class="error"><?php echo $lastnameErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="address">Address:</label>
+                        <input type="text" id="address" name="address" placeholder="Enter Address" value="<?php echo htmlspecialchars($address); ?>">
+                        <span class="error"><?php echo $addressErr; ?></span>
+                    </div>
+                </div>
 
-        <div class="row">
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="contact">Contact:</label>
-            <input type="text" id="contact" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
-            <span class="error"><?php echo $contactErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
-            <span class="error"><?php echo $emailErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="date">Date Applied:</label>
-            <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($dob); ?>">
-            <span class="error"><?php echo $dobErr; ?></span>
-        </div>
-        </div>
+                <div class="row">
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="contact">Contact:</label>
+                        <input type="text" id="contact" name="contact" placeholder="Enter Contact" value="<?php echo htmlspecialchars($contact); ?>">
+                        <span class="error"><?php echo $contactErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="email">Email:</label>
+                        <input type="text" id="email" name="email" placeholder="Enter Email" value="<?php echo htmlspecialchars($email); ?>">
+                        <span class="error"><?php echo $emailErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="date">Date Applied:</label>
+                        <input type="date" id="date" name="date" value="<?php echo htmlspecialchars($dob); ?>">
+                        <span class="error"><?php echo $dobErr; ?></span>
+                    </div>
+                </div>
 
-       <h2>Advance Profile</h2>
-       <hr class="title-line">
-       <div class="secondrow">
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="napname">Nap Name:</label>
-            <input type="text" id="napname" name="napname" placeholder="Nap Name" value="<?php echo htmlspecialchars($napname); ?>">
-            <span class="error"><?php echo $napnameErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="napport">Nap Port:</label>
-            <input type="text" id="napport" name="napport" placeholder="Nap Port" value="<?php echo htmlspecialchars($napport); ?>">
-            <span class="error"><?php echo $napportErr; ?></span>
-        </div>
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-            <label for="macaddress">Mac Address:</label>
-            <input type="text" id="macaddress" name="macaddress" placeholder="Mac Address" value="<?php echo htmlspecialchars($macaddress); ?>">
-            <span class="error"><?php echo $macaddressErr; ?></span>
-        </div>
+                <h2>Advanced Profile</h2>
+                <hr class="title-line">
+                <div class="secondrow">
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="napname">Nap Name:</label>
+                        <input type="text" id="napname" name="napname" placeholder="Nap Name" value="<?php echo htmlspecialchars($napname); ?>">
+                        <span class="error"><?php echo $napnameErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="napport">Nap Port:</label>
+                        <input type="text" id="napport" name="napport" placeholder="Nap Port" value="<?php echo htmlspecialchars($napport); ?>">
+                        <span class="error"><?php echo $napportErr; ?></span>
+                    </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="macaddress">Mac Address:</label>
+                        <input type="text" id="macaddress" name="macaddress" placeholder="Mac Address" value="<?php echo htmlspecialchars($macaddress); ?>">
+                        <span class="error"><?php echo $macaddressErr; ?></span>
+                    </div>
 
-        <div class="input-box">
-            <i class="bx bxs-user"></i>
-        <label for="status">Customer Status:</label>
-        <select id="status" name="status">
-            <option value="Active" <?php echo ($status === 'Active') ? 'selected' : ''; ?>>Active</option>
-            <option value="Inactive" <?php echo ($status === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
-        </select>
-            <span class="error"><?php echo $statusErr; ?></span>
-        </div>
-        </div>
+                    <div class="input-box">
+                        <i class="bx bxs-user"></i>
+                        <label for="status">Customer Status:</label>
+                        <select id="status" name="status">
+                            <option value="" <?php echo ($status === '') ? 'selected' : ''; ?>>Select Status</option>
+                            <option value="Active" <?php echo ($status === 'Active') ? 'selected' : ''; ?>>Active</option>
+                            <option value="Inactive" <?php echo ($status === 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
+                        </select>
+                        <span class="error"><?php echo $statusErr; ?></span>
+                    </div>
+                </div>
 
-        <div class="button-container">
-          <button type="submit">Submit</button>
-        </div>
-       </form>
-
+                <div class="button-container">
+                    <button type="submit" id="submitBtn">Submit</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+    // Prevent multiple form submissions
+    document.getElementById('customerForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true; // Disable button to prevent multiple clicks
+        submitBtn.textContent = 'Submitting...'; // Update button text
+    });
+</script>
 </body>
 </html>
 

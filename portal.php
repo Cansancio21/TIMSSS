@@ -29,7 +29,7 @@ $avatarPath = $_SESSION['avatarPath'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Portal</title>
-    <link rel="stylesheet" href="portall.css">
+    <link rel="stylesheet" href="portal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -38,12 +38,12 @@ $avatarPath = $_SESSION['avatarPath'];
 <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-        <li><a href="portal.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
-            <li><a href="suppT.php"><i class="fas fa-file-invoice"></i> Support tickets</a></li>
+        <li><a href="technicianD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="suppT.php"><i class="fas fa-file-invoice"></i> Support tickets</a></li>
           
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><i class="fas fa-home"></i> Back to Home</a>
+            <a href="customerP.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 

@@ -1,3 +1,15 @@
+:root {
+    --primary: #3d28e2;
+    --secondary: #372fa7;
+    --dark: #2d3436;
+    --light: #667ee2;
+    --success: #00b894;
+    --danger: #d63031;
+    --warning: #fdcb6e;
+    --info: #0984e3;
+}
+
+
 * {
     margin: 0;
     padding: 0;
@@ -125,23 +137,23 @@ form {
 }
 
 .btn {
-    width: 100%; /* Full width */
-    max-width: 300px; /* Maximum width */
-    height: 48px; /* Height of the button */
-    background-color: #1b4d80; /* Background color */
-    border: none; /* No border */
-    border-radius: 8px; /* Rounded corners */
-    color: #fff; /* Text color */
-    font-size: 16px; /* Font size */
-    font-weight: 600; /* Font weight */
-    cursor: pointer; /* Pointer cursor on hover */
-    transition: background-color 0.3s ease, transform 0.2s ease; /* Transition effects */
-    margin: 20px 0; /* Margin for spacing */
+    width: 100%;
+    max-width: 300px;
+    height: 48px;
+    background-color: #372fa7;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 20px 0;
     margin-left: 50%;
 }
 
 .btn:hover {
-    background-color: #1b4d80; 
+    background-color: #3d28e2; 
     transform: translateY(-2px); 
 }
 
@@ -224,7 +236,7 @@ form {
     left: -250%;
     width: 300%;
     height: 100%;
-    background-color: #1b4d80;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
     border-radius: 150px;
     z-index: 2;
     transition: 1.8s ease-in-out;
@@ -362,6 +374,16 @@ form {
 .input-box i.status-icon {
     color: black; /* Orange */
 }
+
+.input-box i.user-icon {
+    color: black; /* Green */
+}
+.input-box i.password-icon {
+    color: black; /* Orange */
+}
+
+
+
 
 .error {
     position: absolute;

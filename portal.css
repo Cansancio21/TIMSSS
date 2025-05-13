@@ -1,6 +1,6 @@
 :root {
-    --primary: #6c5ce7;
-    --secondary: #a29bfe;
+    --primary: #3d28e2;
+    --secondary: #372fa7;
     --dark: #2d3436;
     --light: #f5f6fa;
     --success: #00b894;
@@ -148,7 +148,7 @@ footer {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    background: linear-gradient(135deg, #3d28e2, #594fdd);
     color: white;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -225,7 +225,7 @@ footer {
 }
 
 .user-details small {
-    color: #666;
+    color: #ffffff;
     font-size: 12px;
     margin-left: -300px;
 }
@@ -303,7 +303,6 @@ thead {
     z-index: 10;
 }
 
-
 .settings-link {
     position: absolute;
     right: 40px;
@@ -311,7 +310,7 @@ thead {
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: #333;
+    color: #e7e6e6;
     font-size: 16px;
     font-weight: 600;
     transition: 0.3s ease-in-out;
@@ -321,6 +320,7 @@ thead {
     font-size: 24px;
     margin-right: 5px;
     transition: 0.3s ease-in-out;
+    color: #dad9d9;
 }
 
 .settings-link:hover span {

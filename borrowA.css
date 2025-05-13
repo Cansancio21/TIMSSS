@@ -1,3 +1,15 @@
+:root {
+    --primary: #3d28e2;
+    --secondary: #372fa7;
+    --dark: #2d3436;
+    --light: #667ee2;
+    --success: #00b894;
+    --danger: #d63031;
+    --warning: #fdcb6e;
+    --info: #0984e3;
+}
+
+
 * {
     margin: 0;
     padding: 0;
@@ -5,7 +17,7 @@
 }
 
 body {
-    background: linear-gradient(to bottom, #007BFF, #003366);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
     margin: 0;
     padding: 0;
 }
@@ -118,7 +130,7 @@ textarea {
 /* Button Styles */
 button {
     padding: 10px;
-    background-color: #007bff;
+    background-color: #372fa7;
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -128,7 +140,7 @@ button {
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #3d28e2;
 }
 
 .back-icon {

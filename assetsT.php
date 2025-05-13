@@ -290,7 +290,7 @@ if ($conn) {
                
         </ul>
         <footer>
-            <a href="index.php" class="back-home"><img src="https://img.icons8.com/ios-filled/50/logout-rounded.png" alt="logout"/> Logout</a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 

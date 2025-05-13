@@ -2,7 +2,7 @@
     --primary: #3d28e2;
     --secondary: #372fa7;
     --dark: #2d3436;
-    --light: #667ee2;
+    --light: #f5f6fa;
     --success: #00b894;
     --danger: #d63031;
     --warning: #fdcb6e;
@@ -253,6 +253,9 @@ footer {
     margin-left: -300px;
 }
 
+.table-box h2{
+    margin-top: 15px;
+}
 
 .username {
     position: absolute;
@@ -601,7 +604,7 @@ tr:hover td {
     border-radius: 5px;
     position: absolute;
     top: -5px;
-    left: 15px;
+    left: 5px;
     width: 100%;
     z-index: 1000;
 }
