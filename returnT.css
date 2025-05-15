@@ -19,6 +19,7 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
+    min-height: 100vh;
 }
 
 .glass-container {
@@ -33,6 +34,7 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
+    width: 100%;
 }
 
 /* Sidebar */
@@ -47,6 +49,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -59,7 +62,25 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif; /* Modern, techy font */
+    font-size: 1.6rem; /* Slightly larger for impact */
+    font-weight: 650; /* Bold weight for emphasis */
+    letter-spacing: 1px; /* Slight spacing for readability */
+    text-transform: uppercase; /* Makes it more striking */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adds depth */
+}
+
+.sidebar h2 .sidebar-icon {
+    width: 45px; /* Adjust size as needed */
+    height: 45px;
     margin-left: -10px;
+    margin-right: -10px; /* Space between icon and text */
+    vertical-align: middle; /* Aligns icon with text */
+}
+
+.sidebar h2:hover {
+    transform: translateY(-2px); /* Slight lift effect */
 }
 
 .sidebar ul {
@@ -87,6 +108,7 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -105,11 +127,6 @@ body {
     display: inline;
 }
 
-.sidebar ul li a span {
-    font-size: 14px;
-    display: inline;
-}
-
 .sidebar ul li a img {
     width: 35px;
     height: 30px;
@@ -121,6 +138,7 @@ footer {
     width: 100%;
     padding: 0 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 .back-home {
@@ -151,8 +169,12 @@ footer {
     margin-left: 200px;
     padding: 30px;
     margin-top: -15px;
-    padding-top: 100px;
 }
+
+.container h1 {
+    color: white;
+}
+
 /* Header */
 .upper {
     display: flex;
@@ -163,7 +185,6 @@ footer {
     color: white;
     border-radius: 10px;
     margin-bottom: 20px;
-    margin-top: -70px;
 }
 
 .upper h1 {
@@ -175,7 +196,6 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
-    margin-left: 20px;
 }
 
 .search-bar {
@@ -252,17 +272,14 @@ footer {
     min-height: 600px;
     display: flex;
     flex-direction: column;
-    margin-top: 20px;
 }
 
 .username {
     position: absolute;
     left: 25px;
-    top: 45px;
-    padding-bottom: 25px;
-    margin-bottom: 25px;
+    top: 25px;
+    font-weight: 500;
     color: var(--primary);
-    
 }
 
 .admin-icon {
@@ -270,38 +287,11 @@ footer {
     margin-left: 5px;
 }
 
-.add-user-btn {
-    position: absolute;
-    top: 45px;
-    right: 20px;
-    display: inline-flex;
-    align-items: center;
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 30px;
-    text-decoration: none;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
-    border: none; /* Remove border */
-    outline: none; /* Remove outline on focus */
-}
-
-.add-user-btn:hover {
-    background: var(--secondary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-}
-
-.add-user-btn i {
-    margin-right: 8px;
-}
-
 /* Tabs */
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 65px;
+    margin-top: 50px;
 }
 
 .tab-btn {
@@ -312,6 +302,25 @@ footer {
     margin-right: 5px;
     border-radius: 4px 4px 0 0;
     position: relative;
+}
+
+.export-btn {
+    display: inline-block;
+    background-color: #63c216;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 30px;
+    top: 50px;
+}
+
+.export-btn:hover {
+    background-color: #7494ec;
 }
 
 .tab-btn.active {
@@ -352,7 +361,7 @@ table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 10px;
+    margin-top: 90px;
     table-layout: auto;
 }
 
@@ -439,7 +448,7 @@ tr:hover td {
     justify-content: center;
 }
 
-.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+.view-btn, .edit-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -466,24 +475,6 @@ tr:hover td {
 
 .edit-btn:hover {
     background-color: #27ae60;
-}
-
-.archive-btn {
-    background-color: #f1c40f;
-    color: #fff;
-}
-
-.archive-btn:hover {
-    background-color: #d4ac0d;
-}
-
-.unarchive-btn {
-    background-color: #9b59b6;
-    color: #fff;
-}
-
-.unarchive-btn:hover {
-    background-color: #8e44ad;
 }
 
 /* Pagination */
@@ -623,14 +614,14 @@ tr:hover td {
 /* Alerts */
 .alert-container {
     position: relative;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .alert {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: 15px;
+    top: -5px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -648,6 +639,7 @@ tr:hover td {
     border: 1px solid #f5c6cb;
 }
 
+
 .settings-link {
     position: absolute;
     right: 40px;
@@ -661,13 +653,13 @@ tr:hover td {
     transition: 0.3s ease-in-out;
 }
 
+
 .settings-link i {
     font-size: 24px;
     margin-right: 5px;
     transition: 0.3s ease-in-out;
     color: #dad9d9;
 }
-
 .settings-link:hover span {
     opacity: 1;
     transform: translateX(0);
@@ -685,15 +677,186 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
+.back-icon i {
+    transition: color 0.3s;
+}
+
+.back-icon:hover i {
+    color: #007bff;
+}
+
+/* Heading */
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+}
+
+/* Form Styles */
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row {
+    margin-bottom: 15px;
+}
+
+label {
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Button Styles */
+button {
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.error {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 5px;
+    display: block;
+}
 
 .alert {
     opacity: 1;
-    transition: opacity 0.5s ease-in-out;
+    transition: opacity 0.5s ease-out;
 }
 
 .alert-hidden {
     opacity: 0;
 }
 
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
 
+    .sidebar h2 {
+        font-size: 1rem;
+        padding: 10px;
+        margin-left: 0;
+    }
+
+    .sidebar ul li a span {
+        display: none;
+    }
+
+    .sidebar ul li a i {
+        margin-right: 0;
+        font-size: 1.5rem;
+    }
+
+    .container {
+        margin-left: 70px;
+        padding: 15px;
+    }
+
+    .upper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .search-container {
+        width: 100%;
+    }
+
+    .user-profile {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .user-details {
+        margin-left: 0;
+    }
+
+    .user-details span,
+    .user-details small {
+        margin-left: 0;
+    }
+
+    .table-box {
+        padding: 15px;
+    }
+
+    th, td {
+        padding: 8px;
+        font-size: 0.875rem;
+    }
+
+    .action-buttons a {
+        width: 30px;
+        height: 30px;
+    }
+
+    .pagination-link {
+        width: 35px;
+        height: 35px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 60px;
+    }
+
+    .container {
+        margin-left: 60px;
+        padding: 10px;
+    }
+
+    .upper h1 {
+        font-size: 1.2rem;
+    }
+
+    .search-bar {
+        padding: 8px 30px 8px 10px;
+    }
+
+    .table-box {
+        padding: 10px;
+    }
+
+    th, td {
+        padding: 6px;
+        font-size: 0.75rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        padding: 15px;
+    }
+
+    .modal-btn {
+        padding: 6px 15px;
+    }
+
+    .action-buttons a {
+        width: 25px;
+        height: 25px;
+    }
+
+    .pagination-link {
+        width: 30px;
+        height: 30px;
+    }
+}
 

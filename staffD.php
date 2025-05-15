@@ -61,8 +61,8 @@ if ($resultUser->num_rows > 0) {
 $stmt->close();
 
 // Initialize variables for add ticket validation
-$accountname = $issuedetails = $dob = $issuetype = $ticketstatus = "";
-$accountnameErr = $issuedetailsErr = $dobErr = $issuetypeError = $ticketstatusErr = "";
+$accountname = $subject = $issuedetails = $dob = $issuetype = $ticketstatus = "";
+$accountnameErr = $subjectErr = $issuedetailsErr = $dobErr = $issuetypeError = $ticketstatusErr = "";
 $hasError = false;
 
 // Check for pre-filled account name from query parameter
@@ -213,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['add_ticket']) && $userType !== 'technician') {
         $accountname = trim($_POST['account_name']);
+        $subject = trim($_POST['ticket_subject']);
         $issuedetails = trim($_POST['ticket_details']);
         $issuetype = trim($_POST['issue_type']);
         $ticketstatus = trim($_POST['ticket_status']);
@@ -255,6 +256,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Validate required fields
+         if (empty($subject)) {
+            $subjectErr = "Subject are required.";
+            $hasError = true;
+        }
+
         if (empty($issuedetails)) {
             $issuedetailsErr = "Ticket Details are required.";
             $hasError = true;
@@ -274,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Insert into database if no errors
         if (!$hasError) {
-            $sql = "INSERT INTO tbl_ticket (t_aname, t_details, t_type, t_status, t_date) VALUES (?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO tbl_ticket (t_aname, t_details, t_subject, t_status, t_date) VALUES (?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
                 if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
@@ -320,14 +326,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['edit_ticket']) && $userType !== 'technician') {
         $ticketId = (int)$_POST['t_id'];
         $accountName = trim($_POST['account_name']);
-        $issueType = trim($_POST['issue_type']);
+        $subject = trim($_POST['ticket_subject']);
         $ticketStatus = trim($_POST['ticket_status']);
         $ticketDetails = trim($_POST['ticket_details']);
         $dateIssued = trim($_POST['date']);
         $errors = [];
 
         // Fetch current ticket details
-        $sql = "SELECT t_id, t_aname, t_type, t_status, t_details, t_date FROM tbl_ticket WHERE t_id = ?";
+        $sql = "SELECT t_id, t_aname, t_subject, t_status, t_details, t_date FROM tbl_ticket WHERE t_id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $ticketId);
         $stmt->execute();
@@ -369,7 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         if (empty($issueType)) {
-            $errors['issue_type'] = "Issue Type is required.";
+            $errors['ticket_subject'] = "Subject is required.";
         }
         if (empty($ticketStatus)) {
             $errors['ticket_status'] = "Ticket Status is required.";
@@ -400,7 +406,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Update the ticket in the database
-            $sqlUpdate = "UPDATE tbl_ticket SET t_aname = ?, t_type = ?, t_status = ?, t_details = ?, t_date = ? WHERE t_id = ?";
+            $sqlUpdate = "UPDATE tbl_ticket SET t_aname = ?, t_subject = ?, t_status = ?, t_details = ?, t_date = ? WHERE t_id = ?";
             $stmtUpdate = $conn->prepare($sqlUpdate);
             if (!$stmtUpdate) {
                 if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
@@ -410,7 +416,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 die("Prepare failed: " . $conn->error);
             }
-            $stmtUpdate->bind_param("sssssi", $accountName, $issueType, $ticketStatus, $ticketDetails, $dateIssued, $ticketId);
+            $stmtUpdate->bind_param("sssssi", $accountName, $subject, $ticketStatus, $ticketDetails, $dateIssued, $ticketId);
 
             if ($stmtUpdate->execute()) {
                 // Log changes if any, only for staff
@@ -610,7 +616,7 @@ $totalArchived = $totalArchivedRow['total'];
 $totalArchivedPages = ceil($totalArchived / $limit);
 
 // Fetch active tickets
-$sqlActive = "SELECT t_id, t_aname, t_type, t_status, t_details, t_date 
+$sqlActive = "SELECT t_id, t_aname, t_subject, t_status, t_details, t_date 
               FROM tbl_ticket WHERE t_status != 'archived' LIMIT ?, ?";
 $stmtActive = $conn->prepare($sqlActive);
 $stmtActive->bind_param("ii", $offsetActive, $limit);
@@ -619,7 +625,7 @@ $resultActive = $stmtActive->get_result();
 $stmtActive->close();
 
 // Fetch archived tickets
-$sqlArchived = "SELECT t_id, t_aname, t_type, t_status, t_details, t_date 
+$sqlArchived = "SELECT t_id, t_aname, t_subject, t_status, t_details, t_date 
                 FROM tbl_ticket WHERE t_status = 'archived' LIMIT ?, ?";
 $stmtArchived = $conn->prepare($sqlArchived);
 $stmtArchived->bind_param("ii", $offsetArchived, $limit);
@@ -639,11 +645,12 @@ $conn->close();
     <link rel="stylesheet" href="staffD.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
     <div class="sidebar glass-container">
-        <h2>Task Management</h2>
+        <h2><img src="image/logo.png" alt="Tix Net Icon" class="sidebar-icon">TixNet Pro</h2>
         <ul>
             <li><a href="staffD.php" class="active"><img src="https://img.icons8.com/plasticine/100/ticket.png" alt="ticket"/><span>View Tickets</span></a></li>
             <li><a href="assetsT.php"><img src="https://img.icons8.com/matisse/100/view.png" alt="view"/><span>View Assets</span></a></li>
@@ -742,7 +749,7 @@ $conn->close();
                         <tr>
                             <th>Ticket ID</th>
                             <th>Account Name</th>
-                            <th>Type</th>
+                            <th>Subject</th>
                             <th>Status</th>
                             <th>Ticket Details</th>
                             <th>Date</th>
@@ -760,14 +767,14 @@ $conn->close();
                                 echo "<tr> 
                                         <td>{$row['t_id']}</td> 
                                         <td>" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "</td> 
-                                        <td>" . ucfirst(strtolower($row['t_type'])) . "</td> 
+                                        <td>" . ucfirst(strtolower($row['t_subject'])) . "</td> 
                                         <td class='$statusClass$clickableAttr>" . ucfirst(strtolower($row['t_status'])) . "</td>
                                         <td>" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "</td>
                                         <td>" . htmlspecialchars($row['t_date'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td class='action-buttons'>";
                                 if ($userType !== 'technician') {
-                                    echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='edit-btn' onclick=\"showEditTicketModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                    echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_subject']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                          <a class='edit-btn' onclick=\"showEditTicketModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_subject']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
                                           <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>";
                                 } else {
                                     error_log("Rendering disabled buttons for technician: t_id={$row['t_id']}, tab=active");
@@ -814,7 +821,7 @@ $conn->close();
                         <tr>
                             <th>Ticket ID</th>
                             <th>Account Name</th>
-                            <th>Type</th>
+                            <th>Subject</th>
                             <th>Status</th>
                             <th>Ticket Details</th>
                             <th>Date</th>
@@ -828,13 +835,13 @@ $conn->close();
                                 echo "<tr> 
                                         <td>{$row['t_id']}</td> 
                                         <td>" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "</td> 
-                                        <td>" . ucfirst(strtolower($row['t_type'])) . "</td> 
+                                        <td>" . ucfirst(strtolower($row['t_subject'])) . "</td> 
                                         <td class='status-" . strtolower($row['t_status']) . "'>" . ucfirst(strtolower($row['t_status'])) . "</td>
                                         <td>" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "</td>
                                         <td>" . htmlspecialchars($row['t_date'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td class='action-buttons'>";
                                 if ($userType !== 'technician') {
-                                    echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                    echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_subject']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
                                           <a class='restore-btn' onclick=\"showRestoreModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
                                           <a class='delete-btn' onclick=\"showDeleteModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>";
                                 } else {
@@ -964,21 +971,19 @@ $conn->close();
         <form method="POST" id="addTicketForm" class="modal-form">
             <input type="hidden" name="add_ticket" value="1">
             <input type="hidden" name="ajax" value="true">
+
             <label for="account_name">Account Name</label>
             <input type="text" name="account_name" id="account_name" value="<?php echo htmlspecialchars($accountname, ENT_QUOTES, 'UTF-8'); ?>" required>
             <span class="error"><?php echo $accountnameErr; ?></span>
-            <label for="issue_type">Issue Type</label>
-            <select name="issue_type" id="issue_type" required>
-                <option value="">Select Issue Type</option>
-                <option value="critical">Critical</option>
-                <option value="minor">Minor</option>
-            </select>
+
+            <label for="ticket_subject">Subject</label>
+            <input type="text" name="ticket_subject" id="ticket_subject" value="<?php echo htmlspecialchars($subject, ENT_QUOTES, 'UTF-8'); ?>" required>
+            <span class="error"><?php echo $subjectErr; ?></span>
+
             <span class="error"><?php echo $issuetypeError; ?></span>
             <label for="ticket_status">Ticket Status</label>
             <select name="ticket_status" id="ticket_status" required>
-                <option value="">Select Status</option>
                 <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
             </select>
             <span class="error"><?php echo $ticketstatusErr; ?></span>
             <label for="ticket_details">Ticket Details</label>
@@ -1008,18 +1013,16 @@ $conn->close();
             <input type="hidden" name="t_id" id="edit_t_id">
             <label for="edit_account_name">Account Name</label>
             <input type="text" name="account_name" id="edit_account_name" required>
-            <label for="edit_issue_type">Issue Type</label>
-            <select name="issue_type" id="edit_issue_type" required>
-                <option value="">Select Issue Type</option>
-                <option value="critical">Critical</option>
-                <option value="minor">Minor</option>
-            </select>
+
+            <label for="edit_ticket_subject">Subject</label>
+            <input type="text" name="ticket_subject" id="edit_ticket_subject" required>
+            
+
             <label for="edit_ticket_status">Ticket Status</label>
             <select name="ticket_status" id="edit_ticket_status" required>
-                <option value="">Select Status</option>
                 <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
             </select>
+
             <label for="edit_ticket_details">Ticket Details</label>
             <textarea name="ticket_details" id="edit_ticket_details" required></textarea>
             <label for="edit_date">Date Issued</label>
@@ -1175,12 +1178,12 @@ function showTab(tab) {
     searchTickets();
 }
 
-function showViewModal(id, aname, type, status, details, date) {
+function showViewModal(id, aname, subject, status, details, date) {
     document.getElementById('viewContent').innerHTML = `
         <div class="view-details">
             <p><strong>ID:</strong> ${id}</p>
             <p><strong>Account Name:</strong> ${aname}</p>
-            <p><strong>Issue Type:</strong> ${type}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
             <p><strong>Ticket Status:</strong> <span class="status-${status.toLowerCase()}">${status}</span></p>
             <p><strong>Ticket Details:</strong> ${details}</p>
             <p><strong>Date:</strong> ${date}</p>
@@ -1227,7 +1230,7 @@ function showAddTicketModal() {
 function showEditTicketModal(id, aname, type, status, details, date) {
     document.getElementById('edit_t_id').value = id;
     document.getElementById('edit_account_name').value = aname;
-    document.getElementById('edit_issue_type').value = type.toLowerCase();
+    document.getElementById('edit_ticket_subject').value = type.toLowerCase();
     document.getElementById('edit_ticket_status').value = status;
     document.getElementById('edit_ticket_details').value = details;
     document.getElementById('edit_date').value = date;

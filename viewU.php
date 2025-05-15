@@ -578,14 +578,15 @@ $stmt->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | User Management</title>
-    <link rel="stylesheet" href="views.css"> 
+    <link rel="stylesheet" href="viewU.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
     <div class="sidebar glass-container">
-        <h2>Task Management</h2>
+        <h2><img src="image/logo.png" alt="Tix Net Icon" class="sidebar-icon">TixNet Pro</h2>
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php" class="active"><i class="fas fa-users"></i> <span>View Users</span></a></li>
@@ -893,12 +894,12 @@ $stmt->close();
             <label for="add_password">Password</label>
             <input type="password" name="password" id="add_password" required>
             <span class="error"><?php echo $passwordErr; ?></span>
-            <label for="add_type">Type</label>
+            <label for="add_type">Account Type</label>
             <select name="type" id="add_type" required>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
+                <option value="admin">Staff</option>
+                <option value="user">Technician</option>
             </select>
-            <label for="add_status">Status</label>
+            <label for="add_status">Account Status</label>
             <select name="status" id="add_status" required>
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>

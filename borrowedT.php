@@ -284,15 +284,16 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="borrowedT.css"> 
+    <link rel="stylesheet" href="borrowedTT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="wrapper">
     <div class="sidebar glass-container">
-        <h2>Task Management</h2>
+        <h2><img src="image/logo.png" alt="Tix Net Icon" class="sidebar-icon">TixNet Pro</h2>
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
@@ -364,7 +365,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                         <tr>
                             <th>Borrowed ID</th>
                             <th>Asset Name</th>
-                            <th>Quantity</th>
+                            <th>Asset Quantity</th>
                             <th>Technician Name</th>
                             <th>Technician ID</th>
                             <th>Borrowed Date</th>
@@ -447,7 +448,7 @@ if ($resultBorrowed && $resultBorrowed->num_rows > 0) {
             </div>
             
             <div class="form-group">
-                <label for="edit_b_quantity">Quantity</label>
+                <label for="edit_b_quantity">Asset Quantity</label>
                 <input type="number" name="b_quantity" id="edit_b_quantity" min="1" required>
                 <span class="error-message" id="error_b_quantity"></span>
             </div>
@@ -557,7 +558,7 @@ const debouncedSearchBorrowed = debounce(searchBorrowed, 300);
 function showViewModal(id, assetName, quantity, technicianName, technicianId, date) {
     const modalContent = `
         <p><strong>Asset Name:</strong> ${assetName}</p>
-        <p><strong>Quantity:</strong> ${quantity}</p>
+        <p><strong>Asset Quantity:</strong> ${quantity}</p>
         <p><strong>Technician Name:</strong> ${technicianName}</p>
         <p><strong>Technician ID:</strong> ${technicianId}</p>
         <p><strong>Borrowed Date:</strong> ${date}</p>

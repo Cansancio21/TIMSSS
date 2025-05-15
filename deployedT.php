@@ -385,14 +385,15 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deployed Assets</title>
-    <link rel="stylesheet" href="deployeds.css"> 
+    <link rel="stylesheet" href="deployedTB.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
     <div class="sidebar glass-container">
-        <h2>Task Management</h2>
+        <h2><img src="image/logo.png" alt="Tix Net Icon" class="sidebar-icon">TixNet Pro</h2>
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
@@ -675,9 +676,6 @@ function showViewModal(id, assetName, quantity, technicianName, technicianId, da
         <p><strong>Technician Name:</strong> ${technicianName}</p>
         <p><strong>Technician ID:</strong> ${technicianId}</p>
         <p><strong>Deployed Date:</strong> ${date}</p>
-        <div class="modal-footer">
-            <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
-        </div>
     `;
     document.getElementById('viewModalContent').innerHTML = modalContent;
     document.getElementById('viewModal').style.display = 'flex';

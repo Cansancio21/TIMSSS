@@ -47,7 +47,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: width 0.3s ease;
 }
 
 .sidebar h2 {
@@ -60,8 +59,25 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif; /* Modern, techy font */
+    font-size: 1.6rem; /* Slightly larger for impact */
+    font-weight: 650; /* Bold weight for emphasis */
+    letter-spacing: 1px; /* Slight spacing for readability */
+    text-transform: uppercase; /* Makes it more striking */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adds depth */
+}
+
+.sidebar h2 .sidebar-icon {
+    width: 45px; /* Adjust size as needed */
+    height: 45px;
     margin-left: -10px;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    margin-right: -10px; /* Space between icon and text */
+    vertical-align: middle; /* Aligns icon with text */
+}
+
+.sidebar h2:hover {
+    transform: translateY(-2px); /* Slight lift effect */
 }
 
 .sidebar ul {
@@ -89,7 +105,6 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
-    font-size: clamp(0.875rem, 2vw, 1rem);
 }
 
 .sidebar ul li a:hover,
@@ -108,16 +123,23 @@ body {
     display: inline;
 }
 
+.sidebar ul li a span {
+    font-size: 14px;
+    display: inline;
+}
+
 .sidebar ul li a img {
     width: 35px;
     height: 30px;
     margin-right: 10px;
 }
+
 footer {
     margin-top: auto;
     width: 100%;
     padding: 0 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 .back-home {
@@ -142,15 +164,14 @@ footer {
     margin-bottom: 5px;
 }
 
-
 /* Main Content */
 .container {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
     margin-top: -15px;
+    padding-top: 100px;
 }
-
 /* Header */
 .upper {
     display: flex;
@@ -161,6 +182,7 @@ footer {
     color: white;
     border-radius: 10px;
     margin-bottom: 20px;
+    margin-top: -70px;
 }
 
 .upper h1 {
@@ -172,6 +194,7 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
+    margin-left: 20px;
 }
 
 .search-bar {
@@ -248,14 +271,17 @@ footer {
     min-height: 600px;
     display: flex;
     flex-direction: column;
+    margin-top: 20px;
 }
 
 .username {
     position: absolute;
     left: 25px;
-    top: 25px;
-    font-weight: 500;
+    top: 45px;
+    padding-bottom: 25px;
+    margin-bottom: 25px;
     color: var(--primary);
+    
 }
 
 .admin-icon {
@@ -265,7 +291,7 @@ footer {
 
 .add-user-btn {
     position: absolute;
-    top: 65px;
+    top: 45px;
     right: 20px;
     display: inline-flex;
     align-items: center;
@@ -276,6 +302,8 @@ footer {
     text-decoration: none;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    border: none; /* Remove border */
+    outline: none; /* Remove outline on focus */
 }
 
 .add-user-btn:hover {
@@ -292,7 +320,7 @@ footer {
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 50px;
+    margin-top: 65px;
 }
 
 .tab-btn {
@@ -338,11 +366,12 @@ footer {
     display: flex;
 }
 
+/* Table */
 table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 90px;
+    margin-top: 10px;
     table-layout: auto;
 }
 
@@ -426,6 +455,7 @@ tr:hover td {
 .action-buttons {
     display: flex;
     gap: 5px;
+    justify-content: center;
 }
 
 .view-btn, .edit-btn, .archive-btn, .unarchive-btn {
@@ -455,6 +485,24 @@ tr:hover td {
 
 .edit-btn:hover {
     background-color: #27ae60;
+}
+
+.archive-btn {
+    background-color: #f1c40f;
+    color: #fff;
+}
+
+.archive-btn:hover {
+    background-color: #d4ac0d;
+}
+
+.unarchive-btn {
+    background-color: #9b59b6;
+    color: #fff;
+}
+
+.unarchive-btn:hover {
+    background-color: #8e44ad;
 }
 
 /* Pagination */
@@ -500,10 +548,11 @@ tr:hover td {
     color: var(--dark);
 }
 
+/* Modal */
 .modal {
     display: none;
     position: fixed;
-    top: 0;
+    top: 0px;
     left: 0;
     width: 100%;
     height: 100%;
@@ -515,7 +564,7 @@ tr:hover td {
 
 .modal-content {
     background: white;
-    margin: 10% auto;
+    margin: 5% auto;
     padding: 20px;
     border-radius: 15px;
     width: 90%;
@@ -567,6 +616,7 @@ tr:hover td {
     border-radius: 5px;
 }
 
+/* Archive Header */
 .archive-header {
     display: flex;
     justify-content: space-between;
@@ -592,14 +642,14 @@ tr:hover td {
 /* Alerts */
 .alert-container {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
 .alert {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 15px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -630,13 +680,13 @@ tr:hover td {
     transition: 0.3s ease-in-out;
 }
 
-
 .settings-link i {
     font-size: 24px;
     margin-right: 5px;
     transition: 0.3s ease-in-out;
     color: #dad9d9;
 }
+
 .settings-link:hover span {
     opacity: 1;
     transform: translateX(0);
@@ -655,49 +705,14 @@ tr:hover td {
     margin-top: 10px;
 }
 
-.button-container {
-    position: relative;
-    margin-bottom: 20px;
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
 }
 
-.borrow-btn, .return-btn, .export-btn {
-    display: inline-block;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: lighter;
-    transition: 0.3s;
-    position: absolute;
-    top: 35px;
-    margin-bottom: 20px;
+.alert-hidden {
+    opacity: 0;
 }
 
-.borrow-btn {
-    background-color: #FFA500;
-    right: 225px;
-}
 
-.return-btn {
-    background-color: #8ea722d3;
-    right: 115px;
-}
-
-.export-btn {
-    background-color: #63c216;
-    right: 10px;
-}
-
-.borrow-btn:hover {
-    background-color: #7494ec;
-}
-
-.return-btn:hover {
-    background-color: #7494ec;
-}
-
-.export-btn:hover {
-    background-color: #7494ec;
-}
 

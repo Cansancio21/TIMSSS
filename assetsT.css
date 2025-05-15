@@ -59,7 +59,25 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif; /* Modern, techy font */
+    font-size: 1.6rem; /* Slightly larger for impact */
+    font-weight: 650; /* Bold weight for emphasis */
+    letter-spacing: 1px; /* Slight spacing for readability */
+    text-transform: uppercase; /* Makes it more striking */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adds depth */
+}
+
+.sidebar h2 .sidebar-icon {
+    width: 45px; /* Adjust size as needed */
+    height: 45px;
     margin-left: -10px;
+    margin-right: -10px; /* Space between icon and text */
+    vertical-align: middle; /* Aligns icon with text */
+}
+
+.sidebar h2:hover {
+    transform: translateY(-2px); /* Slight lift effect */
 }
 
 .sidebar ul {
@@ -111,11 +129,17 @@ body {
     margin-right: 10px;
 }
 
+footer .back-home img {
+    width: 35px;
+    height: 35px;
+}
+
 footer {
     margin-top: auto;
     width: 100%;
     padding: 0 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 .back-home {
@@ -145,7 +169,7 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    margin-top: -15px;
+    padding-top: 85px;
 }
 
 /* Header */
@@ -157,7 +181,14 @@ footer {
     background: linear-gradient(135deg, #3d28e2, #594fdd);
     color: white;
     border-radius: 10px;
-    margin-bottom: 20px;
+    position: fixed;
+    margin-top: 15px;
+    top: 0;
+    left: 230px; /* Match sidebar width */
+    right: 30px; /* Match container padding */
+    z-index: 100;
+    height: 70px; /* Fixed height */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .upper h1 {
@@ -169,7 +200,6 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
-    
 }
 
 .search-bar {
@@ -251,7 +281,7 @@ footer {
 .username {
     position: absolute;
     left: 25px;
-    top: 25px;
+    top: 5px;
     font-weight: 500;
     color: var(--primary);
 }
@@ -261,79 +291,64 @@ footer {
     margin-left: 5px;
 }
 
-.add-user-btn {
-    position: absolute;
-    top: 65px;
-    right: 20px;
-    display: inline-flex;
+/* Tab Buttons */
+.header-controls {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    background: var(--primary);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 30px;
-    text-decoration: none;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    margin-bottom: 15px;
 }
 
-.add-user-btn:hover {
-    background: var(--secondary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
-}
-
-.add-user-btn i {
-    margin-right: 8px;
-}
-
-/* Tabs */
 .tab-buttons {
     display: flex;
-    margin-bottom: 15px;
-    margin-top: 50px;
+    gap: 10px;
+    margin-left: 10px; /* As provided, keeps buttons indented */
 }
 
 .tab-btn {
     padding: 8px 16px;
-    background: #f1f1f1;
     border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    margin-right: 5px;
-    border-radius: 4px 4px 0 0;
-    position: relative;
+    transition: background-color 0.3s;
+    position: relative; /* For absolute positioning of tab-badge */
+    background-color: #f5f5f5; /* Default background for non-active buttons */
+    color: #333; /* Default text color for non-active buttons */
 }
 
 .tab-btn.active {
-    background: #4CAF50;
+    background-color: #4CAF50;
     color: white;
 }
 
+/* Tab Badge */
 .tab-badge {
     position: absolute;
     top: -8px;
     right: -8px;
-    background: #ff5722;
+    background: #ff5722; /* Bright orange-red */
     color: white;
     border-radius: 50%;
-    width: 20px;
+    min-width: 20px;
     height: 20px;
     font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 4px; /* For double-digit numbers */
+    transition: background-color 0.3s ease;
 }
 
-#active-users-tab,
-#archived-users-tab {
-    display: none;
-    width: 100%;
-    flex-grow: 1;
-    flex-direction: column;
+
+.tab-content {
+    margin-top: 15px;
 }
 
-#active-users-tab.active,
-#archived-users-tab.active {
-    display: flex;
+
+.deploy .borrow-btn, .deploy .return-btn, .deploy .deploy-btn {
+    margin-top: -115px; /* Adjust to account for tab buttons */
 }
 
 /* Table */
@@ -341,8 +356,7 @@ table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-   
-    margin-top: 10px;
+    margin-top: 25px;
     table-layout: auto;
 }
 
@@ -371,7 +385,7 @@ th:last-child {
 
 td {
     padding: 10px;
- 
+    border-bottom: 1px solid #eee;
     vertical-align: middle;
     text-align: center;
     word-wrap: break-word;
@@ -399,49 +413,89 @@ tr:hover td {
     font-weight: 500;
 }
 
-/* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
+.borrow h2{
+    margin-bottom: 20px;
 }
 
-.action-buttons a {
+.deploy h2{
+    margin-bottom: 20px;
+}
+
+/* Action Buttons */
+/* Style for the delete button */
+.delete-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    color: white;
+    width: 30px; /* Adjust size as needed */
+    height: 30px;
+    background-color: #ff6200; /* Orange background */
+    color: #fff; /* White icon color */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
+
+/* Hover effect for delete button */
+.delete-btn:hover {
+    background-color: #e55a00; /* Slightly darker orange on hover */
+    color: #fff; /* Keep icon white */
+}
+
+/* Icon inside delete button */
+.delete-btn i {
+    font-size: 16px; /* Adjust icon size */
+}
+
+/* Ensure consistency with other action buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px; /* Space between action buttons */
+}
+
+/* Optional: Adjust other buttons for consistency */
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
     text-decoration: none;
-    transition: all 0.3s;
-    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.action-buttons a.view-btn {
-    background: var(--success);
+/* Example colors for other buttons (optional) */
+.view-btn {
+    background-color: #3498db; /* Blue */
+    color: #fff;
+}
+.view-btn:hover {
+    background-color: #2980b9;
 }
 
-.action-buttons a.edit-btn {
-    background: var(--info);
+.edit-btn {
+    background-color: #2ecc71; /* Green */
+    color: #fff;
+}
+.edit-btn:hover {
+    background-color: #27ae60;
 }
 
-.action-buttons a.archive-btn {
-    background: var(--warning);
+.archive-btn {
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
+}
+.archive-btn:hover {
+    background-color: #d4ac0d;
 }
 
-.action-buttons a.unarchive-btn {
-    background-color: #2196F3;
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
 }
-
-.action-buttons a:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
 .unarchive-btn:hover {
-    background-color: #1976D2;
+    background-color: #8e44ad;
 }
 
 /* Pagination */
@@ -586,7 +640,7 @@ tr:hover td {
     padding: 10px;
     border-radius: 5px;
     position: absolute;
-    top: -5px;
+    top: 15px;
     left: 15px;
     width: 100%;
     z-index: 1000;
@@ -606,7 +660,7 @@ tr:hover td {
 
 .settings-link {
     position: absolute;
-    right: 40px;
+    right: 10px;
     top: 10;
     display: flex;
     align-items: center;
@@ -641,4 +695,115 @@ tr:hover td {
     border-radius: 8px;
     margin-top: 10px;
 }
+
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.alert-hidden {
+    opacity: 0;
+}
+
+
+
+
+.add-btn {
+    display: inline-block;
+    background-color: #cf752b;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 90px;
+    margin-top: -50px;
+    
+}
+
+.add-btn:hover {
+    background-color: #7494ec;
+}
+
+.export-btn {
+    display: inline-block;
+    background-color: #63c216;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    position: absolute;
+    right: 225px;
+    margin-top: -50px;
+}
+
+
+.export-btn:hover {
+    background-color: #7494ec;
+}
+
+.borrow-btn {
+    background-color: #c23e16;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 90px;
+    margin-top: -80px;
+    margin-bottom: 50px;
+}
+
+
+.deploy-btn {
+    background-color: #d12e11;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 5px;
+    margin-top: -100px;
+    margin-bottom: 50px;
+}
+
+
+.deploy-btn:hover {
+    background-color: #7494ec;
+}
+
+.borrow-btn:hover {
+    background-color: #7494ec;
+}
+
+.return-btn {
+    background-color: #c2b116;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: lighter;
+    transition: 0.3s;
+    margin-left: 5px;
+    margin-top: -100px;
+    margin-bottom: 50px;
+}
+
+
+.return-btn:hover {
+    background-color: #7494ec;
+}
+
+
 

@@ -60,8 +60,25 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif; /* Modern, techy font */
+    font-size: 1.6rem; /* Slightly larger for impact */
+    font-weight: 650; /* Bold weight for emphasis */
+    letter-spacing: 1px; /* Slight spacing for readability */
+    text-transform: uppercase; /* Makes it more striking */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adds depth */
+}
+
+.sidebar h2 .sidebar-icon {
+    width: 45px; /* Adjust size as needed */
+    height: 45px;
     margin-left: -10px;
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    margin-right: -10px; /* Space between icon and text */
+    vertical-align: middle; /* Aligns icon with text */
+}
+
+.sidebar h2:hover {
+    transform: translateY(-2px); /* Slight lift effect */
 }
 
 .sidebar ul {
@@ -119,6 +136,7 @@ footer {
     width: 100%;
     padding: 0 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 .back-home {
@@ -457,6 +475,18 @@ tr:hover td {
     background-color: #27ae60;
 }
 
+.return-btn {
+    outline: none;
+    border: none;
+}
+
+.return-btn:focus,
+.return-btn:active {
+    outline: none;
+    box-shadow: none;
+    background-color: #7aa12e; /* Optional: subtle focus indicator */
+}
+
 /* Pagination */
 .pagination {
     display: flex;
@@ -674,6 +704,7 @@ tr:hover td {
     position: absolute;
     top: 35px;
     margin-bottom: 20px;
+    outline: none;
 }
 
 .borrow-btn {
