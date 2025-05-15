@@ -566,6 +566,8 @@ tr:hover td {
     font-size: 14px;
     color: #555;
 }
+
+
 .modal {
     display: none;
     position: fixed;

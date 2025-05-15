@@ -1,6 +1,6 @@
 :root {
-    --primary: #6c5ce7;
-    --secondary: #a29bfe;
+    --primary: #3d28e2;
+    --secondary: #372fa7;
     --dark: #2d3436;
     --light: #f5f6fa;
     --success: #00b894;
@@ -59,7 +59,25 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif; /* Modern, techy font */
+    font-size: 1.6rem; /* Slightly larger for impact */
+    font-weight: 650; /* Bold weight for emphasis */
+    letter-spacing: 1px; /* Slight spacing for readability */
+    text-transform: uppercase; /* Makes it more striking */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Adds depth */
+}
+
+.sidebar h2 .sidebar-icon {
+    width: 45px; /* Adjust size as needed */
+    height: 45px;
     margin-left: -10px;
+    margin-right: -10px; /* Space between icon and text */
+    vertical-align: middle; /* Aligns icon with text */
+}
+
+.sidebar h2:hover {
+    transform: translateY(-2px); /* Slight lift effect */
 }
 
 .sidebar ul {
@@ -110,6 +128,7 @@ footer {
     width: 100%;
     padding: 0 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 .back-home {
@@ -148,7 +167,7 @@ footer {
     justify-content: space-between;
     align-items: center;
     padding: 5px;
-    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    background: linear-gradient(135deg, #3d28e2, #594fdd);
     color: white;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -225,7 +244,7 @@ footer {
 }
 
 .user-details small {
-    color: #666;
+    color: #ffffff;
     font-size: 12px;
     margin-left: -300px;
 }
@@ -454,12 +473,12 @@ tr:hover td {
 
 .settings-link {
     position: absolute;
-    right: 40px;
-    margin-top: -15px;
+    right: 10px;
+    top: 20px;
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: #333;
+    color: #e7e6e6;
     font-size: 16px;
     font-weight: 600;
     transition: 0.3s ease-in-out;
@@ -468,7 +487,7 @@ tr:hover td {
 .settings-link i {
     font-size: 24px;
     margin-right: 5px;
-    transition: 0.3s ease-in-out;
+    color: #dad9d9;
 }
 
 .settings-link:hover span {
@@ -476,83 +495,7 @@ tr:hover td {
     transform: translateX(0);
 }
 
-/* Modal Background */
-#modalBackground {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 998;
-}
 
-/* Modal for Create Ticket */
-.modal-content.create-ticket {
-    background-color: #fefefe;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 35%;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.modal-content.create-ticket h2 {
-    margin-bottom: 20px;
-    color: var(--primary);
-}
-
-.modal-content.create-ticket form {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.modal-content.create-ticket label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    text-align: center;
-}
-
-.modal-content.create-ticket input[type="text"],
-.modal-content.create-ticket textarea,
-.modal-content.create-ticket select {
-    width: 80%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-.modal-content.create-ticket textarea {
-    height: 250px;
-    resize: vertical;
-}
-
-.modal-content.create-ticket button {
-    background-color: var(--primary);
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    font-size: 16px;
-}
-
-/* New Modal Styles for Other Modals */
 .modal {
     display: none;
     position: fixed;
@@ -562,6 +505,8 @@ tr:hover td {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
@@ -570,7 +515,7 @@ tr:hover td {
     padding: 20px;
     border-radius: 15px;
     width: 90%;
-    max-width: 600px;
+    max-width: 500px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
@@ -578,12 +523,6 @@ tr:hover td {
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
     margin-bottom: 15px;
-}
-
-.modal-header h2 {
-    margin: 0;
-    font-size: 20px;
-    color: var(--primary);
 }
 
 .modal-footer {
@@ -610,41 +549,46 @@ tr:hover td {
     color: var(--dark);
 }
 
-.modal-btn.delete {
-    background: var(--danger);
-    color: white;
-}
-
 .modal-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.modal-form {
-    display: flex;
-    flex-direction: column;
-}
-
 .modal-form input,
-.modal-form select,
-.modal-form textarea {
+.modal-form select {
     width: 100%;
     padding: 8px;
     margin: 5px 0 15px;
     border: 1px solid #ddd;
     border-radius: 5px;
 }
-
+/* Modal Form Textarea (Ticket Details) */
 .modal-form textarea {
-    height: 100px;
-    resize: vertical;
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    resize: vertical; /* Allows vertical resizing only */
+    min-height: 100px; /* Minimum height for better visibility */
+    outline: none;
+    transition: border-color 0.3s ease;
 }
 
-.modal-form label {
-    font-weight: bold;
-    color: var(--dark);
+.modal-form textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.3);
 }
 
+/* Error message styling (already present, but ensuring consistency) */
+.modal-form .error {
+    color: var(--danger);
+    font-size: 12px;
+    display: block;
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
 .field-row {
     display: flex;
     align-items: center;

@@ -32,13 +32,14 @@ $avatarPath = $_SESSION['avatarPath'];
     <link rel="stylesheet" href="portal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
 <div class="sidebar glass-container">
-        <h2>Task Management</h2>
+        <h2><img src="image/logo.png" alt="Tix Net Icon" class="sidebar-icon">TixNet Pro</h2>
         <ul>
-        <li><a href="technicianD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="technicianD.php" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
         <li><a href="suppT.php"><i class="fas fa-file-invoice"></i> Support tickets</a></li>
           
         </ul>
@@ -76,7 +77,7 @@ $avatarPath = $_SESSION['avatarPath'];
         </div>
 
         <div class="table-box">
-            <h2>Your Profile Information</h2>
+            <h2>Profile Information</h2>
             <hr class="title-line">
             <div class="flex-container">
                 <!-- First Table: ID Number -->
@@ -150,3 +151,5 @@ $avatarPath = $_SESSION['avatarPath'];
 </div>
 </body>
 </html>
+
+

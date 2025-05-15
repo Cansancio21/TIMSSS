@@ -30,7 +30,7 @@ $userAvatar = $avatarFolder . $username . '.png';
 // Initialize avatarPath from session or default
 $avatarPath = isset($_SESSION['avatarPath']) ? $_SESSION['avatarPath'] : 'default-avatar.png';
 
-// Update session only if the file exists and differs from current session value
+// Update session only if the file exists
 $cleanAvatarPath = preg_replace('/\?\d+$/', '', $avatarPath);
 if (file_exists($userAvatar) && $cleanAvatarPath !== $userAvatar) {
     $_SESSION['avatarPath'] = $userAvatar . '?' . time();
@@ -39,16 +39,12 @@ if (file_exists($userAvatar) && $cleanAvatarPath !== $userAvatar) {
 }
 $avatarPath = $_SESSION['avatarPath'];
 
-// Debugging: Log avatar path and file existence
-error_log("viewU.php: avatarPath=$avatarPath, cleanAvatarPath=$cleanAvatarPath, file_exists=" . (file_exists($cleanAvatarPath) ? 'Yes' : 'No'));
-
 // Fetch user details for display
 if ($conn) {
     $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
     $stmt = $conn->prepare($sqlUser);
     if (!$stmt) {
         error_log("Prepare failed for user details: " . $conn->error);
-        $_SESSION['error'] = "Database error fetching user details.";
     } else {
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -58,21 +54,10 @@ if ($conn) {
             $firstName = $row['u_fname'];
             $lastName = $row['u_lname'];
             $userType = $row['u_type'];
-        } else {
-            error_log("No user found for username: $username");
-            $_SESSION['error'] = "User not found in database.";
         }
         $stmt->close();
     }
-} else {
-    error_log("Database connection failed.");
-    $_SESSION['error'] = "Database connection failed.";
 }
-
-// Initialize variables for add user validation
-$firstnameErr = $lastnameErr = $emailErr = $usernameErr = $passwordErr = "";
-$firstname = $lastname = $email = $username = $password = $type = $status = "";
-$hasError = false;
 
 // Check if tbl_user exists
 $result = $conn->query("SHOW TABLES LIKE 'tbl_user'");
@@ -187,7 +172,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $output .= "<tr> 
-                            <td>{$row['u_id']}</td> 
+                            <td>{$row['u_id']}</	td> 
                             <td>" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
                             <td>" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
                             <td>" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "</td> 
@@ -231,44 +216,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = trim($_POST['status']);
 
         // Validation
-        if (!preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
-            $firstnameErr = "Firstname should not contain numbers.";
-            $hasError = true;
+        $errors = [];
+        if (empty($firstname) || !preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
+            $errors['firstname'] = "Firstname is required and must not contain numbers.";
         }
-
-        if (!preg_match("/^[a-zA-Z\s-]+$/", $lastname)) {
-            $lastnameErr = "Lastname should not contain numbers.";
-            $hasError = true;
+        if (empty($lastname) || !preg_match("/^[a-zA-Z\s-]+$/", $lastname)) {
+            $errors['lastname'] = "Lastname is required and must not contain numbers.";
         }
-
-        if (empty($email)) {
-            $emailErr = "Email is required.";
-            $hasError = true;
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = "A valid email is required.";
         }
-
         if (empty($username)) {
-            $usernameErr = "Username is required.";
-            $hasError = true;
+            $errors['username'] = "Username is required.";
+        }
+        if (!preg_match("/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/", $password)) {
+            $errors['password'] = "Password must be at least 8 characters, with 1 uppercase letter, 1 number, and 1 special character.";
+        }
+        if (empty($type) || !in_array($type, ['staff', 'technician'])) {
+            $errors['type'] = "Account type must be Staff or Technician.";
+        }
+        if (empty($status) || !in_array($status, ['active', 'pending'])) {
+            $errors['status'] = "Account status must be Active or Pending.";
         }
 
-        if (!preg_match("/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/", $password)) {
-            $passwordErr = "Password must be at least 8 characters with letters, numbers, and special characters.";
-            $hasError = true;
+        // Check for duplicate username only
+        $checkSql = "SELECT u_id FROM tbl_user WHERE u_username = ?";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bind_param("s", $username);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        if ($checkResult->num_rows > 0) {
+            $errors['username'] = "Username already exists.";
         }
+        $checkStmt->close();
 
-        if (empty($type)) {
-            $hasError = true;
-        }
-
-        if (empty($status)) {
-            $hasError = true;
-        }
-
-        if (!$hasError) {
-            // Log submission for debugging
-            $log = date('Y-m-d H:i:s') . " - Attempted to add user: $firstname $lastname, $email, $username\n";
-            file_put_contents('user_submission_log.txt', $log, FILE_APPEND);
-
+        if (empty($errors)) {
             // Hash the password
             $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
@@ -276,87 +258,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
-                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
-                    exit();
-                }
-                die("Prepare failed: " . $conn->error);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
+                exit();
             }
             $stmt->bind_param("sssssss", $firstname, $lastname, $email, $username, $passwordHash, $type, $status);
 
             if ($stmt->execute()) {
-                // Send the confirmation email using PHPMailer
-                $mail = new PHPMailer(true);
-                try {
-                    // Server settings
-                    $mail->isSMTP();
-                    $mail->Host = 'smtp.gmail.com';
-                    $mail->SMTPAuth = true;
-                    $mail->Username = 'jonwilyammayormita@gmail.com';
-                    $mail->Password = 'mqkcqkytlwurwlks';
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port = 587;
-
-                    // Recipients
-                    $mail->setFrom('jonwilyammayormita@gmail.com', 'Your Website');
-                    $mail->addAddress($email, "$firstname $lastname");
-
-                    // Content
-                    $mail->isHTML(true);
-                    $mail->Subject = 'Your Account Has Been Created';
-                    $mail->Body = "
-                        <html>
-                        <head>
-                            <title>Your Account Details</title>
-                        </head>
-                        <body>
-                            <p>Dear $firstname $lastname,</p>
-                            <p>Your account has been successfully created. Here are your login credentials:</p>
-                            <p><strong>Username:</strong> $username</p>
-                            <p><strong>Password:</strong> $password</p>
-                            <p>Please use these credentials to log in to our system by clicking the link below:</p>
-                            <p><a href='http://localhost/TIMSSS/index.php'>Login Page</a></p>
-                            <p>For security reasons, we recommend changing your password after first login.</p>
-                            <p>Best regards,<br>Your System Administrator</p>
-                        </body>
-                        </html>
-                    ";
-                    $mail->AltBody = "Dear $firstname $lastname,\n\nYour account has been successfully created. Here are your login credentials:\nUsername: $username\nPassword: $password\n\nPlease use these credentials to log in to our system at http://localhost/TIMSSS/index.php\n\nFor security reasons, we recommend changing your password after first login.\n\nBest regards,\nYour System Administrator";
-
-                    // Send the email
-                    $mail->send();
-
-                    if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
-                        header('Content-Type: application/json');
-                        echo json_encode(['success' => true, 'message' => 'User has been registered successfully. A confirmation email has been sent.']);
-                        exit();
-                    }
-                    $_SESSION['message'] = "User has been registered successfully. A confirmation email has been sent.";
-                } catch (Exception $e) {
-                    if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
-                        header('Content-Type: application/json');
-                        echo json_encode(['success' => true, 'message' => 'User registered, but error sending confirmation email: ' . $mail->ErrorInfo]);
-                        exit();
-                    }
-                    $_SESSION['message'] = "User registered, but error sending confirmation email: " . $mail->ErrorInfo;
-                }
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'User has been registered successfully.']);
             } else {
-                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Execution failed: ' . $stmt->error]);
-                    exit();
-                }
-                die("Execution failed: " . $stmt->error);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Execution failed: ' . $stmt->error]);
             }
             $stmt->close();
         } else {
-            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Validation errors: ' . implode(', ', array_filter([$firstnameErr, $lastnameErr, $emailErr, $usernameErr, $passwordErr]))]);
-                exit();
-            }
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'errors' => $errors]);
         }
+        exit();
     } elseif (isset($_POST['edit_user'])) {
         $user_id = $_POST['u_id'];
         $firstname = trim($_POST['firstname']);
@@ -366,67 +286,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $type = trim($_POST['type']);
         $status = trim($_POST['status']);
 
-        // Debugging: Check the values being submitted
-        error_log("Updating user: $user_id, Type: $type, Status: $status");
+        // Validation
+        $errors = [];
+        if (empty($firstname) || !preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
+            $errors['firstname'] = "Firstname is required and must not contain numbers.";
+        }
+        if (empty($lastname) || !preg_match("/^[a-zA-Z\s-]+$/", $lastname)) {
+            $errors['lastname'] = "Lastname is required and must not contain numbers.";
+        }
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = "A valid email is required.";
+        }
+        if (empty($username)) {
+            $errors['username'] = "Username is required.";
+        }
+        if (empty($type) || !in_array($type, ['staff', 'technician'])) {
+            $errors['type'] = "Account type must be Staff or Technician.";
+        }
+        if (empty($status) || !in_array($status, ['active', 'pending'])) {
+            $errors['status'] = "Account status must be Active or Pending.";
+        }
 
-        // Update user in the database
-        $update_sql = "UPDATE tbl_user SET u_fname=?, u_lname=?, u_email=?, u_username=?, u_type=?, u_status=? WHERE u_id=?";
-        $update_stmt = $conn->prepare($update_sql);
-        if (!$update_stmt) {
-            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+        // Check for duplicate username (excluding current user)
+        $checkSql = "SELECT u_id FROM tbl_user WHERE u_username = ? AND u_id != ?";
+        $checkStmt = $conn->prepare($checkSql);
+        $checkStmt->bind_param("si", $username, $user_id);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        if ($checkResult->num_rows > 0) {
+            $errors['username'] = "Username already exists.";
+        }
+        $checkStmt->close();
+
+        if (empty($errors)) {
+            $update_sql = "UPDATE tbl_user SET u_fname=?, u_lname=?, u_email=?, u_username=?, u_type=?, u_status=? WHERE u_id=?";
+            $update_stmt = $conn->prepare($update_sql);
+            if (!$update_stmt) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
                 exit();
             }
-            die("Prepare failed: " . $conn->error);
-        }
-        $update_stmt->bind_param("ssssssi", $firstname, $lastname, $email, $username, $type, $status, $user_id);
+            $update_stmt->bind_param("ssssssi", $firstname, $lastname, $email, $username, $type, $status, $user_id);
 
-        if ($update_stmt->execute()) {
-            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+            if ($update_stmt->execute()) {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => true, 'message' => 'User updated successfully!']);
-                exit();
-            }
-            $_SESSION['message'] = "User updated successfully!";
-        } else {
-            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+            } else {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'Error updating user: ' . $conn->error]);
-                exit();
             }
-            $_SESSION['error'] = "Error updating user: " . $conn->error;
+            $update_stmt->close();
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'errors' => $errors]);
         }
-        $update_stmt->close();
+        exit();
     } elseif (isset($_POST['archive_user'])) {
         $id = $_POST['u_id'];
         $sql = "INSERT INTO tbl_archive (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
                 SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
                 FROM tbl_user WHERE u_id=?";
         $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $stmt->close();
 
         $sql = "DELETE FROM tbl_user WHERE u_id=?";
         $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
         $stmt->bind_param("i", $id);
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "User archived successfully!";
-        } else {
-            $_SESSION['error'] = "Error archiving user: " . $stmt->error;
-        }
+        $stmt->execute();
         $stmt->close();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'User archived successfully!']);
+        exit();
     } elseif (isset($_POST['restore_user'])) {
         $id = $_POST['u_id'];
-
-        // Check if the u_id already exists in tbl_user
         $checkSql = "SELECT u_id FROM tbl_user WHERE u_id = ?";
         $checkStmt = $conn->prepare($checkSql);
         $checkStmt->bind_param("i", $id);
@@ -434,35 +368,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $checkResult = $checkStmt->get_result();
 
         if ($checkResult->num_rows > 0) {
-            $_SESSION['error'] = "User with ID $id already exists in active users!";
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => "User with ID $id already exists in active users!"]);
         } else {
             $sql = "INSERT INTO tbl_user (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
                     SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
                     FROM tbl_archive WHERE u_id=?";
             $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                die("Prepare failed: " . $conn->error);
-            }
             $stmt->bind_param("i", $id);
             $stmt->execute();
             $stmt->close();
 
             $sql = "DELETE FROM tbl_archive WHERE u_id=?";
             $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                die("Prepare failed: " . $conn->error);
-            }
             $stmt->bind_param("i", $id);
-            if ($stmt->execute()) {
-                $_SESSION['message'] = "User unarchived successfully!";
-            } else {
-                $_SESSION['error'] = "Error unarchiving user: " . $stmt->error;
-            }
+            $stmt->execute();
             $stmt->close();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'User unarchived successfully!']);
         }
         $checkStmt->close();
+        exit();
     } elseif (isset($_POST['restore_all_users'])) {
-        // Fetch all archived users to check for duplicates
         $checkSql = "SELECT u_id FROM tbl_archive";
         $checkResult = $conn->query($checkSql);
         $duplicateIds = [];
@@ -480,54 +407,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!empty($duplicateIds)) {
-            $_SESSION['error'] = "Cannot restore all users. Duplicate IDs found: " . implode(", ", $duplicateIds);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => "Cannot restore all users. Duplicate IDs found: " . implode(", ", $duplicateIds)]);
         } else {
             $sql = "INSERT INTO tbl_user (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
                     SELECT u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status 
                     FROM tbl_archive";
             $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                die("Prepare failed: " . $conn->error);
-            }
             $stmt->execute();
             $stmt->close();
 
             $sql = "DELETE FROM tbl_archive";
             $stmt = $conn->prepare($sql);
-            if (!$stmt) {
-                die("Prepare failed: " . $conn->error);
-            }
-            if ($stmt->execute()) {
-                $_SESSION['message'] = "All users restored successfully!";
-            } else {
-                $_SESSION['error'] = "Error restoring all users: " . $stmt->error;
-            }
+            $stmt->execute();
             $stmt->close();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'All users restored successfully!']);
         }
+        exit();
     } elseif (isset($_POST['delete_user'])) {
         $id = $_POST['u_id'];
-
         $sql = "DELETE FROM tbl_archive WHERE u_id=?";
         $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
         $stmt->bind_param("i", $id);
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "User deleted from archive successfully!";
-        } else {
-            $_SESSION['error'] = "Error deleting user: " . $stmt->error;
-        }
+        $stmt->execute();
         $stmt->close();
-    }
-
-    // Redirect based on current tab if not AJAX
-    if (!(isset($_POST['ajax']) && $_POST['ajax'] == 'true')) {
-        if ($currentTab === 'archived') {
-            header("Location: viewU.php?tab=archived&archived_page=$archivedPage");
-        } else {
-            header("Location: viewU.php?tab=active&page=$page");
-        }
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'User deleted from archive successfully!']);
         exit();
     }
 }
@@ -544,9 +450,6 @@ $totalPages = ceil($totalUsers / $limit);
 
 $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_user WHERE u_status IN ('active', 'pending') LIMIT ?, ?";
 $stmt = $conn->prepare($sql);
-if (!$stmt) {
-    die("Prepare failed: " . $conn->error);
-}
 $stmt->bind_param("ii", $offset, $limit);
 $stmt->execute();
 $activeAndPendingUsers = $stmt->get_result();
@@ -563,9 +466,6 @@ $totalArchivedPages = ceil($totalArchived / $limit);
 
 $archivedUsersQuery = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_archive LIMIT ?, ?";
 $stmt = $conn->prepare($archivedUsersQuery);
-if (!$stmt) {
-    die("Prepare failed: " . $conn->error);
-}
 $stmt->bind_param("ii", $archivedOffset, $limit);
 $stmt->execute();
 $archivedResult = $stmt->get_result();
@@ -582,6 +482,27 @@ $stmt->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        .password-container {
+            position: relative;
+        }
+        .password-container input {
+            padding-right: 35px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--primary);
+        }
+        .error {
+            color: var(--danger);
+            font-size: 12px;
+            display: block;
+        }
+    </style>
 </head>
 <body>
 <div class="wrapper">
@@ -590,7 +511,7 @@ $stmt->close();
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php" class="active"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span> Service Record</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>Service Record</span></a></li>
             <li><a href="logs.php"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
             <li><a href="borrowedT.php"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
             <li><a href="returnT.php"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
@@ -622,9 +543,9 @@ $stmt->close();
                     </a>
                 </div>
                 <div class="user-details">
-    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
-    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
-</div>
+                    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
+                </div>
                 <a href="settings.php" class="settings-link">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -632,17 +553,10 @@ $stmt->close();
             </div>
         </div>
         
-        <div class="alert-container">
-            <?php if (isset($_SESSION['message'])): ?>
-                <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert alert-error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-            <?php endif; ?>
-        </div>
+        <div class="alert-container"></div>
 
         <div class="table-box glass-container">
-            <?php if ($userType === 'admin'): ?>
+            <?php if ($userType === 'staff'): ?>
                 <div class="username">
                     Welcome, <?php echo htmlspecialchars($firstName); ?>!
                     <i class="fas fa-user-shield admin-icon"></i>
@@ -704,7 +618,7 @@ $stmt->close();
 
                 <div class="pagination" id="active-users-pagination">
                     <?php if ($page > 1): ?>
-                        <a href="?tab=active&page=<?php echo $page - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                        <a href="javascript:searchUsers(<?php echo $page - 1; ?>)" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
                         <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
                     <?php endif; ?>
@@ -712,7 +626,7 @@ $stmt->close();
                     <span class="current-page">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
 
                     <?php if ($page < $totalPages): ?>
-                        <a href="?tab=active&page=<?php echo $page + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                        <a href="javascript:searchUsers(<?php echo $page + 1; ?>)" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
                     <?php else: ?>
                         <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
                     <?php endif; ?>
@@ -767,7 +681,7 @@ $stmt->close();
                 <?php if ($totalArchived > 0): ?>
                 <div class="pagination" id="archived-users-pagination">
                     <?php if ($archivedPage > 1): ?>
-                        <a href="?tab=archived&archived_page=<?php echo $archivedPage - 1; ?>" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
+                        <a href="javascript:searchUsers(<?php echo $archivedPage - 1; ?>)" class="pagination-link"><i class="fas fa-chevron-left"></i></a>
                     <?php else: ?>
                         <span class="pagination-link disabled"><i class="fas fa-chevron-left"></i></span>
                     <?php endif; ?>
@@ -775,7 +689,7 @@ $stmt->close();
                     <span class="current-page">Page <?php echo $archivedPage; ?> of <?php echo $totalArchivedPages; ?></span>
 
                     <?php if ($archivedPage < $totalArchivedPages): ?>
-                        <a href="?tab=archived&archived_page=<?php echo $archivedPage + 1; ?>" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
+                        <a href="javascript:searchUsers(<?php echo $archivedPage + 1; ?>)" class="pagination-link"><i class="fas fa-chevron-right"></i></a>
                     <?php else: ?>
                         <span class="pagination-link disabled"><i class="fas fa-chevron-right"></i></span>
                     <?php endif; ?>
@@ -809,6 +723,7 @@ $stmt->close();
         <form method="POST" id="archiveForm">
             <input type="hidden" name="u_id" id="archiveUserId">
             <input type="hidden" name="archive_user" value="1">
+            <input type="hidden" name="ajax" value="true">
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('archiveModal')">Cancel</button>
                 <button type="submit" class="modal-btn confirm">Archive</button>
@@ -827,6 +742,7 @@ $stmt->close();
         <form method="POST" id="restoreForm">
             <input type="hidden" name="u_id" id="restoreUserId">
             <input type="hidden" name="restore_user" value="1">
+            <input type="hidden" name="ajax" value="true">
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('restoreModal')">Cancel</button>
                 <button type="submit" class="modal-btn confirm">Unarchive</button>
@@ -845,6 +761,7 @@ $stmt->close();
         <form method="POST" id="deleteForm">
             <input type="hidden" name="u_id" id="deleteUserId">
             <input type="hidden" name="delete_user" value="1">
+            <input type="hidden" name="ajax" value="true">
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('deleteModal')">Cancel</button>
                 <button type="submit" class="modal-btn confirm">Delete</button>
@@ -862,6 +779,7 @@ $stmt->close();
         <p>Are you sure you want to restore all archived users?</p>
         <form method="POST" id="restoreAllForm">
             <input type="hidden" name="restore_all_users" value="1">
+            <input type="hidden" name="ajax" value="true">
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('restoreAllModal')">Cancel</button>
                 <button type="submit" class="modal-btn confirm">Restore All</button>
@@ -879,31 +797,50 @@ $stmt->close();
         <form method="POST" id="addUserForm" class="modal-form">
             <input type="hidden" name="add_user" value="1">
             <input type="hidden" name="ajax" value="true">
-            <label for="add_firstname">First Name</label>
-            <input type="text" name="firstname" id="add_firstname" required>
-            <span class="error"><?php echo $firstnameErr; ?></span>
-            <label for="add_lastname">Last Name</label>
-            <input type="text" name="lastname" id="add_lastname" required>
-            <span class="error"><?php echo $lastnameErr; ?></span>
-            <label for="add_email">Email</label>
-            <input type="email" name="email" id="add_email" required>
-            <span class="error"><?php echo $emailErr; ?></span>
-            <label for="add_username">Username</label>
-            <input type="text" name="username" id="add_username" required>
-            <span class="error"><?php echo $usernameErr; ?></span>
-            <label for="add_password">Password</label>
-            <input type="password" name="password" id="add_password" required>
-            <span class="error"><?php echo $passwordErr; ?></span>
-            <label for="add_type">Account Type</label>
-            <select name="type" id="add_type" required>
-                <option value="admin">Staff</option>
-                <option value="user">Technician</option>
-            </select>
-            <label for="add_status">Account Status</label>
-            <select name="status" id="add_status" required>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-            </select>
+            <div class="form-group">
+                <label for="add_firstname">First Name</label>
+                <input type="text" name="firstname" id="add_firstname" required>
+                <span class="error" id="add_firstname_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="add_lastname">Last Name</label>
+                <input type="text" name="lastname" id="add_lastname" required>
+                <span class="error" id="add_lastname_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="add_email">Email</label>
+                <input type="email" name="email" id="add_email" required>
+                <span class="error" id="add_email_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="add_username">Username</label>
+                <input type="text" name="username" id="add_username" required>
+                <span class="error" id="add_username_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="add_password">Password</label>
+                <div class="password-container">
+                    <input type="password" name="password" id="add_password" required>
+                    <i class="fas fa-eye password-toggle" id="toggleAddPassword"></i>
+                </div>
+                <span class="error" id="add_password_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="add_type">Account Type</label>
+                <select name="type" id="add_type" required>
+                    <option value="staff">Staff</option>
+                    <option value="technician">Technician</option>
+                </select>
+                <span class="error" id="add_type_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="add_status">Account Status</label>
+                <select name="status" id="add_status" required>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                </select>
+                <span class="error" id="add_status_error"></span>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('addUserModal')">Cancel</button>
                 <button type="submit" class="modal-btn confirm">Add User</button>
@@ -922,24 +859,43 @@ $stmt->close();
             <input type="hidden" name="edit_user" value="1">
             <input type="hidden" name="ajax" value="true">
             <input type="hidden" name="u_id" id="edit_u_id">
-            <label for="edit_firstname">First Name</label>
-            <input type="text" name="firstname" id="edit_firstname" required>
-            <label for="edit_lastname">Last Name</label>
-            <input type="text" name="lastname" id="edit_lastname" required>
-            <label for="edit_email">Email</label>
-            <input type="email" name="email" id="edit_email" required>
-            <label for="edit_username">Username</label>
-            <input type="text" name="username" id="edit_username" required>
-            <label for="edit_type">Type</label>
-            <select name="type" id="edit_type" required>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-            </select>
-            <label for="edit_status">Status</label>
-            <select name="status" id="edit_status" required>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-            </select>
+            <div class="form-group">
+                <label for="edit_firstname">First Name</label>
+                <input type="text" name="firstname" id="edit_firstname" required>
+                <span class="error" id="edit_firstname_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="edit_lastname">Last Name</label>
+                <input type="text" name="lastname" id="edit_lastname" required>
+                <span class="error" id="edit_lastname_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="edit_email">Email</label>
+                <input type="email" name="email" id="edit_email" required>
+                <span class="error" id="edit_email_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="edit_username">Username</label>
+                <input type="text" name="username" id="edit_username" required>
+                <span class="error" id="edit_username_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="edit_type">Type</label>
+                <select name="type" id="edit_type" required>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                    <option value="technician">Technician</option>
+                </select>
+                <span class="error" id="edit_type_error"></span>
+            </div>
+            <div class="form-group">
+                <label for="edit_status">Status</label>
+                <select name="status" id="edit_status" required>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                </select>
+                <span class="error" id="edit_status_error"></span>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="modal-btn cancel" onclick="closeModal('editUserModal')">Cancel</button>
                 <button type="submit" class="modal-btn confirm">Update User</button>
@@ -950,10 +906,10 @@ $stmt->close();
 
 <script>
     let currentSearchPage = 1;
-    let defaultPage = <?php echo json_encode($page); ?>;
-    let defaultArchivedPage = <?php echo json_encode($archivedPage); ?>;
+    let currentTab = '<?php echo isset($_GET['tab']) ? $_GET['tab'] : 'active'; ?>';
+    let activePage = <?php echo json_encode($page); ?>;
+    let archivedPage = <?php echo json_encode($archivedPage); ?>;
 
-    // Debounce function to limit search calls
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -978,32 +934,78 @@ $stmt->close();
         if (tabName === 'active') {
             activeTab.classList.add('active');
             buttons[0].classList.add('active');
-            history.pushState(null, '', '?tab=active&page=' + defaultPage);
+            currentTab = 'active';
+            currentSearchPage = activePage;
         } else if (tabName === 'archived') {
             archivedTab.classList.add('active');
             buttons[1].classList.add('active');
-            history.pushState(null, '', '?tab=archived&archived_page=' + defaultArchivedPage);
+            currentTab = 'archived';
+            currentSearchPage = archivedPage;
         }
-        searchUsers();
+        searchUsers(currentSearchPage);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab') || 'active';
-        showTab(tab);
+        showTab(currentTab);
 
-        // Alert handling
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                alert.classList.add('alert-hidden');
-                setTimeout(() => alert.remove(), 500);
-            }, 2000);
+        // Password toggle functionality
+        document.getElementById('toggleAddPassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('add_password');
+            const icon = this;
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Client-side validation for Add User Form
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            const firstname = document.getElementById('add_firstname').value.trim();
+            const lastname = document.getElementById('add_lastname').value.trim();
+            const firstnameError = document.getElementById('add_firstname_error');
+            const lastnameError = document.getElementById('add_lastname_error');
+
+            // Validate firstname (no numbers)
+            if (!firstname.match(/^[a-zA-Z\s-]+$/)) {
+                firstnameError.textContent = 'Firstname must not contain numbers.';
+                isValid = false;
+            } else {
+                firstnameError.textContent = '';
+            }
+
+            // Validate lastname (no numbers)
+            if (!lastname.match(/^[a-zA-Z\s-]+$/)) {
+                lastnameError.textContent = 'Lastname must not contain numbers.';
+                isValid = false;
+            } else {
+                lastnameError.textContent = '';
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
         });
     });
 
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
+        if (modalId === 'addUserModal') {
+            document.querySelectorAll('#addUserForm .error').forEach(el => el.textContent = '');
+            document.getElementById('addUserForm').reset();
+            const passwordInput = document.getElementById('add_password');
+            const toggleIcon = document.getElementById('toggleAddPassword');
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        } else if (modalId === 'editUserModal') {
+            document.querySelectorAll('#editUserForm .error').forEach(el => el.textContent = '');
+        }
     }
 
     function showViewModal(id, fname, lname, email, username, type, status) {
@@ -1043,21 +1045,31 @@ $stmt->close();
 
     function showAddUserModal() {
         document.getElementById('addUserForm').reset();
+        document.querySelectorAll('#addUserForm .error').forEach(el => el.textContent = '');
+        const passwordInput = document.getElementById('add_password');
+        const toggleIcon = document.getElementById('toggleAddPassword');
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
         document.getElementById('addUserModal').style.display = 'block';
     }
-
     function showEditUserModal(id, fname, lname, email, username, type, status) {
         document.getElementById('edit_u_id').value = id;
         document.getElementById('edit_firstname').value = fname;
         document.getElementById('edit_lastname').value = lname;
         document.getElementById('edit_email').value = email;
         document.getElementById('edit_username').value = username;
-        document.getElementById('edit_type').value = type.toLowerCase();
+        // Set type correctly for admin, staff, or technician
+        const typeSelect = document.getElementById('edit_type');
+        const normalizedType = type.toLowerCase();
+        typeSelect.value = normalizedType === 'admin' ? 'admin' : normalizedType === 'staff' ? 'staff' : 'technician';
+        // Set status correctly
         document.getElementById('edit_status').value = status.toLowerCase();
+        document.querySelectorAll('#editUserForm .error').forEach(el => el.textContent = '');
         document.getElementById('editUserModal').style.display = 'block';
     }
 
-    function updatePagination(currentPage, totalPages, tab, searchTerm) {
+    function updatePagination(currentPage, totalPages, tab) {
         const paginationContainer = tab === 'active' ? document.getElementById('active-users-pagination') : document.getElementById('archived-users-pagination');
         let paginationHtml = '';
 
@@ -1078,12 +1090,9 @@ $stmt->close();
         paginationContainer.innerHTML = paginationHtml;
     }
 
-    function searchUsers(page = 1) {
+    function searchUsers(page) {
         const searchTerm = document.getElementById('searchInput').value;
-        const activeTab = document.querySelector('.tab-btn.active').textContent.toLowerCase();
-        const tab = activeTab.includes('user') ? 'active' : 'archived';
-        const tbody = tab === 'active' ? document.getElementById('active-users-tbody') : document.getElementById('archived-users-tbody');
-        const defaultPageToUse = tab === 'active' ? defaultPage : defaultArchivedPage;
+        const tbody = currentTab === 'active' ? document.getElementById('active-users-tbody') : document.getElementById('archived-users-tbody');
 
         currentSearchPage = page;
 
@@ -1093,71 +1102,73 @@ $stmt->close();
                 try {
                     const response = JSON.parse(xhr.responseText);
                     tbody.innerHTML = response.html;
-                    updatePagination(response.currentPage, response.totalPages, response.tab, response.searchTerm);
+                    updatePagination(response.currentPage, response.totalPages, response.tab);
+                    if (currentTab === 'active') {
+                        activePage = response.currentPage;
+                    } else {
+                        archivedPage = response.currentPage;
+                    }
                 } catch (e) {
                     console.error('Error parsing JSON:', e, xhr.responseText);
                 }
             }
         };
-        xhr.open('GET', `viewU.php?action=search&search=${encodeURIComponent(searchTerm)}&tab=${tab}&search_page=${searchTerm ? page : defaultPageToUse}`, true);
+        xhr.open('GET', `viewU.php?action=search&search=${encodeURIComponent(searchTerm)}&tab=${currentTab}&search_page=${page}`, true);
         xhr.send();
     }
 
-    // Handle Add User form submission via AJAX
-    document.getElementById('addUserForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'viewU.php', true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const response = JSON.parse(xhr.responseText);
-                const alertContainer = document.querySelector('.alert-container');
-                const alert = document.createElement('div');
-                alert.className = `alert ${response.success ? 'alert-success' : 'alert-error'}`;
-                alert.textContent = response.message;
-                alertContainer.appendChild(alert);
-                setTimeout(() => {
-                    alert.classList.add('alert-hidden');
-                    setTimeout(() => alert.remove(), 500);
-                }, 2000);
-                if (response.success) {
-                    closeModal('addUserModal');
-                    searchUsers(defaultPage);
+    function handleFormSubmission(formId, successCallback) {
+        const form = document.getElementById(formId);
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'viewU.php', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        closeModal(formId.replace('Form', 'Modal'));
+                        successCallback();
+                        // Show success alert
+                        const alertContainer = document.querySelector('.alert-container');
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-success';
+                        alert.textContent = response.message;
+                        alertContainer.appendChild(alert);
+                        setTimeout(() => {
+                            alert.classList.add('alert-hidden');
+                            setTimeout(() => alert.remove(), 500);
+                        }, 3000);
+                    } else if (response.errors) {
+                        Object.keys(response.errors).forEach(key => {
+                            document.getElementById(`${formId.replace('Form', '')}_${key}_error`).textContent = response.errors[key];
+                        });
+                    } else {
+                        // Show error alert
+                        const alertContainer = document.querySelector('.alert-container');
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-error';
+                        alert.textContent = response.message || 'An error occurred.';
+                        alertContainer.appendChild(alert);
+                        setTimeout(() => {
+                            alert.classList.add('alert-hidden');
+                            setTimeout(() => alert.remove(), 500);
+                        }, 3000);
+                    }
                 }
-            }
-        };
-        xhr.send(formData);
-    });
+            };
+            xhr.send(formData);
+        });
+    }
 
-    // Handle Edit User form submission via AJAX
-    document.getElementById('editUserForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'viewU.php', true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                const response = JSON.parse(xhr.responseText);
-                const alertContainer = document.querySelector('.alert-container');
-                const alert = document.createElement('div');
-                alert.className = `alert ${response.success ? 'alert-success' : 'alert-error'}`;
-                alert.textContent = response.message;
-                alertContainer.appendChild(alert);
-                setTimeout(() => {
-                    alert.classList.add('alert-hidden');
-                    setTimeout(() => alert.remove(), 500);
-                }, 2000);
-                if (response.success) {
-                    closeModal('editUserModal');
-                    searchUsers(defaultPage);
-                }
-            }
-        };
-        xhr.send(formData);
-    });
+    handleFormSubmission('addUserForm', () => searchUsers(activePage));
+    handleFormSubmission('editUserForm', () => searchUsers(activePage));
+    handleFormSubmission('archiveForm', () => searchUsers(activePage));
+    handleFormSubmission('restoreForm', () => searchUsers(archivedPage));
+    handleFormSubmission('deleteForm', () => searchUsers(archivedPage));
+    handleFormSubmission('restoreAllForm', () => searchUsers(archivedPage));
 
-    // Debounced search function
     const debouncedSearchUsers = debounce(searchUsers, 300);
 </script>
 </body>

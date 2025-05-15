@@ -59,7 +59,25 @@ body {
     border-radius: 8px;
     transition: all 0.3s;
     width: 100%;
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 650;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar h2 .sidebar-icon {
+    width: 45px;
+    height: 45px;
     margin-left: -10px;
+    margin-right: -10px;
+    vertical-align: middle;
+}
+
+.sidebar h2:hover {
+    transform: translateY(-2px);
 }
 
 .sidebar ul {
@@ -110,6 +128,7 @@ footer {
     width: 100%;
     padding: 0 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 .back-home {
@@ -142,13 +161,14 @@ footer {
     margin-top: -15px;
     padding-top: 100px;
 }
+
 /* Header */
 .upper {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    background: linear-gradient(135deg, #3d28e2, #594fdd);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
     color: white;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -230,69 +250,94 @@ footer {
     margin-left: -300px;
 }
 
-
 /* Table Box */
 .table-box {
     width: 100%;
-    padding: 20px;
+    padding: 30px;
     background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     min-height: 600px;
     display: flex;
     flex-direction: column;
     margin-top: 20px;
-}
-
-.username {
-    position: absolute;
-    left: 25px;
-    top: 25px;
-    font-weight: 500;
-    color: var(--primary);
-}
-
-.admin-icon {
-    color: var(--warning);
-    margin-left: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .table-box h2 {
     text-align: center;
-    margin-top: 50px;
-    font-size: 1.8rem;
+    margin-top: 20px;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: 0.5px;
 }
+
 .title-line {
     border: none;
     height: 2px;
-    background-color: black; /* Set to black for visibility */
-    margin: 15px 0; /* Adjust margin for spacing */
-    width: 100%; /* Ensure it takes full width of the container */
-}
-
-
-.center {
-    text-align: center; /* Center text */
-}
-
-.right {
-    text-align: right; /* Right-align text */
+    background-color: var(--primary);
+    margin: 20px 0;
+    width: 100%;
 }
 
 /* Flexbox styles for profile information */
 .flex-container {
     display: flex;
-    justify-content: space-between; /* Space between the three sections */
-    width: 100%; /* Ensure it takes full width */
-    
+    justify-content: space-between;
+    width: 100%;
+    gap: 20px;
 }
 
 .flex-item {
-    width: 30%; /* Adjust width for each section */
-    padding: 10px;
-    margin-top: 10px;
-    margin-left: 60px;
+    width: 32%;
+    padding: 20px;
+    background: var(--light);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.flex-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.flex-item h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--primary);
+    padding-bottom: 8px;
+}
+
+.flex-item table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.flex-item th,
+.flex-item td {
+    padding: 12px 10px;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.flex-item th {
+    font-weight: 500;
+    color: var(--dark);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.flex-item td {
+    color: var(--dark);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.flex-item tr:last-child th,
+.flex-item tr:last-child td {
+    border-bottom: none;
 }
 
 thead {
@@ -305,8 +350,8 @@ thead {
 
 .settings-link {
     position: absolute;
-    right: 40px;
-    margin-top: -15px;
+    right: 35px;
+    top: 40px;
     display: flex;
     align-items: center;
     text-decoration: none;
@@ -319,7 +364,6 @@ thead {
 .settings-link i {
     font-size: 24px;
     margin-right: 5px;
-    transition: 0.3s ease-in-out;
     color: #dad9d9;
 }
 
@@ -340,4 +384,5 @@ thead {
     border-radius: 8px;
     margin-top: 10px;
 }
+
 
