@@ -1,15 +1,28 @@
-<?php 
-include 'db.php'; 
-session_start(); 
+<?php
+session_start();
 
-if (!isset($_SESSION['username'])) { 
+// Include PHPMailer dependencies
+require 'PHPmailer-master/PHPmailer-master/src/Exception.php';
+require 'PHPmailer-master/PHPmailer-master/src/PHPMailer.php';
+require 'PHPmailer-master/PHPmailer-master/src/SMTP.php';
+
+// Use PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+include 'db.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['username'])) {
     header("Location: index.php");
-    exit(); 
+    exit();
 }
 
 $username = $_SESSION['username'];
-$lastName = '';
+
+// Initialize user detail variables
 $firstName = '';
+$lastName = '';
 $userType = '';
 $avatarFolder = 'Uploads/avatars/';
 $userAvatar = $avatarFolder . $username . '.png';
@@ -29,18 +42,57 @@ $avatarPath = $_SESSION['avatarPath'];
 // Debugging: Log avatar path and file existence
 error_log("viewU.php: avatarPath=$avatarPath, cleanAvatarPath=$cleanAvatarPath, file_exists=" . (file_exists($cleanAvatarPath) ? 'Yes' : 'No'));
 
+// Fetch user details for display
+if ($conn) {
+    $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
+    $stmt = $conn->prepare($sqlUser);
+    if (!$stmt) {
+        error_log("Prepare failed for user details: " . $conn->error);
+        $_SESSION['error'] = "Database error fetching user details.";
+    } else {
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $resultUser = $stmt->get_result();
+        if ($resultUser->num_rows > 0) {
+            $row = $resultUser->fetch_assoc();
+            $firstName = $row['u_fname'];
+            $lastName = $row['u_lname'];
+            $userType = $row['u_type'];
+        } else {
+            error_log("No user found for username: $username");
+            $_SESSION['error'] = "User not found in database.";
+        }
+        $stmt->close();
+    }
+} else {
+    error_log("Database connection failed.");
+    $_SESSION['error'] = "Database connection failed.";
+}
+
+// Initialize variables for add user validation
+$firstnameErr = $lastnameErr = $emailErr = $usernameErr = $passwordErr = "";
+$firstname = $lastname = $email = $username = $password = $type = $status = "";
+$hasError = false;
+
+// Check if tbl_user exists
+$result = $conn->query("SHOW TABLES LIKE 'tbl_user'");
+if ($result->num_rows == 0) {
+    die("Error: Table 'tbl_user' does not exist in the 'task_management' database.");
+}
+
 // Handle AJAX search request
 if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search'])) {
+    header('Content-Type: application/json');
     $searchTerm = trim($_GET['search']);
     $tab = isset($_GET['tab']) ? $_GET['tab'] : 'active';
     $page = isset($_GET['search_page']) ? (int)$_GET['search_page'] : 1;
     $limit = 10;
     $offset = ($page - 1) * $limit;
     $output = '';
+    $response = ['html' => '', 'currentPage' => $page, 'totalPages' => 0, 'tab' => $tab, 'searchTerm' => $searchTerm];
 
     if ($tab === 'active') {
         if ($searchTerm === '') {
-            // Fetch default active users for the current page
             $countSql = "SELECT COUNT(*) as total FROM tbl_user WHERE u_status IN ('active', 'pending')";
             $countResult = $conn->query($countSql);
             $totalUsers = $countResult->fetch_assoc()['total'];
@@ -52,7 +104,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ii", $offset, $limit);
         } else {
-            // Count total matching users for pagination
             $countSql = "SELECT COUNT(*) as total FROM tbl_user 
                         WHERE u_status IN ('active', 'pending') 
                         AND (u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?)";
@@ -66,7 +117,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
 
             $totalPages = ceil($totalUsers / $limit);
 
-            // Fetch paginated search results
             $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_user 
                     WHERE u_status IN ('active', 'pending') 
                     AND (u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?)
@@ -81,16 +131,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
             while ($row = $result->fetch_assoc()) {
                 $output .= "<tr> 
                             <td>{$row['u_id']}</td> 
-                            <td>{$row['u_fname']}</td> 
-                            <td>{$row['u_lname']}</td> 
-                            <td>{$row['u_email']}</td> 
-                            <td>{$row['u_username']}</td> 
+                            <td>" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                            <td>" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                            <td>" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                            <td>" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "</td> 
                             <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
                             <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
                             <td class='action-buttons'>
-                                <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                                <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                <a class='edit-btn' onclick=\"showEditUserModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "', '{$row['u_type']}', '{$row['u_status']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'] . ' ' . $row['u_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
                             </td>
                             </tr>";
             }
@@ -99,13 +149,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         }
         $stmt->close();
 
-        // Add pagination data
-        $output .= "<script>
-            updatePagination($page, $totalPages, '$tab', '$searchTerm');
-        </script>";
+        $response['html'] = $output;
+        $response['totalPages'] = $totalPages;
     } else {
         if ($searchTerm === '') {
-            // Fetch default archived users for the current page
             $countSql = "SELECT COUNT(*) as total FROM tbl_archive";
             $countResult = $conn->query($countSql);
             $totalUsers = $countResult->fetch_assoc()['total'];
@@ -116,7 +163,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ii", $offset, $limit);
         } else {
-            // Count total matching archived users for pagination
             $countSql = "SELECT COUNT(*) as total FROM tbl_archive 
                         WHERE u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?";
             $countStmt = $conn->prepare($countSql);
@@ -129,7 +175,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
 
             $totalPages = ceil($totalUsers / $limit);
 
-            // Fetch paginated search results
             $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_archive 
                     WHERE u_fname LIKE ? OR u_lname LIKE ? OR u_email LIKE ? OR u_username LIKE ?
                     LIMIT ?, ?";
@@ -143,16 +188,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
             while ($row = $result->fetch_assoc()) {
                 $output .= "<tr> 
                             <td>{$row['u_id']}</td> 
-                            <td>{$row['u_fname']}</td> 
-                            <td>{$row['u_lname']}</td> 
-                            <td>{$row['u_email']}</td> 
-                            <td>{$row['u_username']}</td> 
+                            <td>" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                            <td>" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                            <td>" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                            <td>" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "</td> 
                             <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
                             <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
                             <td class='action-buttons'>
-                                <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
+                                <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'] . ' ' . $row['u_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'] . ' ' . $row['u_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                             </td>
                             </tr>";
             }
@@ -161,13 +206,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
         }
         $stmt->close();
 
-        // Add pagination data
-        $output .= "<script>
-            updatePagination($page, $totalPages, '$tab', '$searchTerm');
-        </script>";
+        $response['html'] = $output;
+        $response['totalPages'] = $totalPages;
     }
 
-    echo $output;
+    echo json_encode($response);
     exit();
 }
 
@@ -178,48 +221,183 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $archivedPage = isset($_GET['archived_page']) ? (int)$_GET['archived_page'] : 1;
 
     if (isset($_POST['add_user'])) {
-        $fname = $_POST['u_fname'];
-        $lname = $_POST['u_lname'];
-        $email = $_POST['u_email'];
-        $new_username = $_POST['u_username'];
-        $type = $_POST['u_type'];
-        $status = $_POST['u_status'];
-        $password = password_hash($_POST['u_password'], PASSWORD_DEFAULT);
-    
-        $sql = "INSERT INTO tbl_user (u_fname, u_lname, u_email, u_username, u_type, u_status, u_password) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
-        $stmt->bind_param("sssssss", $fname, $lname, $email, $new_username, $type, $status, $password);
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "User added successfully!";
-        } else {
-            $_SESSION['error'] = "Error adding user: " . $stmt->error;
-        }
-        $stmt->close();
-    
-    } elseif (isset($_POST['edit_user'])) {
-        $id = $_POST['u_id'];
-        $fname = $_POST['u_fname'];
-        $lname = $_POST['u_lname'];
-        $email = $_POST['u_email'];
-        $new_username = $_POST['u_username'];
-        $type = $_POST['u_type'];
-        $status = $_POST['u_status'];
+        // Get form data and sanitize
+        $firstname = trim($_POST['firstname']);
+        $lastname = trim($_POST['lastname']);
+        $email = trim($_POST['email']);
+        $username = trim($_POST['username']);
+        $password = trim($_POST['password']);
+        $type = trim($_POST['type']);
+        $status = trim($_POST['status']);
 
-        $sql = "UPDATE tbl_user SET u_fname=?, u_lname=?, u_email=?, u_username=?, u_type=?, u_status=? WHERE u_id=?";
-        $stmt = $conn->prepare($sql);
-        if (!$stmt) {
+        // Validation
+        if (!preg_match("/^[a-zA-Z\s-]+$/", $firstname)) {
+            $firstnameErr = "Firstname should not contain numbers.";
+            $hasError = true;
+        }
+
+        if (!preg_match("/^[a-zA-Z\s-]+$/", $lastname)) {
+            $lastnameErr = "Lastname should not contain numbers.";
+            $hasError = true;
+        }
+
+        if (empty($email)) {
+            $emailErr = "Email is required.";
+            $hasError = true;
+        }
+
+        if (empty($username)) {
+            $usernameErr = "Username is required.";
+            $hasError = true;
+        }
+
+        if (!preg_match("/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/", $password)) {
+            $passwordErr = "Password must be at least 8 characters with letters, numbers, and special characters.";
+            $hasError = true;
+        }
+
+        if (empty($type)) {
+            $hasError = true;
+        }
+
+        if (empty($status)) {
+            $hasError = true;
+        }
+
+        if (!$hasError) {
+            // Log submission for debugging
+            $log = date('Y-m-d H:i:s') . " - Attempted to add user: $firstname $lastname, $email, $username\n";
+            file_put_contents('user_submission_log.txt', $log, FILE_APPEND);
+
+            // Hash the password
+            $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+
+            $sql = "INSERT INTO tbl_user (u_fname, u_lname, u_email, u_username, u_password, u_type, u_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
+                    exit();
+                }
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("sssssss", $firstname, $lastname, $email, $username, $passwordHash, $type, $status);
+
+            if ($stmt->execute()) {
+                // Send the confirmation email using PHPMailer
+                $mail = new PHPMailer(true);
+                try {
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'jonwilyammayormita@gmail.com';
+                    $mail->Password = 'mqkcqkytlwurwlks';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+
+                    // Recipients
+                    $mail->setFrom('jonwilyammayormita@gmail.com', 'Your Website');
+                    $mail->addAddress($email, "$firstname $lastname");
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Your Account Has Been Created';
+                    $mail->Body = "
+                        <html>
+                        <head>
+                            <title>Your Account Details</title>
+                        </head>
+                        <body>
+                            <p>Dear $firstname $lastname,</p>
+                            <p>Your account has been successfully created. Here are your login credentials:</p>
+                            <p><strong>Username:</strong> $username</p>
+                            <p><strong>Password:</strong> $password</p>
+                            <p>Please use these credentials to log in to our system by clicking the link below:</p>
+                            <p><a href='http://localhost/TIMSSS/index.php'>Login Page</a></p>
+                            <p>For security reasons, we recommend changing your password after first login.</p>
+                            <p>Best regards,<br>Your System Administrator</p>
+                        </body>
+                        </html>
+                    ";
+                    $mail->AltBody = "Dear $firstname $lastname,\n\nYour account has been successfully created. Here are your login credentials:\nUsername: $username\nPassword: $password\n\nPlease use these credentials to log in to our system at http://localhost/TIMSSS/index.php\n\nFor security reasons, we recommend changing your password after first login.\n\nBest regards,\nYour System Administrator";
+
+                    // Send the email
+                    $mail->send();
+
+                    if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => true, 'message' => 'User has been registered successfully. A confirmation email has been sent.']);
+                        exit();
+                    }
+                    $_SESSION['message'] = "User has been registered successfully. A confirmation email has been sent.";
+                } catch (Exception $e) {
+                    if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => true, 'message' => 'User registered, but error sending confirmation email: ' . $mail->ErrorInfo]);
+                        exit();
+                    }
+                    $_SESSION['message'] = "User registered, but error sending confirmation email: " . $mail->ErrorInfo;
+                }
+            } else {
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Execution failed: ' . $stmt->error]);
+                    exit();
+                }
+                die("Execution failed: " . $stmt->error);
+            }
+            $stmt->close();
+        } else {
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Validation errors: ' . implode(', ', array_filter([$firstnameErr, $lastnameErr, $emailErr, $usernameErr, $passwordErr]))]);
+                exit();
+            }
+        }
+    } elseif (isset($_POST['edit_user'])) {
+        $user_id = $_POST['u_id'];
+        $firstname = trim($_POST['firstname']);
+        $lastname = trim($_POST['lastname']);
+        $email = trim($_POST['email']);
+        $username = trim($_POST['username']);
+        $type = trim($_POST['type']);
+        $status = trim($_POST['status']);
+
+        // Debugging: Check the values being submitted
+        error_log("Updating user: $user_id, Type: $type, Status: $status");
+
+        // Update user in the database
+        $update_sql = "UPDATE tbl_user SET u_fname=?, u_lname=?, u_email=?, u_username=?, u_type=?, u_status=? WHERE u_id=?";
+        $update_stmt = $conn->prepare($update_sql);
+        if (!$update_stmt) {
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
+                exit();
+            }
             die("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("ssssssi", $fname, $lname, $email, $new_username, $type, $status, $id);
-        if ($stmt->execute()) {
+        $update_stmt->bind_param("ssssssi", $firstname, $lastname, $email, $username, $type, $status, $user_id);
+
+        if ($update_stmt->execute()) {
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'User updated successfully!']);
+                exit();
+            }
             $_SESSION['message'] = "User updated successfully!";
         } else {
-            $_SESSION['error'] = "Error updating user: " . $stmt->error;
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Error updating user: ' . $conn->error]);
+                exit();
+            }
+            $_SESSION['error'] = "Error updating user: " . $conn->error;
         }
-        $stmt->close();
+        $update_stmt->close();
     } elseif (isset($_POST['archive_user'])) {
         $id = $_POST['u_id'];
         $sql = "INSERT INTO tbl_archive (u_id, u_fname, u_lname, u_email, u_username, u_password, u_type, u_status) 
@@ -343,72 +521,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     }
 
-    // Redirect based on current tab
-    if ($currentTab === 'archived') {
-        header("Location: viewU.php?tab=archived&archived_page=$archivedPage");
-    } else {
-        header("Location: viewU.php?tab=active&page=$page");
+    // Redirect based on current tab if not AJAX
+    if (!(isset($_POST['ajax']) && $_POST['ajax'] == 'true')) {
+        if ($currentTab === 'archived') {
+            header("Location: viewU.php?tab=archived&archived_page=$archivedPage");
+        } else {
+            header("Location: viewU.php?tab=active&page=$page");
+        }
+        exit();
     }
-    exit();
 }
 
-if ($conn) {
-    $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
-    $stmt = $conn->prepare($sqlUser);
-    if (!$stmt) {
-        die("Prepare failed: " . $conn->error);
-    }
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $resultUser = $stmt->get_result();
+// Pagination for active and pending users
+$limit = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
 
-    if ($resultUser->num_rows > 0) {
-        $row = $resultUser->fetch_assoc();
-        $firstName = $row['u_fname'];
-        $lastName = $row['u_lname'];
-        $userType = $row['u_type'];
-    }
+$countQuery = "SELECT COUNT(*) as total FROM tbl_user WHERE u_status IN ('active', 'pending')";
+$countResult = $conn->query($countQuery);
+$totalUsers = $countResult->fetch_assoc()['total'];
+$totalPages = ceil($totalUsers / $limit);
 
-    $limit = 10;
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    $offset = ($page - 1) * $limit;
-
-    // Active and pending users pagination
-    $countQuery = "SELECT COUNT(*) as total FROM tbl_user WHERE u_status IN ('active', 'pending')";
-    $countResult = $conn->query($countQuery);
-    $totalUsers = $countResult->fetch_assoc()['total'];
-    $totalPages = ceil($totalUsers / $limit);
-
-    $sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_user WHERE u_status IN ('active', 'pending') LIMIT ?, ?";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        die("Prepare failed: " . $conn->error);
-    }
-    $stmt->bind_param("ii", $offset, $limit);
-    $stmt->execute();
-    $activeAndPendingUsers = $stmt->get_result();
-
-    // Archived users pagination
-    $archivedPage = isset($_GET['archived_page']) ? (int)$_GET['archived_page'] : 1;
-    $archivedOffset = ($archivedPage - 1) * $limit;
-
-    $archivedCountQuery = "SELECT COUNT(*) as total FROM tbl_archive";
-    $archivedCountResult = $conn->query($archivedCountQuery);
-    $totalArchived = $archivedCountResult->fetch_assoc()['total'];
-    $totalArchivedPages = ceil($totalArchived / $limit);
-
-    $archivedUsersQuery = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_archive LIMIT ?, ?";
-    $stmt = $conn->prepare($archivedUsersQuery);
-    if (!$stmt) {
-        die("Prepare failed: " . $conn->error);
-    }
-    $stmt->bind_param("ii", $archivedOffset, $limit);
-    $stmt->execute();
-    $archivedResult = $stmt->get_result();
-} else {
-    echo "Database connection failed.";
-    exit();
+$sql = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_user WHERE u_status IN ('active', 'pending') LIMIT ?, ?";
+$stmt = $conn->prepare($sql);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
 }
+$stmt->bind_param("ii", $offset, $limit);
+$stmt->execute();
+$activeAndPendingUsers = $stmt->get_result();
+$stmt->close();
+
+// Pagination for archived users
+$archivedPage = isset($_GET['archived_page']) ? (int)$_GET['archived_page'] : 1;
+$archivedOffset = ($archivedPage - 1) * $limit;
+
+$archivedCountQuery = "SELECT COUNT(*) as total FROM tbl_archive";
+$archivedCountResult = $conn->query($archivedCountQuery);
+$totalArchived = $archivedCountResult->fetch_assoc()['total'];
+$totalArchivedPages = ceil($totalArchived / $limit);
+
+$archivedUsersQuery = "SELECT u_id, u_fname, u_lname, u_email, u_username, u_type, u_status FROM tbl_archive LIMIT ?, ?";
+$stmt = $conn->prepare($archivedUsersQuery);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+$stmt->bind_param("ii", $archivedOffset, $limit);
+$stmt->execute();
+$archivedResult = $stmt->get_result();
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -417,29 +578,27 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | User Management</title>
-    <link rel="stylesheet" href="view.css"> 
+    <link rel="stylesheet" href="views.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper">
-<div class="sidebar glass-container">
+    <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php" class="active"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>View Service Record</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span> Service Record</span></a></li>
             <li><a href="logs.php"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
             <li><a href="borrowedT.php"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
             <li><a href="returnT.php"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
-            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deployed Records</span></a></li>
+            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deploy Records</span></a></li>
         </ul>
         <footer>
-         <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
-
-
 
     <div class="container">
         <div class="upper"> 
@@ -462,9 +621,9 @@ if ($conn) {
                     </a>
                 </div>
                 <div class="user-details">
-                    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
-                    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
-                </div>
+    <span><?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></span>
+    <small><?php echo htmlspecialchars(ucfirst($userType), ENT_QUOTES, 'UTF-8'); ?></small>
+</div>
                 <a href="settings.php" class="settings-link">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -501,7 +660,7 @@ if ($conn) {
             
             <div id="active-users-tab" class="active">
                 <div>
-                    <button class="add-user-btn" onclick="window.location.href='addU.php'"><i class="fas fa-user-plus"></i> Add New User</button>
+                    <button class="add-user-btn" onclick="showAddUserModal()"><i class="fas fa-user-plus"></i> Add New User</button>
                 </div>
                 <table id="active-users-table">
                     <thead>
@@ -522,16 +681,16 @@ if ($conn) {
                             while ($row = $activeAndPendingUsers->fetch_assoc()) { 
                                 echo "<tr> 
                                         <td>{$row['u_id']}</td> 
-                                        <td>{$row['u_fname']}</td> 
-                                        <td>{$row['u_lname']}</td> 
-                                        <td>{$row['u_email']}</td> 
-                                        <td>{$row['u_username']}</td> 
+                                        <td>" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
                                         <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
                                         <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='edit-btn' href='editU.php?id=" . htmlspecialchars($row['u_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Archive'><i class='fas fa-archive'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a class='edit-btn' onclick=\"showEditUserModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "', '{$row['u_type']}', '{$row['u_status']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                                            <a class='archive-btn' onclick=\"showArchiveModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'] . ' ' . $row['u_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
                                         </td>
                                     </tr>"; 
                             } 
@@ -584,16 +743,16 @@ if ($conn) {
                             while ($row = $archivedResult->fetch_assoc()) { 
                                 echo "<tr> 
                                         <td>{$row['u_id']}</td> 
-                                        <td>{$row['u_fname']}</td> 
-                                        <td>{$row['u_lname']}</td> 
-                                        <td>{$row['u_email']}</td> 
-                                        <td>{$row['u_username']}</td> 
+                                        <td>" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "</td> 
+                                        <td>" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "</td> 
                                         <td>" . ucfirst(strtolower($row['u_type'])) . "</td> 
                                         <td class='status-" . strtolower($row['u_status']) . "'>" . ucfirst(strtolower($row['u_status'])) . "</td>
                                         <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '{$row['u_fname']}', '{$row['u_lname']}', '{$row['u_email']}', '{$row['u_username']}', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
-                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '{$row['u_fname']} {$row['u_lname']}')\" title='Delete'><i class='fas fa-trash'></i></a>
+                                            <a class='view-btn' onclick=\"showViewModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['u_username'], ENT_QUOTES, 'UTF-8') . "', '{$row['u_type']}', '{$row['u_status']}')\" title='View'><i class='fas fa-eye'></i></a>
+                                            <a class='unarchive-btn' onclick=\"showRestoreModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'] . ' ' . $row['u_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Unarchive'><i class='fas fa-box-open'></i></a>
+                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['u_id']}', '" . htmlspecialchars($row['u_fname'] . ' ' . $row['u_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                                         </td>
                                     </tr>"; 
                             } 
@@ -710,6 +869,84 @@ if ($conn) {
     </div>
 </div>
 
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New User</h2>
+        </div>
+        <form method="POST" id="addUserForm" class="modal-form">
+            <input type="hidden" name="add_user" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <label for="add_firstname">First Name</label>
+            <input type="text" name="firstname" id="add_firstname" required>
+            <span class="error"><?php echo $firstnameErr; ?></span>
+            <label for="add_lastname">Last Name</label>
+            <input type="text" name="lastname" id="add_lastname" required>
+            <span class="error"><?php echo $lastnameErr; ?></span>
+            <label for="add_email">Email</label>
+            <input type="email" name="email" id="add_email" required>
+            <span class="error"><?php echo $emailErr; ?></span>
+            <label for="add_username">Username</label>
+            <input type="text" name="username" id="add_username" required>
+            <span class="error"><?php echo $usernameErr; ?></span>
+            <label for="add_password">Password</label>
+            <input type="password" name="password" id="add_password" required>
+            <span class="error"><?php echo $passwordErr; ?></span>
+            <label for="add_type">Type</label>
+            <select name="type" id="add_type" required>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+            </select>
+            <label for="add_status">Status</label>
+            <select name="status" id="add_status" required>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+            </select>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('addUserModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Add User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit User</h2>
+        </div>
+        <form method="POST" id="editUserForm" class="modal-form">
+            <input type="hidden" name="edit_user" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <input type="hidden" name="u_id" id="edit_u_id">
+            <label for="edit_firstname">First Name</label>
+            <input type="text" name="firstname" id="edit_firstname" required>
+            <label for="edit_lastname">Last Name</label>
+            <input type="text" name="lastname" id="edit_lastname" required>
+            <label for="edit_email">Email</label>
+            <input type="email" name="email" id="edit_email" required>
+            <label for="edit_username">Username</label>
+            <input type="text" name="username" id="edit_username" required>
+            <label for="edit_type">Type</label>
+            <select name="type" id="edit_type" required>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+            </select>
+            <label for="edit_status">Status</label>
+            <select name="status" id="edit_status" required>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+            </select>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('editUserModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Update User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     let currentSearchPage = 1;
     let defaultPage = <?php echo json_encode($page); ?>;
@@ -803,25 +1040,20 @@ if ($conn) {
         document.getElementById('restoreAllModal').style.display = 'block';
     }
 
-    function searchUsers(page = 1) {
-        const searchTerm = document.getElementById('searchInput').value;
-        const activeTab = document.querySelector('.tab-btn.active').textContent.toLowerCase();
-        const tab = activeTab.includes('user') ? 'active' : 'archived';
-        const tbody = tab === 'active' ? document.getElementById('active-users-tbody') : document.getElementById('archived-users-tbody');
-        const paginationContainer = tab === 'active' ? document.getElementById('active-users-pagination') : document.getElementById('archived-users-pagination');
-        const defaultPageToUse = tab === 'active' ? defaultPage : defaultArchivedPage;
+    function showAddUserModal() {
+        document.getElementById('addUserForm').reset();
+        document.getElementById('addUserModal').style.display = 'block';
+    }
 
-        currentSearchPage = page;
-
-        // Create XMLHttpRequest for AJAX
-        const xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                tbody.innerHTML = xhr.responseText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-            }
-        };
-        xhr.open('GET', `viewU.php?action=search&search=${encodeURIComponent(searchTerm)}&tab=${tab}&search_page=${searchTerm ? page : defaultPageToUse}`, true);
-        xhr.send();
+    function showEditUserModal(id, fname, lname, email, username, type, status) {
+        document.getElementById('edit_u_id').value = id;
+        document.getElementById('edit_firstname').value = fname;
+        document.getElementById('edit_lastname').value = lname;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_username').value = username;
+        document.getElementById('edit_type').value = type.toLowerCase();
+        document.getElementById('edit_status').value = status.toLowerCase();
+        document.getElementById('editUserModal').style.display = 'block';
     }
 
     function updatePagination(currentPage, totalPages, tab, searchTerm) {
@@ -845,8 +1077,91 @@ if ($conn) {
         paginationContainer.innerHTML = paginationHtml;
     }
 
-    // Debounced search function     
+    function searchUsers(page = 1) {
+        const searchTerm = document.getElementById('searchInput').value;
+        const activeTab = document.querySelector('.tab-btn.active').textContent.toLowerCase();
+        const tab = activeTab.includes('user') ? 'active' : 'archived';
+        const tbody = tab === 'active' ? document.getElementById('active-users-tbody') : document.getElementById('archived-users-tbody');
+        const defaultPageToUse = tab === 'active' ? defaultPage : defaultArchivedPage;
+
+        currentSearchPage = page;
+
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    tbody.innerHTML = response.html;
+                    updatePagination(response.currentPage, response.totalPages, response.tab, response.searchTerm);
+                } catch (e) {
+                    console.error('Error parsing JSON:', e, xhr.responseText);
+                }
+            }
+        };
+        xhr.open('GET', `viewU.php?action=search&search=${encodeURIComponent(searchTerm)}&tab=${tab}&search_page=${searchTerm ? page : defaultPageToUse}`, true);
+        xhr.send();
+    }
+
+    // Handle Add User form submission via AJAX
+    document.getElementById('addUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'viewU.php', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                const alertContainer = document.querySelector('.alert-container');
+                const alert = document.createElement('div');
+                alert.className = `alert ${response.success ? 'alert-success' : 'alert-error'}`;
+                alert.textContent = response.message;
+                alertContainer.appendChild(alert);
+                setTimeout(() => {
+                    alert.classList.add('alert-hidden');
+                    setTimeout(() => alert.remove(), 500);
+                }, 2000);
+                if (response.success) {
+                    closeModal('addUserModal');
+                    searchUsers(defaultPage);
+                }
+            }
+        };
+        xhr.send(formData);
+    });
+
+    // Handle Edit User form submission via AJAX
+    document.getElementById('editUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'viewU.php', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                const alertContainer = document.querySelector('.alert-container');
+                const alert = document.createElement('div');
+                alert.className = `alert ${response.success ? 'alert-success' : 'alert-error'}`;
+                alert.textContent = response.message;
+                alertContainer.appendChild(alert);
+                setTimeout(() => {
+                    alert.classList.add('alert-hidden');
+                    setTimeout(() => alert.remove(), 500);
+                }, 2000);
+                if (response.success) {
+                    closeModal('editUserModal');
+                    searchUsers(defaultPage);
+                }
+            }
+        };
+        xhr.send(formData);
+    });
+
+    // Debounced search function
     const debouncedSearchUsers = debounce(searchUsers, 300);
 </script>
 </body>
 </html>
+
+<?php
+$conn->close();
+?>

@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 include 'db.php';
@@ -26,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_asset']) && is
     exit();
 }
 
-// Handle AJAX request for asset name
-if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated']) && !isset($_GET['action'])) {
+// Handle AJAX request for asset name (for view modal)
+if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !isset($_GET['updated']) && !isset($_GET['action']) && !isset($_GET['edit'])) {
     error_log('AJAX handler triggered for id: ' . $_GET['id']);
     header('Content-Type: application/json');
     $id = (int)$_GET['id'];
@@ -49,6 +48,92 @@ if (isset($_GET['id']) && !isset($_GET['page']) && !isset($_GET['deleted']) && !
         echo json_encode(['assetName' => null]);
     }
     
+    $stmt->close();
+    $conn->close();
+    exit();
+}
+
+// Handle AJAX request for edit modal data
+if (isset($_GET['edit']) && $_GET['edit'] === 'true' && isset($_GET['id'])) {
+    header('Content-Type: application/json');
+    $id = (int)$_GET['id'];
+    $sql = "SELECT b_assets_name, b_quantity, b_technician_name, b_technician_id, b_date FROM tbl_borrowed WHERE b_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        echo json_encode($row);
+    } else {
+        echo json_encode(['error' => 'Asset not found']);
+    }
+    
+    $stmt->close();
+    $conn->close();
+    exit();
+}
+
+// Handle AJAX edit form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_asset']) && isset($_POST['b_id'])) {
+    header('Content-Type: application/json');
+    $id = (int)$_POST['b_id'];
+    $asset_name = trim($_POST['b_assets_name']);
+    $quantity = trim($_POST['b_quantity']);
+    $technician_name = trim($_POST['b_technician_name']);
+    $technician_id = trim($_POST['b_technician_id']);
+    $date = trim($_POST['b_date']);
+
+    $errors = [];
+
+    // Validate inputs
+    if (empty($asset_name)) {
+        $errors['b_assets_name'] = "Asset name is required.";
+    } elseif (strlen($asset_name) > 100) {
+        $errors['b_assets_name'] = "Asset name must be 100 characters or less.";
+    }
+
+    if (empty($quantity)) {
+        $errors['b_quantity'] = "Quantity is required.";
+    } elseif (!is_numeric($quantity) || $quantity <= 0) {
+        $errors['b_quantity'] = "Quantity must be a positive number.";
+    }
+
+    if (empty($technician_name)) {
+        $errors['b_technician_name'] = "Technician name is required.";
+    } elseif (strlen($technician_name) > 100) {
+        $errors['b_technician_name'] = "Technician name must be 100 characters or less.";
+    }
+
+    if (empty($technician_id)) {
+        $errors['b_technician_id'] = "Technician ID is required.";
+    } elseif (strlen($technician_id) > 50) {
+        $errors['b_technician_id'] = "Technician ID must be 50 characters or less.";
+    }
+
+    if (empty($date)) {
+        $errors['b_date'] = "Date is required.";
+    } elseif (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $date)) {
+        $errors['b_date'] = "Invalid date format.";
+    }
+
+    if (!empty($errors)) {
+        echo json_encode(['success' => false, 'errors' => $errors]);
+        $conn->close();
+        exit();
+    }
+
+    // If no errors, update the record
+    $sql = "UPDATE tbl_borrowed SET b_assets_name = ?, b_quantity = ?, b_technician_name = ?, b_technician_id = ?, b_date = ? WHERE b_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sissis", $asset_name, $quantity, $technician_name, $technician_id, $date, $id);
+
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Record updated successfully!']);
+    } else {
+        echo json_encode(['success' => false, 'errors' => ['general' => 'Error updating record: ' . $conn->error]]);
+    }
+
     $stmt->close();
     $conn->close();
     exit();
@@ -111,7 +196,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
                           <td>{$row['b_date']}</td> 
                           <td class='action-buttons'>
                               <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                              <a href='editB.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                              <a class='edit-btn' onclick=\"showEditModal('{$row['b_id']}')\" title='Edit'><i class='fas fa-edit'></i></a>
                               <a class='delete-btn' onclick=\"showDeleteModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                           </td>
                         </tr>";
@@ -199,7 +284,7 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Borrowed Assets</title>
-    <link rel="stylesheet" href="borrowedTB.css"> 
+    <link rel="stylesheet" href="borrowedT.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -209,20 +294,18 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
     <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
-        <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>View Service Record</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>Service Record</span></a></li>
             <li><a href="logs.php"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
             <li><a href="borrowedT.php" class="active"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
             <li><a href="returnT.php"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
-            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deployed Records</span></a></li>
+            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deploy Records</span></a></li>
         </ul>
         <footer>
         <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
-
 
     <div class="container">
         <div class="upper"> 
@@ -289,27 +372,27 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <?php 
-                        if ($resultBorrowed && $resultBorrowed->num_rows > 0) { 
-                            while ($row = $resultBorrowed->fetch_assoc()) { 
-                                echo "<tr> 
-                                        <td>{$row['b_id']}</td> 
-                                        <td>" . (isset($row['b_assets_name']) ? htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
-                                        <td>{$row['b_quantity']}</td>
-                                        <td>{$row['b_technician_name']}</td>
-                                        <td>{$row['b_technician_id']}</td>    
-                                        <td>{$row['b_date']}</td> 
-                                        <td class='action-buttons'>
-                                            <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                            <a href='editB.php?id={$row['b_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
-                                            <a class='delete-btn' onclick=\"showDeleteModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
-                                        </td>
-                                      </tr>"; 
-                            } 
-                        } else { 
-                            echo "<tr><td colspan='7'>No borrowed assets found.</td></tr>"; 
-                        } 
-                        ?>
+                    <?php 
+if ($resultBorrowed && $resultBorrowed->num_rows > 0) { 
+    while ($row = $resultBorrowed->fetch_assoc()) { 
+        echo "<tr> 
+                <td>{$row['b_id']}</td> 
+                <td>" . (isset($row['b_assets_name']) ? htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') : 'N/A') . "</td>  
+                <td>{$row['b_quantity']}</td>
+                <td>{$row['b_technician_name']}</td>
+                <td>{$row['b_technician_id']}</td>    
+                <td>{$row['b_date']}</td> 
+                <td class='action-buttons'>
+                    <a class='view-btn' onclick=\"showViewModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['b_quantity']}', '{$row['b_technician_name']}', '{$row['b_technician_id']}', '{$row['b_date']}')\" title='View'><i class='fas fa-eye'></i></a>
+                    <a class='edit-btn' onclick=\"showEditModal('{$row['b_id']}')\" title='Edit'><i class='fas fa-edit'></i></a>
+                    <a class='delete-btn' onclick=\"showDeleteModal('{$row['b_id']}', '" . htmlspecialchars($row['b_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
+                </td>
+              </tr>"; 
+    } 
+} else { 
+    echo "<tr><td colspan='7'>No borrowed assets found.</td></tr>"; 
+} 
+?>
                     </tbody>
                 </table>
 
@@ -336,30 +419,64 @@ if (isset($_GET['updated']) && $_GET['updated'] == 'true') {
 <!-- View Modal -->
 <div id="viewModal" class="modal">
     <div class="modal-content">
-        <h2>View Borrowed Asset</h2>
-        <div id="viewModalContent" style="margin-top: 20px;">
-
+        <div class="modal-header">
+            <h2>View Borrowed Asset</h2>
+        </div>
+        <div id="viewModalContent" style="margin-top: 20px;"></div>
         <div class="modal-footer">
             <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
-        </div>
-
         </div>
     </div>
 </div>
 
-
-<div id="viewModal" class="modal">
+<!-- Edit Modal -->
+<div id="editBorrowedModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Returned Asset</h2>
+            <h2>Edit Borrowed Asset</h2>
         </div>
-        <div id="viewContent"></div>
-        <div class="modal-footer">
-            <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
-        </div>
+        <form method="POST" id="editBorrowedForm" class="modal-form">
+            <input type="hidden" name="edit_asset" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <input type="hidden" name="b_id" id="edit_b_id">
+            
+            <div class="form-group">
+                <label for="edit_b_assets_name">Asset Name</label>
+                <input type="text" name="b_assets_name" id="edit_b_assets_name" required>
+                <span class="error-message" id="error_b_assets_name"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_b_quantity">Quantity</label>
+                <input type="number" name="b_quantity" id="edit_b_quantity" min="1" required>
+                <span class="error-message" id="error_b_quantity"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_b_technician_name">Technician Name</label>
+                <input type="text" name="b_technician_name" id="edit_b_technician_name" required>
+                <span class="error-message" id="error_b_technician_name"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_b_technician_id">Technician ID</label>
+                <input type="text" name="b_technician_id" id="edit_b_technician_id" required>
+                <span class="error-message" id="error_b_technician_id"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_b_date">Borrowed Date</label>
+                <input type="date" name="b_date" id="edit_b_date" required>
+                <span class="error-message" id="error_b_date"></span>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('editBorrowedModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Update Asset</button>
+            </div>
+        </form>
     </div>
 </div>
-
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="modal">
@@ -404,7 +521,6 @@ function searchBorrowed(page = 1) {
 
     currentSearchPage = page;
 
-    // Create XMLHttpRequest for AJAX
     const xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4 && xhr.status === 200) {
@@ -436,7 +552,6 @@ function updatePagination(currentPage, totalPages, searchTerm) {
     paginationContainer.innerHTML = paginationHtml;
 }
 
-// Debounced search function
 const debouncedSearchBorrowed = debounce(searchBorrowed, 300);
 
 function showViewModal(id, assetName, quantity, technicianName, technicianId, date) {
@@ -451,8 +566,32 @@ function showViewModal(id, assetName, quantity, technicianName, technicianId, da
     document.getElementById('viewModal').style.display = 'flex';
 }
 
+function showEditModal(id) {
+    fetch(`borrowedT.php?edit=true&id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            // Clear previous error messages
+            document.querySelectorAll('.error-message').forEach(span => span.textContent = '');
+            // Populate form fields
+            document.getElementById('edit_b_id').value = id;
+            document.getElementById('edit_b_assets_name').value = data.b_assets_name || '';
+            document.getElementById('edit_b_quantity').value = data.b_quantity || 1;
+            document.getElementById('edit_b_technician_name').value = data.b_technician_name || '';
+            document.getElementById('edit_b_technician_id').value = data.b_technician_id || '';
+            document.getElementById('edit_b_date').value = data.b_date || '';
+            document.getElementById('editBorrowedModal').style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Error fetching asset data:', error);
+            alert('Failed to load asset data.');
+        });
+}
+
 function showDeleteModal(id, assetName) {
-    console.log('showDeleteModal called with id:', id, 'assetName:', assetName);
     document.getElementById('deleteAssetName').textContent = assetName || 'Unknown Asset';
     document.getElementById('deleteAssetId').value = id;
     document.getElementById('deleteModal').style.display = 'flex';
@@ -477,18 +616,68 @@ function updateTable() {
 }
 
 function closeModal(modalId) {
-    console.log('closeModal called for:', modalId);
     document.getElementById(modalId).style.display = 'none';
+    // Clear error messages when closing edit modal
+    if (modalId === 'editBorrowedModal') {
+        document.querySelectorAll('.error-message').forEach(span => span.textContent = '');
+    }
 }
 
 window.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal')) {
-        console.log('Clicked outside modal, closing');
-        event.target.style.display = 'none';
+        closeModal(event.target.id);
     }
 });
 
-// Initialize auto-update table every 30 seconds
+// Handle edit form submission
+document.getElementById('editBorrowedForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('borrowedT.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Clear previous error messages
+        document.querySelectorAll('.error-message').forEach(span => span.textContent = '');
+        
+        if (data.success) {
+            closeModal('editBorrowedModal');
+            updateTable();
+            // Show success message
+            const alertContainer = document.querySelector('.alert-container');
+            alertContainer.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            setTimeout(() => {
+                const alert = alertContainer.querySelector('.alert');
+                if (alert) {
+                    alert.classList.add('alert-hidden');
+                    setTimeout(() => alert.remove(), 500);
+                }
+            }, 2000);
+        } else {
+            // Display validation errors
+            if (data.errors) {
+                for (const [field, error] of Object.entries(data.errors)) {
+                    const errorSpan = document.getElementById(`error_${field}`);
+                    if (errorSpan) {
+                        errorSpan.textContent = error;
+                    }
+                }
+            }
+            if (data.errors?.general) {
+                alert(data.errors.general);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting form:', error);
+        alert('Failed to update asset.');
+    });
+});
+
+// Initialize auto-update table and handle alerts
 document.addEventListener('DOMContentLoaded', () => {
     updateInterval = setInterval(updateTable, 30000);
 

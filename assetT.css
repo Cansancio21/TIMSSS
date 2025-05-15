@@ -642,7 +642,7 @@ tr:hover td {
 .settings-link {
     position: absolute;
     right: 40px;
-    margin-top: -15px;
+    top: 10;
     display: flex;
     align-items: center;
     text-decoration: none;
@@ -658,6 +658,35 @@ tr:hover td {
     transition: 0.3s ease-in-out;
     color: #dad9d9;
 }
+
+.settings-link:hover span {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Empty state styling */
+.empty-state {
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #666;
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.alert-hidden {
+    opacity: 0;
+}
+
+
 
 
 .add-btn {
@@ -758,35 +787,4 @@ tr:hover td {
 }
 
 
-.settings-link i {
-    font-size: 24px;
-    margin-right: 5px;
-    transition: 0.3s ease-in-out;
-}
-
-.settings-link:hover span {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-/* Empty state styling */
-.empty-state {
-    height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #666;
-    border: 1px dashed #ddd;
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-.alert {
-    transition: opacity 0.5s ease-out;
-}
-.alert-hidden {
-    opacity: 0;
-    display: none;
-}
 

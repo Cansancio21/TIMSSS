@@ -130,7 +130,7 @@ if (!$logResult) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Logs</title>
-    <link rel="stylesheet" href="logss.css">
+    <link rel="stylesheet" href="logs.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -141,11 +141,11 @@ if (!$logResult) {
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>View Service Record</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span> Service Record</span></a></li>
             <li><a href="logs.php" class="active"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
             <li><a href="borrowedT.php"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
             <li><a href="returnT.php"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
-            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deployed Records</span></a></li>
+            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deploy Records</span></a></li>
         </ul>
         <footer>
         <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>

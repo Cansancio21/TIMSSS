@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 include 'db.php';
@@ -7,6 +6,64 @@ include 'db.php';
 if (!isset($_SESSION['username'])) { 
     header("Location: index.php");
     exit(); 
+}
+
+// Initialize variables for edit form
+$return_assetsname = $return_quantity = $return_techname = $return_techid = $return_date = "";
+$return_assetsnameErr = $return_quantityErr = $return_technameErr = $return_techidErr = "";
+
+// Handle edit request via AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_asset']) && isset($_POST['r_id'])) {
+    $id = (int)$_POST['r_id'];
+    $return_assetsname = trim($_POST['asset_name']);
+    $return_quantity = trim($_POST['return_quantity']);
+    $return_techname = trim($_POST['tech_name']);
+    $return_techid = trim($_POST['tech_id']);
+    $return_date = trim($_POST['date']);
+
+    // Basic validation
+    $errors = [];
+    $return_quantity = filter_var($return_quantity, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]);
+    if (empty($return_assetsname)) {
+        $errors[] = "Asset name is required.";
+    }
+    if ($return_quantity === false) {
+        $errors[] = "Quantity must be a positive integer.";
+    }
+    if (empty($return_techname)) {
+        $errors[] = "Technician name is required.";
+    }
+    if (empty($return_techid)) {
+        $errors[] = "Technician ID is required.";
+    }
+    if (empty($return_date) || !strtotime($return_date)) {
+        $errors[] = "Valid return date is required.";
+    }
+
+    if (empty($errors)) {
+        $sqlUpdate = "UPDATE tbl_returned SET r_assets_name = ?, r_quantity = ?, r_technician_name = ?, r_technician_id = ?, r_date = ? WHERE r_id = ?";
+        $stmtUpdate = $conn->prepare($sqlUpdate);
+        $stmtUpdate->bind_param("sisssi", $return_assetsname, $return_quantity, $return_techname, $return_techid, $return_date, $id);
+
+        if ($stmtUpdate->execute()) {
+            $response = ['status' => 'success', 'message' => 'Record updated successfully!'];
+        } else {
+            $response = ['status' => 'error', 'message' => 'Error updating record: ' . $conn->error];
+        }
+        $stmtUpdate->close();
+    } else {
+        $response = ['status' => 'error', 'message' => implode(' ', $errors)];
+    }
+
+    if (isset($_POST['ajax'])) {
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit();
+    } else {
+        $_SESSION[$response['status'] == 'success' ? 'message' : 'error'] = $response['message'];
+        header("Location: returnT.php?updated=true");
+        exit();
+    }
 }
 
 // Handle delete request
@@ -102,7 +159,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
                           <td>{$row['r_date']}</td> 
                           <td class='action-buttons'>
                               <a class='view-btn' onclick=\"showViewModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_quantity']}', '" . htmlspecialchars($row['r_technician_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                              <a href='editR.php?id={$row['r_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                              <a class='edit-btn' onclick=\"showEditModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_quantity']}', '" . htmlspecialchars($row['r_technician_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
                               <a class='delete-btn' onclick=\"showDeleteModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                           </td>
                         </tr>";
@@ -185,22 +242,21 @@ if ($conn) {
 </head>
 <body>
 <div class="wrapper">
-<div class="sidebar glass-container">
+    <div class="sidebar glass-container">
         <h2>Task Management</h2>
         <ul>
             <li><a href="adminD.php"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>View Service Record</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span> Service Record</span></a></li>
             <li><a href="logs.php"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
             <li><a href="borrowedT.php"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
             <li><a href="returnT.php" class="active"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
-            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deployed Records</span></a></li>
+            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deploy Records</span></a></li>
         </ul>
         <footer>
            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
-
 
     <div class="container">
         <div class="upper">
@@ -279,7 +335,7 @@ if ($conn) {
                                     <td>{$row['r_date']}</td> 
                                     <td class='action-buttons'>
                                         <a class='view-btn' onclick=\"showViewModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_quantity']}', '" . htmlspecialchars($row['r_technician_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                        <a href='editR.php?id={$row['r_id']}' class='edit-btn' title='Edit'><i class='fas fa-edit'></i></a>
+                                        <a class='edit-btn' onclick=\"showEditModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_quantity']}', '" . htmlspecialchars($row['r_technician_name'], ENT_QUOTES, 'UTF-8') . "', '{$row['r_technician_id']}', '{$row['r_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
                                         <a class='delete-btn' onclick=\"showDeleteModal('{$row['r_id']}', '" . htmlspecialchars($row['r_assets_name'], ENT_QUOTES, 'UTF-8') . "')\" title='Delete'><i class='fas fa-trash'></i></a>
                                     </td>
                                   </tr>"; 
@@ -320,6 +376,34 @@ if ($conn) {
         <div class="modal-footer">
             <button class="modal-btn cancel" onclick="closeModal('viewModal')">Close</button>
         </div>
+    </div>
+</div>
+
+<!-- Edit Asset Modal -->
+<div id="editAssetModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Returned Asset</h2>
+        </div>
+        <form method="POST" id="editAssetForm" class="modal-form">
+            <input type="hidden" name="edit_asset" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <input type="hidden" name="r_id" id="edit_r_id">
+            <label for="edit_asset_name">Asset Name</label>
+            <input type="text" name="asset_name" id="edit_asset_name" required>
+            <label for="edit_return_quantity">Quantity</label>
+            <input type="number" name="return_quantity" id="edit_return_quantity" min="1" required>
+            <label for="edit_tech_name">Technician Name</label>
+            <input type="text" name="tech_name" id="edit_tech_name" required>
+            <label for="edit_tech_id">Technician ID</label>
+            <input type="text" name="tech_id" id="edit_tech_id" required>
+            <label for="edit_date">Return Date</label>
+            <input type="date" name="date" id="edit_date" required>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('editAssetModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Update Asset</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -415,8 +499,17 @@ function showViewModal(id, name, quantity, techName, techId, date) {
     document.getElementById('viewModal').style.display = 'block';
 }
 
+function showEditModal(id, name, quantity, techName, techId, date) {
+    document.getElementById('edit_r_id').value = id;
+    document.getElementById('edit_asset_name').value = name;
+    document.getElementById('edit_return_quantity').value = quantity;
+    document.getElementById('edit_tech_name').value = techName;
+    document.getElementById('edit_tech_id').value = techId;
+    document.getElementById('edit_date').value = date;
+    document.getElementById('editAssetModal').style.display = 'block';
+}
+
 function showDeleteModal(id, name) {
-    console.log('showDeleteModal called with id:', id, 'name:', name);
     document.getElementById('deleteAssetName').textContent = name || 'Unknown Asset';
     document.getElementById('deleteAssetId').value = id;
     document.getElementById('deleteModal').style.display = 'block';
@@ -441,15 +534,55 @@ function updateTable() {
 }
 
 function closeModal(modalId) {
-    console.log('closeModal called for:', modalId);
     document.getElementById(modalId).style.display = 'none';
 }
 
 window.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal')) {
-        console.log('Clicked outside modal, closing');
         event.target.style.display = 'none';
     }
+});
+
+// Handle edit form submission via AJAX
+document.getElementById('editAssetForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('returnT.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertContainer = document.querySelector('.alert-container');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${data.status}`;
+        alert.textContent = data.message;
+        alertContainer.appendChild(alert);
+
+        setTimeout(() => {
+            alert.classList.add('alert-hidden');
+            setTimeout(() => alert.remove(), 500);
+        }, 2000);
+
+        if (data.status === 'success') {
+            closeModal('editAssetModal');
+            updateTable();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const alertContainer = document.querySelector('.alert-container');
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-error';
+        alert.textContent = 'An error occurred while updating the record.';
+        alertContainer.appendChild(alert);
+
+        setTimeout(() => {
+            alert.classList.add('alert-hidden');
+            setTimeout(() => alert.remove(), 500);
+        }, 2000);
+    });
 });
 
 // Initialize auto-update table every 30 seconds

@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 include 'db.php';
@@ -92,7 +91,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
                     <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                     <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                     <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
-                    <a class='ticket-btn' href='createTickets.php?aname=" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>";
+                    <a class='ticket-btn' onclick=\"showAddTicketModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Ticket'><i class='fas fa-ticket-alt'></i></a>";
             } else {
                 echo "
                     <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($displayStatus, ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
@@ -235,6 +234,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $stmt->close();
         $tab = 'customers_archived';
+    } elseif (isset($_POST['add_ticket'])) {
+        $c_id = $_POST['c_id'];
+        $account_name = $_POST['account_name'];
+        $issue_type = $_POST['issue_type'];
+        $ticket_status = $_POST['ticket_status'];
+        $ticket_details = $_POST['ticket_details'];
+        $date = $_POST['date'];
+
+        // Basic validation
+        $errors = [];
+        if (empty($account_name)) {
+            $errors[] = "Account name is required.";
+        }
+        if (empty($issue_type)) {
+            $errors[] = "Issue type is required.";
+        }
+        if (empty($ticket_status)) {
+            $errors[] = "Ticket status is required.";
+        }
+        if (empty($ticket_details)) {
+            $errors[] = "Ticket details are required.";
+        }
+        if (empty($date)) {
+            $errors[] = "Date issued is required.";
+        }
+
+        if (empty($errors)) {
+            $sql = "INSERT INTO tbl_ticket (c_id, t_accountname, t_type, t_status, t_details, t_date) 
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                $_SESSION['error'] = "Prepare failed: " . $conn->error;
+            } else {
+                $stmt->bind_param("isssss", $c_id, $account_name, $issue_type, $ticket_status, $ticket_details, $date);
+                if ($stmt->execute()) {
+                    $_SESSION['message'] = "Ticket added successfully!";
+                } else {
+                    $_SESSION['error'] = "Error adding ticket: " . $stmt->error;
+                }
+                $stmt->close();
+            }
+        } else {
+            $_SESSION['error'] = implode(" ", $errors);
+        }
+        $tab = 'customers_active';
     }
 
     header("Location: customersT.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
@@ -304,7 +348,7 @@ if ($conn) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registered Customers</title>
-    <link rel="stylesheet" href="customersTB.css">
+    <link rel="stylesheet" href="customersT.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -421,7 +465,7 @@ if ($conn) {
                                             <a class='view-btn' onclick=\"showViewModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_lname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_address'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_contact'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_email'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_date'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napname'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_napport'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_macaddress'], ENT_QUOTES, 'UTF-8') . "', '" . htmlspecialchars($row['c_status'] ?? '', ENT_QUOTES, 'UTF-8') . "')\" title='View'><i class='fas fa-eye'></i></a>
                                             <a class='edit-btn' href='editC.php?id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
                                             <a class='archive-btn' onclick=\"showArchiveModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>
-                                            <a class='ticket-btn' href='createTickets.php?aname=" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "&id=" . htmlspecialchars($row['c_id'], ENT_QUOTES, 'UTF-8') . "' title='Ticket'><i class='fas fa-ticket-alt'></i></a>
+                                            <a class='ticket-btn' onclick=\"showAddTicketModal('{$row['c_id']}', '" . htmlspecialchars($row['c_fname'] . ' ' . $row['c_lname'], ENT_QUOTES, 'UTF-8') . "')\" title='Ticket'><i class='fas fa-ticket-alt'></i></a>
                                         </td>
                                       </tr>";
                             }
@@ -590,6 +634,47 @@ if ($conn) {
     </div>
 </div>
 
+<!-- Add Ticket Modal -->
+<div id="addTicketModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Ticket</h2>
+        </div>
+        <form method="POST" id="addTicketForm" class="modal-form">
+            <input type="hidden" name="add_ticket" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <input type="hidden" name="c_id" id="ticketCustomerId">
+            <label for="account_name">Account Name</label>
+            <input type="text" name="account_name" id="account_name" required readonly>
+            <span class="error" id="accountnameErr"></span>
+            <label for="issue_type">Issue Type</label>
+            <select name="issue_type" id="issue_type" required>
+                <option value="">Select Issue Type</option>
+                <option value="critical">Critical</option>
+                <option value="minor">Minor</option>
+            </select>
+            <span class="error" id="issuetypeError"></span>
+            <label for="ticket_status">Ticket Status</label>
+            <select name="ticket_status" id="ticket_status" required>
+                <option value="">Select Status</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+            </select>
+            <span class="error" id="ticketstatusErr"></span>
+            <label for="ticket_details">Ticket Details</label>
+            <textarea name="ticket_details" id="ticket_details" required></textarea>
+            <span class="error" id="issuedetailsErr"></span>
+            <label for="date">Date Issued</label>
+            <input type="date" name="date" id="date" required>
+            <span class="error" id="dobErr"></span>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('addTicketModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Add Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 let currentSearchPage = 1;
 let updateInterval = null;
@@ -747,6 +832,62 @@ function showDeleteModal(id, name) {
     document.getElementById('deleteCustomerName').innerText = name;
     document.getElementById('deleteModal').style.display = 'block';
 }
+
+function showAddTicketModal(id, name) {
+    console.log('showAddTicketModal called with id:', id, 'name:', name);
+    // Clear previous errors
+    document.querySelectorAll('.modal-form .error').forEach(el => el.innerText = '');
+    // Set form values
+    document.getElementById('ticketCustomerId').value = id;
+    document.getElementById('account_name').value = name;
+    document.getElementById('issue_type').value = '';
+    document.getElementById('ticket_status').value = '';
+    document.getElementById('ticket_details').value = '';
+    document.getElementById('date').value = '';
+    // Show modal
+    document.getElementById('addTicketModal').style.display = 'block';
+}
+
+// Handle form submission with AJAX
+document.getElementById('addTicketForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('customersT.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => {
+        closeModal('addTicketModal');
+        // Show alert
+        const alertContainer = document.querySelector('.alert-container');
+        alertContainer.innerHTML = `
+            <div class="alert alert-success">
+                ${formData.get('add_ticket') ? 'Ticket added successfully!' : 'Operation completed!'}
+            </div>`;
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+                alert.classList.add('alert-hidden');
+                setTimeout(() => alert.remove(), 500);
+            }
+        }, 2000);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const alertContainer = document.querySelector('.alert-container');
+        alertContainer.innerHTML = `
+            <div class="alert alert-error">Error adding ticket. Please try again.</div>`;
+        setTimeout(() => {
+            const alert = alertContainer.querySelector('.alert');
+            if (alert) {
+                alert.classList.add('alert-hidden');
+                setTimeout(() => alert.remove(), 500);
+            }
+        }, 2000);
+    });
+});
 
 function updateTable() {
     const searchTerm = document.getElementById('searchInput').value;

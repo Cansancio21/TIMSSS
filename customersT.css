@@ -19,6 +19,7 @@
 body {
     background-color: #f8f9fa;
     color: var(--dark);
+    min-height: 100vh;
 }
 
 .glass-container {
@@ -33,6 +34,7 @@ body {
 .wrapper {
     display: flex;
     min-height: 100vh;
+    width: 100%;
 }
 
 /* Sidebar */
@@ -114,8 +116,13 @@ body {
     margin-right: 10px;
 }
 
+footer .back-home img {
+    width: 35px;
+    height: 35px;
+}
+
 footer {
-    margin-top: 220px;
+    margin-top: auto;
     width: 100%;
     padding: 0 15px;
     text-align: center;
@@ -148,7 +155,7 @@ footer {
     flex: 1;
     margin-left: 200px;
     padding: 30px;
-    margin-top: -15px;
+    padding-top: 100px;
 }
 
 /* Header */
@@ -160,7 +167,15 @@ footer {
     background: linear-gradient(135deg, #3d28e2, #594fdd);
     color: white;
     border-radius: 10px;
-    margin-bottom: 20px;
+    position: fixed;
+    margin-top: 15px;
+    top: 0;
+    left: 230px; /* Match sidebar width */
+    right: 30px; /* Match container padding */
+    z-index: 100;
+    height: 70px; /* Fixed height */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
 }
 
 .upper h1 {
@@ -172,6 +187,7 @@ footer {
 .search-container {
     position: relative;
     width: 300px;
+    margin-left: 20px;
 }
 
 .search-bar {
@@ -237,17 +253,8 @@ footer {
     margin-left: -300px;
 }
 
-/* Table Box */
-.table-box {
-    width: 100%;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
-    min-height: 600px;
-    display: flex;
-    flex-direction: column;
+.table-box h2{
+    margin-top: 15px;
 }
 
 .username {
@@ -263,9 +270,34 @@ footer {
     margin-left: 5px;
 }
 
+.export-btn {
+    position: absolute;
+    top: 60px;
+    right: 190px;
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    border: none; /* Remove border */
+    outline: none; /* Remove outline on focus */
+}
+
+
+.export-btn:hover {
+    background-color: #7494ec;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+}
+
+
 .add-user-btn {
     position: absolute;
-    top: 65px;
+    top: 60px;
     right: 20px;
     display: inline-flex;
     align-items: center;
@@ -276,10 +308,12 @@ footer {
     text-decoration: none;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    border: none; /* Remove border */
+    outline: none; /* Remove outline on focus */
 }
 
 .add-user-btn:hover {
-    background: var(--secondary);
+    background-color: #7494ec;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
 }
@@ -288,11 +322,14 @@ footer {
     margin-right: 8px;
 }
 
+.export-btn i {
+    margin-right: 8px;
+}
 /* Tabs */
 .tab-buttons {
     display: flex;
     margin-bottom: 15px;
-    margin-top: 50px;
+    margin-top: 20px;
 }
 
 .tab-btn {
@@ -337,14 +374,27 @@ footer {
 #archived-users-tab.active {
     display: flex;
 }
+.table-box {
+    width: 100%;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    min-height: 60vh;
+    overflow: visible;
+    margin-top: -15px;
+}
 
+/* Optimized Table Structure */
 table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 90px;
-    table-layout: auto;
+    border-collapse: collapse;
+    margin-top: 15px;
+    table-layout: fixed; /* Essential for equal column widths */
+    margin-top: 25px;
 }
+
 
 thead {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -369,13 +419,15 @@ th:last-child {
     border-top-right-radius: 10px;
 }
 
+
+
 td {
-    padding: 10px;
+    padding: 8px 5px;
     border-bottom: 1px solid #eee;
-    vertical-align: middle;
     text-align: center;
-    word-wrap: break-word;
-    white-space: normal;
+    font-size: 0.9rem;
+    word-break: break-word;
+    line-height: 1.3;
 }
 
 tr:last-child td {
@@ -400,64 +452,6 @@ tr:hover td {
     font-weight: 500;
 }
 
-/* Action Buttons */
-.delete-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    background-color: #ff6200;
-    color: #fff;
-    border-radius: 5px;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
-}
-
-.delete-btn:hover {
-    background-color: #e55a00;
-    color: #fff;
-}
-
-.delete-btn i {
-    font-size: 16px;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 5px;
-}
-
-.view-btn, .edit-btn, .archive-btn, .unarchive-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 5px;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
-}
-
-.view-btn {
-    background-color: #3498db;
-    color: #fff;
-}
-
-.view-btn:hover {
-    background-color: #2980b9;
-}
-
-.edit-btn {
-    background-color: #2ecc71;
-    color: #fff;
-}
-
-.edit-btn:hover {
-    background-color: #27ae60;
-}
-
-/* Pagination */
 .pagination {
     display: flex;
     justify-content: center;
@@ -500,6 +494,7 @@ tr:hover td {
     color: var(--dark);
 }
 
+/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -567,6 +562,36 @@ tr:hover td {
     border-radius: 5px;
 }
 
+.modal-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    resize: vertical; /* Allows vertical resizing only */
+    min-height: 100px; /* Minimum height for better visibility */
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.modal-form textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.3);
+}
+
+/* Error message styling (already present, but ensuring consistency) */
+.modal-form .error {
+    color: var(--danger);
+    font-size: 12px;
+    display: block;
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
+
+
+
+/* Archive Header */
 .archive-header {
     display: flex;
     justify-content: space-between;
@@ -600,7 +625,7 @@ tr:hover td {
     border-radius: 5px;
     position: absolute;
     top: -5px;
-    left: 15px;
+    left: 5px;
     width: 100%;
     z-index: 1000;
 }
@@ -616,11 +641,10 @@ tr:hover td {
     color: #721c24;
     border: 1px solid #f5c6cb;
 }
-
 .settings-link {
     position: absolute;
     right: 40px;
-    margin-top: -15px;
+    top: 10;
     display: flex;
     align-items: center;
     text-decoration: none;
@@ -636,6 +660,7 @@ tr:hover td {
     transition: 0.3s ease-in-out;
     color: #dad9d9;
 }
+
 .settings-link:hover span {
     opacity: 1;
     transform: translateX(0);
@@ -654,49 +679,100 @@ tr:hover td {
     margin-top: 10px;
 }
 
-.button-container {
-    position: relative;
-    margin-bottom: 20px;
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
 }
 
-.borrow-btn, .return-btn, .export-btn {
-    display: inline-block;
-    color: white;
-    padding: 10px 20px;
+.alert-hidden {
+    opacity: 0;
+}
+
+
+
+
+
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; /* Adjust size as needed */
+    height: 30px;
+    background-color: #ff6200; /* Orange background */
+    color: #fff; /* White icon color */
+    border-radius: 5px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */ 
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
+
+/* Hover effect for delete button */
+.delete-btn:hover {
+    background-color: #e55a00; /* Slightly darker orange on hover */
+    color: #fff; /* Keep icon white */
+}
+
+/* Icon inside delete button */
+.delete-btn i {
+    font-size: 16px; /* Adjust icon size */
+}
+
+/* Ensure consistency with other action buttons */
+.action-buttons {
+    display: flex;
+    gap: 5px; /* Space between action buttons */
+    padding: 23px 5px;
+}
+
+.view-btn, .edit-btn, .archive-btn, .unarchive-btn, .ticket-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
     border-radius: 5px;
     text-decoration: none;
-    font-size: 13px;
-    font-weight: lighter;
-    transition: 0.3s;
-    position: absolute;
-    top: 35px;
-    margin-bottom: 20px;
+    transition: background-color 0.3s ease;
 }
 
-.borrow-btn {
-    background-color: #FFA500;
-    right: 225px;
+/* Example colors for other buttons (optional) */
+.view-btn {
+    background-color: #3498db; /* Blue */
+    color: #fff;
+}
+.view-btn:hover {
+    background-color: #2980b9;
 }
 
-.return-btn {
-    background-color: #8ea722d3;
-    right: 115px;
+.edit-btn {
+    background-color: #2ecc71; /* Green */
+    color: #fff;
+}
+.edit-btn:hover {
+    background-color: #27ae60;
 }
 
-.export-btn {
-    background-color: #63c216;
-    right: 10px;
+.archive-btn {
+    background-color: #f1c40f; /* Yellow */
+    color: #fff;
+}
+.archive-btn:hover {
+    background-color: #d4ac0d;
 }
 
-.borrow-btn:hover {
-    background-color: #7494ec;
+.unarchive-btn {
+    background-color: #9b59b6; /* Purple */
+    color: #fff;
+}
+.unarchive-btn:hover {
+    background-color: #8e44ad;
 }
 
-.return-btn:hover {
-    background-color: #7494ec;
+.ticket-btn {
+    background-color: #9b59b6;
+    color: #fff;
 }
 
-.export-btn:hover {
-    background-color: #7494ec;
+.ticket-btn:hover {
+    background-color: #8e44ad;
 }
 

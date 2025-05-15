@@ -96,11 +96,11 @@ if ($conn) {
         <ul>
             <li><a href="adminD.php" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="viewU.php"><i class="fas fa-users"></i> <span>View Users</span></a></li>
-            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span>View Service Record</span></a></li>
+            <li><a href="view_service_record.php"><i class="fas fa-wrench"></i> <span> Service Record</span></a></li>
             <li><a href="logs.php"><i class="fas fa-file-alt"></i> <span>View Logs</span></a></li>
             <li><a href="borrowedT.php"><i class="fas fa-book"></i> <span>Borrowed Records</span></a></li>
             <li><a href="returnT.php"><i class="fas fa-undo"></i> <span>Returned Records</span></a></li>
-            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deployed Records</span></a></li>
+            <li><a href="deployedT.php"><i class="fas fa-rocket"></i> <span>Deploy Records</span></a></li>
         </ul>
         <footer>
         <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>

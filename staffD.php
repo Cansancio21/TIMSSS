@@ -26,6 +26,12 @@ $avatarPath = $_SESSION['avatarPath'];
 // Fetch user data
 $sqlUser = "SELECT u_fname, u_lname, u_type FROM tbl_user WHERE u_username = ?";
 $stmt = $conn->prepare($sqlUser);
+if (!$stmt) {
+    error_log("Prepare failed for user details: " . $conn->error);
+    $_SESSION['error'] = "Database error fetching user details.";
+    header("Location: index.php");
+    exit();
+}
 $stmt->bind_param("s", $_SESSION['username']);
 $stmt->execute();
 $resultUser = $stmt->get_result();
@@ -54,8 +60,45 @@ if ($resultUser->num_rows > 0) {
 }
 $stmt->close();
 
+// Initialize variables for add ticket validation
+$accountname = $issuedetails = $dob = $issuetype = $ticketstatus = "";
+$accountnameErr = $issuedetailsErr = $dobErr = $issuetypeError = $ticketstatusErr = "";
+$hasError = false;
+
+// Check for pre-filled account name from query parameter
+if (isset($_GET['aname']) && !empty($_GET['aname'])) {
+    $accountname = urldecode(trim($_GET['aname']));
+    // Validate account name against tbl_customer
+    $nameParts = explode(" ", $accountname);
+    if (count($nameParts) >= 2) {
+        $firstNameCustomer = $nameParts[0];
+        $lastNameCustomer = implode(" ", array_slice($nameParts, 1)); // Handle multi-word last names
+
+        $sql = "SELECT COUNT(*) FROM tbl_customer WHERE c_fname = ? AND c_lname = ?";
+        $stmt = $conn->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param("ss", $firstNameCustomer, $lastNameCustomer);
+            $stmt->execute();
+            $stmt->bind_result($count);
+            $stmt->fetch();
+            $stmt->close();
+            if ($count == 0) {
+                $accountnameErr = "Account Name does not exist in customer database.";
+                $accountname = ""; // Clear invalid account name
+            }
+        } else {
+            $accountnameErr = "Database error: Unable to validate account name.";
+            $accountname = "";
+        }
+    } else {
+        $accountnameErr = "Account Name must consist of first and last name.";
+        $accountname = "";
+    }
+}
+
 // Handle AJAX search request
 if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['search']) && isset($_GET['tab'])) {
+    header('Content-Type: application/json');
     $searchTerm = trim($_GET['search']);
     $tab = $_GET['tab'] === 'archived' ? 'archived' : 'active';
     $page = isset($_GET['search_page']) ? max(1, (int)$_GET['search_page']) : 1;
@@ -64,14 +107,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
     $output = '';
 
     if ($tab === 'active') {
-        $tableId = 'active-tickets-table';
-        $tbodyId = 'active-table-body';
-        $paginationId = 'active-pagination';
         $statusCondition = "t_status != 'archived'";
     } else {
-        $tableId = 'archived-tickets-table';
-        $tbodyId = 'archived-table-body';
-        $paginationId = 'archived-pagination';
         $statusCondition = "t_status = 'archived'";
     }
 
@@ -131,7 +168,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
             if ($userType !== 'technician') {
                 if ($tab === 'active') {
                     $output .= "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                <a class='edit-btn' onclick=\"showEditTicketModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
                                 <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>";
                 } else {
                     $output .= "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
@@ -157,12 +194,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'search' && isset($_GET['searc
     }
     $stmt->close();
 
-    // Add pagination data
-    $output .= "<script>
-        updatePagination($page, $totalPages, '$searchTerm', '$paginationId');
-    </script>";
-
-    echo $output;
+    $response = [
+        'html' => $output,
+        'currentPage' => $page,
+        'totalPages' => $totalPages,
+        'tab' => $tab,
+        'searchTerm' => $searchTerm
+    ];
+    echo json_encode($response);
     exit();
 }
 
@@ -173,63 +212,239 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tab = isset($_GET['tab']) ? $_GET['tab'] : 'active';
 
     if (isset($_POST['add_ticket']) && $userType !== 'technician') {
-        $t_aname = $_POST['t_aname'];
-        $t_type = $_POST['t_type'];
-        $t_status = $_POST['t_status'];
-        $t_details = $_POST['t_details'];
-        $t_date = $_POST['t_date'];
+        $accountname = trim($_POST['account_name']);
+        $issuedetails = trim($_POST['ticket_details']);
+        $issuetype = trim($_POST['issue_type']);
+        $ticketstatus = trim($_POST['ticket_status']);
+        $dob = trim($_POST['date']);
 
-        $sql = "INSERT INTO tbl_ticket (t_aname, t_type, t_status, t_details, t_date) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssss", $t_aname, $t_type, $t_status, $t_details, $t_date);
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Ticket added successfully!";
+        // Validate account name
+        if (!preg_match("/^[a-zA-Z\s-]+$/", $accountname)) {
+            $accountnameErr = "Account Name should not contain numbers.";
+            $hasError = true;
         } else {
-            $_SESSION['error'] = "Error adding ticket: " . $stmt->error;
-            error_log("Error adding ticket: " . $stmt->error);
+            $nameParts = explode(" ", $accountname);
+            if (count($nameParts) < 2) {
+                $accountnameErr = "Account Name must consist of first and last name.";
+                $hasError = true;
+            } else {
+                $firstNameCustomer = $nameParts[0];
+                $lastNameCustomer = implode(" ", array_slice($nameParts, 1));
+
+                $sql = "SELECT COUNT(*) FROM tbl_customer WHERE c_fname = ? AND c_lname = ?";
+                $stmt = $conn->prepare($sql);
+                if (!$stmt) {
+                    if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
+                        exit();
+                    }
+                    die("Prepare failed: " . $conn->error);
+                }
+                $stmt->bind_param("ss", $firstNameCustomer, $lastNameCustomer);
+                $stmt->execute();
+                $stmt->bind_result($count);
+                $stmt->fetch();
+                $stmt->close();
+
+                if ($count == 0) {
+                    $accountnameErr = "Account Name does not exist.";
+                    $hasError = true;
+                }
+            }
         }
-        $stmt->close();
-        $tab = 'active';
+
+        // Validate required fields
+        if (empty($issuedetails)) {
+            $issuedetailsErr = "Ticket Details are required.";
+            $hasError = true;
+        }
+        if (empty($dob)) {
+            $dobErr = "Date Issued is required.";
+            $hasError = true;
+        }
+        if (empty($issuetype)) {
+            $issuetypeError = "Issue Type is required.";
+            $hasError = true;
+        }
+        if (empty($ticketstatus)) {
+            $ticketstatusErr = "Ticket Status is required.";
+            $hasError = true;
+        }
+
+        // Insert into database if no errors
+        if (!$hasError) {
+            $sql = "INSERT INTO tbl_ticket (t_aname, t_details, t_type, t_status, t_date) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
+                    exit();
+                }
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmt->bind_param("sssss", $accountname, $issuedetails, $issuetype, $ticketstatus, $dob);
+            if ($stmt->execute()) {
+                // Log add action for staff
+                if ($userType === 'staff') {
+                    $logDescription = "Staff $firstName added ticket for $accountname";
+                    $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+                    $stmtLog = $conn->prepare($sqlLog);
+                    $stmtLog->bind_param("s", $logDescription);
+                    $stmtLog->execute();
+                    $stmtLog->close();
+                }
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Ticket has been registered successfully.']);
+                    exit();
+                }
+                $_SESSION['message'] = "Ticket has been registered successfully.";
+            } else {
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Execution failed: ' . $stmt->error]);
+                    exit();
+                }
+                die("Execution failed: " . $stmt->error);
+            }
+            $stmt->close();
+        } else {
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Validation errors: ' . implode(', ', array_filter([$accountnameErr, $issuedetailsErr, $dobErr, $issuetypeError, $ticketstatusErr]))]);
+                exit();
+            }
+        }
     } elseif (isset($_POST['edit_ticket']) && $userType !== 'technician') {
-        $t_id = $_POST['t_id'];
-        $t_aname = $_POST['t_aname'];
-        $t_type = $_POST['t_type'];
-        $t_status = $_POST['t_status'];
-        $t_details = $_POST['t_details'];
-        $t_date = $_POST['t_date'];
+        $ticketId = (int)$_POST['t_id'];
+        $accountName = trim($_POST['account_name']);
+        $issueType = trim($_POST['issue_type']);
+        $ticketStatus = trim($_POST['ticket_status']);
+        $ticketDetails = trim($_POST['ticket_details']);
+        $dateIssued = trim($_POST['date']);
+        $errors = [];
 
-        // Check if the ticket is currently closed or open
-        $sqlCheck = "SELECT t_status FROM tbl_ticket WHERE t_id = ?";
-        $stmtCheck = $conn->prepare($sqlCheck);
-        $stmtCheck->bind_param("i", $t_id);
-        $stmtCheck->execute();
-        $resultCheck = $stmtCheck->get_result();
-        // rikes are not logged separately but are handled in editT.php
-        $currentTicket = $resultCheck->fetch_assoc();
-        $stmtCheck->close();
-
-        if ($currentTicket['t_status'] === 'Closed' && ($t_status === 'Open' || $t_status === 'Closed')) {
-            $_SESSION['error'] = "Cannot change status of a closed ticket to 'Open' or 'Closed'.";
-            header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
-            exit();
-        }
-        if ($currentTicket['t_status'] === 'Open' && ($t_status === 'Open' || $t_status === 'Closed')) {
-            $_SESSION['error'] = "Cannot change status of an open ticket to 'Open' or 'Closed'.";
-            header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
-            exit();
-        }
-
-        $sql = "UPDATE tbl_ticket SET t_aname=?, t_type=?, t_status=?, t_details=?, t_date=? WHERE t_id=?";
+        // Fetch current ticket details
+        $sql = "SELECT t_id, t_aname, t_type, t_status, t_details, t_date FROM tbl_ticket WHERE t_id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssssi", $t_aname, $t_type, $t_status, $t_details, $t_date, $t_id);
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Ticket updated successfully!";
+        $stmt->bind_param("i", $ticketId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $ticket = $result->fetch_assoc();
         } else {
-            $_SESSION['error'] = "Error updating ticket: " . $stmt->error;
-            error_log("Error updating ticket: " . $stmt->error);
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Ticket not found.']);
+                exit();
+            }
+            $_SESSION['error'] = "Ticket not found.";
+            header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
+            exit();
         }
         $stmt->close();
-        $tab = 'active';
+
+        // Validation
+        if (empty($accountName)) {
+            $errors['account_name'] = "Account Name is required.";
+        } else {
+            $nameParts = explode(" ", $accountName);
+            if (count($nameParts) < 2) {
+                $errors['account_name'] = "Account Name must consist of first and last name.";
+            } else {
+                $firstNameCustomer = $nameParts[0];
+                $lastNameCustomer = implode(" ", array_slice($nameParts, 1));
+                $sql = "SELECT COUNT(*) FROM tbl_customer WHERE c_fname = ? AND c_lname = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("ss", $firstNameCustomer, $lastNameCustomer);
+                $stmt->execute();
+                $stmt->bind_result($count);
+                $stmt->fetch();
+                $stmt->close();
+                if ($count == 0) {
+                    $errors['account_name'] = "Account Name does not exist.";
+                }
+            }
+        }
+        if (empty($issueType)) {
+            $errors['issue_type'] = "Issue Type is required.";
+        }
+        if (empty($ticketStatus)) {
+            $errors['ticket_status'] = "Ticket Status is required.";
+        }
+        if (empty($ticketDetails)) {
+            $errors['ticket_details'] = "Ticket Details are required.";
+        }
+        if (empty($dateIssued)) {
+            $errors['date'] = "Date Issued is required.";
+        }
+
+        // Prevent status change for closed or open tickets
+        if ($ticket['t_status'] === 'Closed' && ($ticketStatus === 'Open' || $ticketStatus === 'Closed')) {
+            $errors['ticket_status'] = "Cannot change status of a closed ticket to 'Open' or 'Closed'.";
+        }
+        if ($ticket['t_status'] === 'Open' && ($ticketStatus === 'Open' || $ticketStatus === 'Closed')) {
+            $errors['ticket_status'] = "Cannot change status of an open ticket to 'Open' or 'Closed'.";
+        }
+
+        if (empty($errors)) {
+            // Check for changes in account_name and ticket_details
+            $logParts = [];
+            if ($accountName !== $ticket['t_aname']) {
+                $logParts[] = "account name";
+            }
+            if ($ticketDetails !== $ticket['t_details']) {
+                $logParts[] = "ticket details";
+            }
+
+            // Update the ticket in the database
+            $sqlUpdate = "UPDATE tbl_ticket SET t_aname = ?, t_type = ?, t_status = ?, t_details = ?, t_date = ? WHERE t_id = ?";
+            $stmtUpdate = $conn->prepare($sqlUpdate);
+            if (!$stmtUpdate) {
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Prepare failed: ' . $conn->error]);
+                    exit();
+                }
+                die("Prepare failed: " . $conn->error);
+            }
+            $stmtUpdate->bind_param("sssssi", $accountName, $issueType, $ticketStatus, $ticketDetails, $dateIssued, $ticketId);
+
+            if ($stmtUpdate->execute()) {
+                // Log changes if any, only for staff
+                if ($userType === 'staff' && !empty($logParts)) {
+                    $logDescription = "Staff $firstName edited ticket ID $ticketId " . implode(" and ", $logParts);
+                    $sqlLog = "INSERT INTO tbl_logs (l_stamp, l_description) VALUES (NOW(), ?)";
+                    $stmtLog = $conn->prepare($sqlLog);
+                    $stmtLog->bind_param("s", $logDescription);
+                    $stmtLog->execute();
+                    $stmtLog->close();
+                }
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Ticket updated successfully!']);
+                    exit();
+                }
+                $_SESSION['message'] = "Ticket updated successfully!";
+            } else {
+                if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Error updating ticket: ' . $stmtUpdate->error]);
+                    exit();
+                }
+                $_SESSION['error'] = "Error updating ticket: " . $stmtUpdate->error;
+            }
+            $stmtUpdate->close();
+        } else {
+            if (isset($_POST['ajax']) && $_POST['ajax'] == 'true') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Validation errors: ' . implode(', ', $errors)]);
+                exit();
+            }
+            $_SESSION['error'] = implode(", ", $errors);
+        }
     } elseif (isset($_POST['archive_ticket']) && $userType !== 'technician') {
         $t_id = $_POST['t_id'];
         $sql = "UPDATE tbl_ticket SET t_status='archived' WHERE t_id=?";
@@ -287,13 +502,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ticket) {
             $t_aname = $ticket['t_aname'];
             // Try to fetch user details from tbl_user
-            $sqlUser = "SELECT u_fname, u_lname FROM tbl_user WHERE u_username = ?";
-            $stmtUser = $conn->prepare($sqlUser);
-            $stmtUser->bind_param("s", $t_aname);
-            $stmtUser->execute();
-            $resultUser = $stmtUser->get_result();
-            if ($resultUser->num_rows > 0) {
-                $user = $resultUser->fetch_assoc();
+            $sqlUserCheck = "SELECT u_fname, u_lname FROM tbl_user WHERE u_username = ?";
+            $stmtUserCheck = $conn->prepare($sqlUserCheck);
+            $stmtUserCheck->bind_param("s", $t_aname);
+            $stmtUserCheck->execute();
+            $resultUserCheck = $stmtUserCheck->get_result();
+            if ($resultUserCheck->num_rows > 0) {
+                $user = $resultUserCheck->fetch_assoc();
                 $userFirstName = $user['u_fname'];
                 $userLastName = $user['u_lname'];
             } else {
@@ -313,7 +528,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $stmtCustomer->close();
             }
-            $stmtUser->close();
+            $stmtUserCheck->close();
 
             // Update ticket status
             $sql = "UPDATE tbl_ticket SET t_status='closed' WHERE t_id=?";
@@ -367,8 +582,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tab = 'archived';
     }
 
-    header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
-    exit();
+    // Redirect if not AJAX
+    if (!(isset($_POST['ajax']) && $_POST['ajax'] == 'true')) {
+        header("Location: staffD.php?tab=$tab&page_active=$pageActive&page_archived=$pageArchived");
+        exit();
+    }
 }
 
 // Pagination setup
@@ -418,7 +636,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | Ticket Reports</title>
-    <link rel="stylesheet" href="staffsD.css">
+    <link rel="stylesheet" href="staffD.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -452,7 +670,7 @@ $conn->close();
             </li>
         </ul>
         <footer>
-             <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="index.php" class="back-home"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </footer>
     </div>
 
@@ -515,7 +733,7 @@ $conn->close();
                     </button>
                 </div>
                 <?php if ($userType !== 'technician'): ?>
-                    <button class="add-user-btn" onclick="window.location.href='createTickets.php'"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
+                    <button class="add-user-btn" onclick="showAddTicketModal()"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
                 <?php else: ?>
                     <button class="add-user-btn disabled" onclick="showRestrictedMessage()"><i class="fas fa-ticket-alt"></i> Add New Ticket</button>
                 <?php endif; ?>
@@ -549,7 +767,7 @@ $conn->close();
                                         <td class='action-buttons'>";
                                 if ($userType !== 'technician') {
                                     echo "<a class='view-btn' onclick=\"showViewModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='View'><i class='fas fa-eye'></i></a>
-                                          <a class='edit-btn' href='editT.php?id=" . htmlspecialchars($row['t_id'], ENT_QUOTES, 'UTF-8') . "' title='Edit'><i class='fas fa-edit'></i></a>
+                                          <a class='edit-btn' onclick=\"showEditTicketModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_type']}', '{$row['t_status']}', '" . htmlspecialchars($row['t_details'], ENT_QUOTES, 'UTF-8') . "', '{$row['t_date']}')\" title='Edit'><i class='fas fa-edit'></i></a>
                                           <a class='archive-btn' onclick=\"showArchiveModal('{$row['t_id']}', '" . htmlspecialchars($row['t_aname'], ENT_QUOTES, 'UTF-8') . "')\" title='Archive'><i class='fas fa-archive'></i></a>";
                                 } else {
                                     error_log("Rendering disabled buttons for technician: t_id={$row['t_id']}, tab=active");
@@ -737,6 +955,83 @@ $conn->close();
     </div>
 </div>
 
+<!-- Add Ticket Modal -->
+<div id="addTicketModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Ticket</h2>
+        </div>
+        <form method="POST" id="addTicketForm" class="modal-form">
+            <input type="hidden" name="add_ticket" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <label for="account_name">Account Name</label>
+            <input type="text" name="account_name" id="account_name" value="<?php echo htmlspecialchars($accountname, ENT_QUOTES, 'UTF-8'); ?>" required>
+            <span class="error"><?php echo $accountnameErr; ?></span>
+            <label for="issue_type">Issue Type</label>
+            <select name="issue_type" id="issue_type" required>
+                <option value="">Select Issue Type</option>
+                <option value="critical">Critical</option>
+                <option value="minor">Minor</option>
+            </select>
+            <span class="error"><?php echo $issuetypeError; ?></span>
+            <label for="ticket_status">Ticket Status</label>
+            <select name="ticket_status" id="ticket_status" required>
+                <option value="">Select Status</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+            </select>
+            <span class="error"><?php echo $ticketstatusErr; ?></span>
+            <label for="ticket_details">Ticket Details</label>
+            <textarea name="ticket_details" id="ticket_details" required></textarea>
+            <span class="error"><?php echo $issuedetailsErr; ?></span>
+            <label for="date">Date Issued</label>
+            <input type="date" name="date" id="date" required>
+            <span class="error"><?php echo $dobErr; ?></span>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('addTicketModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Add Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Ticket Modal -->
+<!-- Edit Ticket Modal -->
+<div id="editTicketModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Ticket</h2>
+        </div>
+        <form method="POST" id="editTicketForm" class="modal-form">
+            <input type="hidden" name="edit_ticket" value="1">
+            <input type="hidden" name="ajax" value="true">
+            <input type="hidden" name="t_id" id="edit_t_id">
+            <label for="edit_account_name">Account Name</label>
+            <input type="text" name="account_name" id="edit_account_name" required>
+            <label for="edit_issue_type">Issue Type</label>
+            <select name="issue_type" id="edit_issue_type" required>
+                <option value="">Select Issue Type</option>
+                <option value="critical">Critical</option>
+                <option value="minor">Minor</option>
+            </select>
+            <label for="edit_ticket_status">Ticket Status</label>
+            <select name="ticket_status" id="edit_ticket_status" required>
+                <option value="">Select Status</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+            </select>
+            <label for="edit_ticket_details">Ticket Details</label>
+            <textarea name="ticket_details" id="edit_ticket_details" required></textarea>
+            <label for="edit_date">Date Issued</label>
+            <input type="date" name="date" id="edit_date" required>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn cancel" onclick="closeModal('editTicketModal')">Cancel</button>
+                <button type="submit" class="modal-btn confirm">Update Ticket</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 let currentSearchPage = 1;
 let defaultPageActive = <?php echo json_encode($pageActive); ?>;
@@ -798,6 +1093,7 @@ function searchTickets(page = 1) {
     const tab = activeSection.classList.contains('active') ? 'active' : 'archived';
     const tbody = tab === 'active' ? document.getElementById('active-table-body') : document.getElementById('archived-table-body');
     const paginationContainer = tab === 'active' ? document.getElementById('active-pagination') : document.getElementById('archived-pagination');
+    const defaultPageToUse = tab === 'active' ? defaultPageActive : defaultPageArchived;
 
     currentSearchPage = page;
 
@@ -805,16 +1101,17 @@ function searchTickets(page = 1) {
 
     const xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                tbody.innerHTML = xhr.responseText.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-                console.log('Search request completed successfully');
-            } else {
-                console.error('Search request failed with status:', xhr.status);
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                tbody.innerHTML = response.html;
+                updatePagination(response.currentPage, response.totalPages, response.searchTerm, tab === 'active' ? 'active-pagination' : 'archived-pagination');
+            } catch (e) {
+                console.error('Error parsing JSON:', e, xhr.responseText);
             }
         }
     };
-    xhr.open('GET', `staffD.php?action=search&tab=${tab}&search=${encodeURIComponent(searchTerm)}&search_page=${searchTerm ? page : (tab === 'active' ? defaultPageActive : defaultPageArchived)}`, true);
+    xhr.open('GET', `staffD.php?action=search&tab=${tab}&search=${encodeURIComponent(searchTerm)}&search_page=${searchTerm ? page : defaultPageToUse}`, true);
     xhr.send();
 }
 
@@ -896,11 +1193,6 @@ function showArchiveModal(id, aname) {
     document.getElementById('archiveTicketId').value = id;
     document.getElementById('archiveTicketName').innerText = aname;
     document.getElementById('archiveModal').style.display = 'block';
-    const archiveButton = document.querySelector('#archiveForm .modal-btn.confirm');
-    archiveButton.onclick = function() {
-        document.getElementById('archiveForm').submit();
-        setTimeout(() => searchTickets(currentSearchPage), 500);
-    };
 }
 
 function showRestoreModal(id, aname) {
@@ -927,6 +1219,21 @@ function showCloseModal(id, aname, status) {
     document.getElementById('closeModal').style.display = 'block';
 }
 
+function showAddTicketModal() {
+    document.getElementById('addTicketForm').reset();
+    document.getElementById('addTicketModal').style.display = 'block';
+}
+
+function showEditTicketModal(id, aname, type, status, details, date) {
+    document.getElementById('edit_t_id').value = id;
+    document.getElementById('edit_account_name').value = aname;
+    document.getElementById('edit_issue_type').value = type.toLowerCase();
+    document.getElementById('edit_ticket_status').value = status;
+    document.getElementById('edit_ticket_details').value = details;
+    document.getElementById('edit_date').value = date;
+    document.getElementById('editTicketModal').style.display = 'block';
+}
+
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
@@ -935,6 +1242,60 @@ window.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.style.display = 'none';
     }
+});
+
+// Handle Add Ticket form submission via AJAX
+document.getElementById('addTicketForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'staffD.php', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            const alertContainer = document.querySelector('.alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert ${response.success ? 'alert-success' : 'alert-error'}`;
+            alert.textContent = response.message;
+            alertContainer.appendChild(alert);
+            setTimeout(() => {
+                alert.classList.add('alert-hidden');
+                setTimeout(() => alert.remove(), 500);
+            }, 2000);
+            if (response.success) {
+                closeModal('addTicketModal');
+                searchTickets(defaultPageActive);
+            }
+        }
+    };
+    xhr.send(formData);
+});
+
+// Handle Edit Ticket form submission via AJAX
+document.getElementById('editTicketForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'staffD.php', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            const alertContainer = document.querySelector('.alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert ${response.success ? 'alert-success' : 'alert-error'}`;
+            alert.textContent = response.message;
+            alertContainer.appendChild(alert);
+            setTimeout(() => {
+                alert.classList.add('alert-hidden');
+                setTimeout(() => alert.remove(), 500);
+            }, 2000);
+            if (response.success) {
+                closeModal('editTicketModal');
+                searchTickets(defaultPageActive);
+            }
+        }
+    };
+    xhr.send(formData);
 });
 </script>
 </body>
